@@ -10,6 +10,8 @@
 .contact-section p {
     margin-left: 110px;
     text-align: left;
+    color: #000;
+    font-weight: normal;
 }
 
 .contact-button {
@@ -26,4 +28,9 @@
     padding: 20px;
     background-color: #f0f0f0;
     margin-top: 170px;
+}
+
+.contact-footer p {
+    color: #000;
+    font-weight: normal;
 }
