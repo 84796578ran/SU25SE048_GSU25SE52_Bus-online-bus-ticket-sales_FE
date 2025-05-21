@@ -1,0 +1,48 @@
+.about {
+    text-align: left;
+}
+
+.main-content {
+    padding: 50px;
+}
+
+.about p {
+    color: #000;
+    font-weight: normal;
+}
+
+.highlight {
+    color: #00f;
+}
+
+.buttons {
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    cursor: pointer;
+    width: auto;
+    /* Điều chỉnh chiều rộng dựa trên nội dung */
+    display: inline-block;
+    /* Đảm bảo nút không bị kéo dài toàn bộ chiều ngang */
+    text-align: center;
+    /* Căn chỉnh văn bản bên trong nút */
+    min-width: 100px;
+    /* Đặt một giá trị tối thiểu để nút không quá nhỏ */
+}
+
+.book-now {
+    background-color: #00f;
+    color: #fff;
+    position: relative;
+    left: -12px;
+}
+
+.learn-more {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #000;
+}
