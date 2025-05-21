@@ -5,6 +5,7 @@ import Header from './header/Header';
 import RegisterForm from './register/Register';
 import About from './about/About';
 import Contact from './contact/Contact';
+import ForgotPassword from './forgotPassword/ForgotPass';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path='/register' element={<RegisterForm />} />
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
+          <Route path='/forgotPass' element={<ForgotPassword />} />
         </Routes>
       </BrowserRouter>
     </div>
