@@ -22,10 +22,16 @@
 }
 
 .seat-map {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    display: flex;
+    gap: 15px;
     margin: 20px 0;
+    flex-direction: column;
+}
+
+.seat-row {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
 }
 
 .seat {
@@ -40,6 +46,7 @@
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s ease;
+    margin: 3px;
 }
 
 .seat:hover {

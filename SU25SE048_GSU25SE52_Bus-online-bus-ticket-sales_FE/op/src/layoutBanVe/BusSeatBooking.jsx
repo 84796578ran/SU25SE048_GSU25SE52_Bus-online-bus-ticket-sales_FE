@@ -21,7 +21,7 @@ const BusBooking = () => {
                 const mockApiCall = () => {
                     return new Promise((resolve) => {
                         setTimeout(() => {
-                            const initialSeats = Array.from({ length: 15 }, (_, i) => ({
+                            const initialSeats = Array.from({ length: 16 }, (_, i) => ({
                                 id: `A${i + 1}`,
                                 number: `A${i + 1}`,
                                 isAvailable: true,
@@ -109,6 +109,11 @@ const BusBooking = () => {
             Lỗi: {error}
         </div>
     }
+    // Chia seats thành các nhóm 4 ghế để hiển thị thành công
+    const seatRows = [];
+    for (let i = 0; i < seats.length; i += 4) {
+        seatRows.push(seats.slice(i, i + 4));
+    }
     return (
         <div className="bus-booking-container">
             <h1>Đặt vé xe trực tuyến</h1>
@@ -136,10 +141,14 @@ const BusBooking = () => {
                     </div>
                 </div>
                 <div className="seat-map">
-                    {seats.map(seat => (
-                        <div key={seat.id} className={`seat ${!seat.isAvailable ? 'unavailable' : ''} ${seat.isSelected ? 'selected' : ''}`}
-                            onClick={() => handleSeatClick(seat.id)}>
-                            {seat.number}
+                    {seatRows.map((row, rowIndex) => (
+                        <div key={rowIndex} className="seat-row">
+                            {row.map(seat => (
+                                <div key={seat.id} className={`seat ${!seat.isAvailable ? 'unavailable' : ''} ${seat.isSelected ? 'selected' : ''}`}
+                                    onClick={() => handleSeatClick(seat.id)}>
+                                    {seat.number}
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </div>
