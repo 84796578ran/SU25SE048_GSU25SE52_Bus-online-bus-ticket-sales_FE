@@ -24,7 +24,9 @@ const LoginForm = () => {
             <input type="password" placeholder="Mật khẩu" value={password}
                 onChange={(e) => setPassword(e.target.value)} />
             <button onClick={handleLogin}>Đăng nhập</button>
-            <button className="google-login">
+            <button className="google-login" onClick={() =>
+                window.location.href = '/loginGoogle'
+            }>
                 <img src="channels4_profile-removebg-preview.png"
                     className="google-logo"></img>
                 Đăng nhập bằng Gmail
