@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import '../login/Login.css';
+import Header from "../../components/header/Header";
 const LoginForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -18,9 +19,6 @@ const LoginForm = () => {
                 user => user.username === username && user.password === password
             );
             if (user) {
-                setLoginStatus(true);
-                setErrorMessage('');
-                localStorage.setItem('user', JSON.stringify(user));
                 navigate('/manageRoute');
             } else {
                 throw new Error('Sai tên đăng nhập hoặc mật khẩu');
@@ -31,33 +29,38 @@ const LoginForm = () => {
         }
     };
     return (
-        <div className="login-container">
-            <h2>Đăng nhập</h2>
-            {loginStatus === true && (
-                <div className="success-message">
-                    Đăng nhập thành công
-                </div>
-            )}
-            {(loginStatus === null || loginStatus === false) && (
-                <>
-                    <input type="text" placeholder="Tên đăng nhập hoặc số điện thoại"
-                        value={username} onChange={(e) => setUsername(e.target.value)} />
-                    <input type="password" placeholder="Mật khẩu" value={password}
-                        onChange={(e) => setPassword(e.target.value)} />
-                    <button onClick={handleLogin}>Đăng nhập</button>
-                    {loginStatus === false && errorMessage && (
-                        <p className="error-message">{errorMessage}</p>
+        <div className="login-page">
+            <Header />
+            <div className="login-content">
+                <div className="login-container">
+                    <h2>Đăng nhập</h2>
+                    {loginStatus === true && (
+                        <div className="success-message">
+                            Đăng nhập thành công
+                        </div>
                     )}
-                    <button className="google-login" onClick={() =>
-                        window.location.href = '/loginGoogle'
-                    }>
-                        <img src="channels4_profile-removebg-preview.png"
-                            className="google-logo"></img>
-                        Đăng nhập bằng Gmail
-                    </button>
-                    <Link to='/forgotPass'>Quên mật khẩu?</Link>
-                </>
-            )}
+                    {(loginStatus === null || loginStatus === false) && (
+                        <>
+                            <input type="text" placeholder="Tên đăng nhập hoặc số điện thoại"
+                                value={username} onChange={(e) => setUsername(e.target.value)} />
+                            <input type="password" placeholder="Mật khẩu" value={password}
+                                onChange={(e) => setPassword(e.target.value)} />
+                            <button onClick={handleLogin}>Đăng nhập</button>
+                            {loginStatus === false && errorMessage && (
+                                <p className="error-message">{errorMessage}</p>
+                            )}
+                            <button className="google-login" onClick={() =>
+                                window.location.href = '/loginGoogle'
+                            }>
+                                <img src="channels4_profile-removebg-preview.png"
+                                    className="google-logo"></img>
+                                Đăng nhập bằng Gmail
+                            </button>
+                            <Link to='/forgotPass'>Quên mật khẩu?</Link>
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }
