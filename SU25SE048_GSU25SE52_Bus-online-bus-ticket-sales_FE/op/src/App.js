@@ -1,21 +1,20 @@
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Header from './header/Header';
 import RegisterForm from './API/register/Register';
-import About from './about/About';
 import Contact from './contact/Contact';
 import ForgotPassword from './forgotPassword/ForgotPass';
 import BusBooking from './layoutBanVe/BusSeatBooking';
 import GoogleLoginButton from './googleLoginButton/GoogleLoginButton';
-import HomePage from './home/HomePage';
 import ManageRoute from './pages/manager/manageRoute/ManageRoute';
 import LoginForm from './API/login/Login';
+import ManageUsers from './pages/manager/manageUser/ManageUser';
+import HomePage from './pages/admin/home/HomePage';
+import About from './components/about/About';
 
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Header />
         <Routes>
           <Route path='/' element={<LoginForm />} />
           <Route path='/register' element={<RegisterForm />} />
@@ -25,6 +24,7 @@ function App() {
           <Route path='/services' element={<BusBooking />} />
           <Route path='/home' element={<HomePage />} />
           <Route path='/loginGoogle' element={<GoogleLoginButton />} />
+          <Route path='/manageUser' element={<ManageUsers />} />
           <Route path='/manageRoute' element={<ManageRoute />} />
         </Routes>
       </BrowserRouter>
