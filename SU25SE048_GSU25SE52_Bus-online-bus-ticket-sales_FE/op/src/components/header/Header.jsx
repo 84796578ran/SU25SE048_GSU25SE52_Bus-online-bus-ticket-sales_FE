@@ -1,6 +1,6 @@
 import '../header/Header.css';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaInfoCircle, FaConciergeBell, FaEnvelope, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
+import { FaHome, FaInfoCircle, FaConciergeBell, FaSignInAlt, FaUserPlus, FaEnvelope } from 'react-icons/fa';
 
 const Header = () => {
     const location = useLocation();
