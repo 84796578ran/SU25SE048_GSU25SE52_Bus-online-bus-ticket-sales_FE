@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import '../layoutBanVe/BusSeatBooking.css';
+import Header from "../components/header/Header";
 const BusBooking = () => {
     const busInfo = {
         name: 'Xe Limousine VIP',
@@ -115,57 +116,62 @@ const BusBooking = () => {
         seatRows.push(seats.slice(i, i + 4));
     }
     return (
-        <div className="bus-booking-container">
-            <h1>Đặt vé xe trực tuyến</h1>
-            <div className="bus-info">
-                <h2>
-                    {busInfo.name} - Tuyến {busInfo.route}
-                </h2>
-                <p>Khởi hành: {busInfo.departureTime} - {busInfo.departureDate}
-                </p>
-            </div>
-            <div className="seat-selection">
-                <h3>Chọn ghế</h3>
-                <div className="seat-legend">
-                    <div className="legend-item">
-                        <div className="legend-color available"></div>
-                        <span>Có sẵn</span>
+        <div className="app-layout">
+            <Header />
+            <div className="main-content">
+                <div className="bus-booking-container">
+                    <h1>Đặt vé xe trực tuyến</h1>
+                    <div className="bus-info">
+                        <h2>
+                            {busInfo.name} - Tuyến {busInfo.route}
+                        </h2>
+                        <p>Khởi hành: {busInfo.departureTime} - {busInfo.departureDate}
+                        </p>
                     </div>
-                    <div className="legend-item">
-                        <div className="legend-color selected"></div>
-                        <span>Đã chọn</span>
-                    </div>
-                    <div className="legend-item">
-                        <div className="legend-color unavailable"></div>
-                        <span>Đã bán</span>
-                    </div>
-                </div>
-                <div className="seat-map">
-                    {seatRows.map((row, rowIndex) => (
-                        <div key={rowIndex} className="seat-row">
-                            {row.map(seat => (
-                                <div key={seat.id} className={`seat ${!seat.isAvailable ? 'unavailable' : ''} ${seat.isSelected ? 'selected' : ''}`}
-                                    onClick={() => handleSeatClick(seat.id)}>
-                                    {seat.number}
+                    <div className="seat-selection">
+                        <h3>Chọn ghế</h3>
+                        <div className="seat-legend">
+                            <div className="legend-item">
+                                <div className="legend-color available"></div>
+                                <span>Có sẵn</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-color selected"></div>
+                                <span>Đã chọn</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-color unavailable"></div>
+                                <span>Đã bán</span>
+                            </div>
+                        </div>
+                        <div className="seat-map">
+                            {seatRows.map((row, rowIndex) => (
+                                <div key={rowIndex} className="seat-row">
+                                    {row.map(seat => (
+                                        <div key={seat.id} className={`seat ${!seat.isAvailable ? 'unavailable' : ''} ${seat.isSelected ? 'selected' : ''}`}
+                                            onClick={() => handleSeatClick(seat.id)}>
+                                            {seat.number}
+                                        </div>
+                                    ))}
                                 </div>
                             ))}
                         </div>
-                    ))}
-                </div>
 
-            </div>
-            <div className="booking-summary">
-                <h3>Thông tin đặt vé</h3>
-                <p>
-                    Số ghế đã chọn: {selectedSeats.length > 0 ? selectedSeats.length : ''}
-                </p>
-                <p>
-                    Tổng tiền: {selectedSeats.length * busInfo.pricePerSeat} VND (200.000 VND/ghế)
-                </p>
-                <button onClick={handleBooking}
-                    disabled={selectedSeats.length === 0 || loading}>
-                    {loading ? 'Đang xử lý...' : 'Đặt vé'}
-                </button>
+                    </div>
+                    <div className="booking-summary">
+                        <h3>Thông tin đặt vé</h3>
+                        <p>
+                            Số ghế đã chọn: {selectedSeats.length > 0 ? selectedSeats.length : ''}
+                        </p>
+                        <p>
+                            Tổng tiền: {selectedSeats.length * busInfo.pricePerSeat} VND (200.000 VND/ghế)
+                        </p>
+                        <button onClick={handleBooking}
+                            disabled={selectedSeats.length === 0 || loading}>
+                            {loading ? 'Đang xử lý...' : 'Đặt vé'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     )

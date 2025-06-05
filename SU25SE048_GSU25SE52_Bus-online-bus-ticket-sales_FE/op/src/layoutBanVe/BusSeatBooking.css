@@ -5,6 +5,11 @@
     font-family: 'Arial', sans-serif;
 }
 
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
 .bus-info {
     background-color: #f5f5f5;
     padding: 15px;
@@ -47,6 +52,13 @@
     font-weight: bold;
     transition: all 0.3s ease;
     margin: 3px;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    margin-left: 200px;
 }
 
 .seat:hover {
