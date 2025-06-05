@@ -1,8 +1,7 @@
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import RegisterForm from './API/register/Register';
-import Contact from './contact/Contact';
-import ForgotPassword from './forgotPassword/ForgotPass';
+import ForgotPassword from './API/forgotPassword/ForgotPass';
 import BusBooking from './layoutBanVe/BusSeatBooking';
 import GoogleLoginButton from './googleLoginButton/GoogleLoginButton';
 import ManageRoute from './pages/manager/manageRoute/ManageRoute';
@@ -10,6 +9,7 @@ import LoginForm from './API/login/Login';
 import ManageUsers from './pages/manager/manageUser/ManageUser';
 import HomePage from './pages/admin/home/HomePage';
 import About from './components/about/About';
+import Contact from './components/contact/Contact';
 
 function App() {
   return (
