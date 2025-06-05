@@ -172,6 +172,7 @@
 .footer-brand {
     display: flex;
     flex-direction: column;
+
 }
 
 .footer-logo {
@@ -190,7 +191,9 @@
 .footer-social {
     display: flex;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: auto;
+    padding: 1rem;
+    justify-content: center;
 }
 
 .social-icon {
