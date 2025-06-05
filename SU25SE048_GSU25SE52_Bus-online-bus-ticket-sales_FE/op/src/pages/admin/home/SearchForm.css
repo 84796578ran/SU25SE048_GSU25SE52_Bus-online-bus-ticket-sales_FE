@@ -203,17 +203,13 @@
     color: black;
 }
 
-#returnDate {
-    max-width: 510px;
-    margin-left: -261px;
-}
-
 .form-group .react-datepicker-wrapper {
     width: 100% !important;
 }
 
 .date-picker-wrapper {
     width: 100% !important;
+    margin-left: 0 !important;
 }
 
 .date-picker-container {
