@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPopularRoutes } from '../../../API/api';
+import { fetchPopularRoutes } from '../../../services/api';
 const PopularRoutes = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
