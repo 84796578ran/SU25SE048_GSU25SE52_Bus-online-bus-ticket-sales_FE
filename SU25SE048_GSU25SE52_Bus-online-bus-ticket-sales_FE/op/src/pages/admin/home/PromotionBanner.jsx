@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPromotions } from '../../../API/api';
+import { fetchPromotions } from '../../../services/api';
 
 const PromotionBanner = () => {
     const [promotions, setPromotions] = useState([]);
