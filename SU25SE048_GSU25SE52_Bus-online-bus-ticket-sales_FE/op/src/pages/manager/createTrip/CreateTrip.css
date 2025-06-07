@@ -1,0 +1,311 @@
+:root {
+    --primary-color: #4361ee;
+    --primary-light: #eef2ff;
+    --primary-hover: #3a56d4;
+    --error-color: #ef233c;
+    --error-bg: #ffebee;
+    --success-color: #4caf50;
+    --success-bg: #e8f5e9;
+    --warning-color: #ff9800;
+    --warning-bg: #fff3e0;
+    --text-color: #2b2d42;
+    --text-secondary: #6c757d;
+    --border-color: #e0e0e0;
+    --bg-color: #f8f9fa;
+    --white: #ffffff;
+    --radius: 8px;
+    --radius-sm: 4px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+/* Main Container */
+.create-trip-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+}
+
+.create-trip-container {
+    flex: 1;
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.create-trip-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.create-trip-header h2 {
+    color: var(--text-color);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.create-trip-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* Form Styles */
+.trip-form {
+    margin-top: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.form-group label .required {
+    color: var(--error-color);
+    margin-left: 2px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    transition: var(--transition);
+    background-color: var(--white);
+    color: var(--text-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+}
+
+/* Special Input Styles */
+.input-with-symbol {
+    position: relative;
+}
+
+.input-with-symbol .currency-symbol {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.input-with-symbol .form-control {
+    padding-left: 30px !important;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.select-wrapper::after {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+    font-size: 1.2rem;
+}
+
+.select-wrapper select {
+    appearance: none;
+    padding-right: 36px;
+    cursor: pointer;
+}
+
+/* Date Picker Styles */
+.date-picker-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    background-color: var(--white);
+    color: var(--text-color);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+}
+
+.date-picker-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Textarea Styles */
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+/* Button Styles */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.submit-btn {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.submit-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.submit-btn:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    border-left: 4px solid transparent;
+}
+
+.alert-error {
+    background-color: var(--error-bg);
+    color: var(--error-color);
+    border-left-color: var(--error-color);
+}
+
+.alert-success {
+    background-color: var(--success-bg);
+    color: var(--success-color);
+    border-left-color: var(--success-color);
+}
+
+.alert-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-color);
+    border-left-color: var(--warning-color);
+}
+
+.alert-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Loading State */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    gap: 1rem;
+}
+
+.loading-container p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(67, 97, 238, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .create-trip-container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-actions {
+        justify-content: center;
+    }
+
+    .submit-btn {
+        width: 100%;
+    }
+}
