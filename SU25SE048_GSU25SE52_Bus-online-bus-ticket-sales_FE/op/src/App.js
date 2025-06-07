@@ -1,16 +1,15 @@
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import RegisterForm from './API/register/Register';
-import ForgotPassword from './API/forgotPassword/ForgotPass';
-import BusBooking from './layoutBanVe/BusSeatBooking';
-import GoogleLoginButton from './googleLoginButton/GoogleLoginButton';
+import RegisterForm from './services/register/Register';
+import ForgotPassword from './services/forgotPassword/ForgotPass';
 import ManageRoute from './pages/manager/manageRoute/ManageRoute';
-import LoginForm from './API/login/Login';
+import LoginForm from './services/login/Login';
 import ManageUsers from './pages/manager/manageUser/ManageUser';
 import HomePage from './pages/admin/home/HomePage';
 import About from './components/about/About';
 import Contact from './components/contact/Contact';
 import CreateTrip from './pages/manager/createTrip/CreateTrip';
+import BusBooking from './pages/manager/layoutBanVe/BusSeatBooking';
 
 function App() {
   return (
@@ -24,7 +23,6 @@ function App() {
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/services' element={<BusBooking />} />
           <Route path='/home' element={<HomePage />} />
-          <Route path='/loginGoogle' element={<GoogleLoginButton />} />
           <Route path='/manageUser' element={<ManageUsers />} />
           <Route path='/manageRoute' element={<ManageRoute />} />
           <Route path='/manageBus' element={<CreateTrip />} />
