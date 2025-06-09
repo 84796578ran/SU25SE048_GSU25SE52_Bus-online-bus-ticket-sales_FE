@@ -4,7 +4,7 @@ import '../createTrip/CreateTrip.css';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
-import Menu from "../../../components/menu/Menu";
+import Menu from "../../../components/Manager/menu/Menu";
 registerLocale('vi', vi);
 const CreateTrip = () => {
     const [startDate, setStartDate] = useState(null);

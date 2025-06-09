@@ -4,8 +4,8 @@ const Menu = () => {
     return (
         <div className="menu-container">
             <div className="menu-header">
-                <img src='z6610397187736_0129b5400c3fb8991bfc9acb047eea2a-removebg-preview.png'
-                    className="menu-logo" />
+                <img src="./public/Logo.png"
+                    className="menu-logo" />    
             </div>
             <ul className="menu-list">
                 <li className="menu-item">

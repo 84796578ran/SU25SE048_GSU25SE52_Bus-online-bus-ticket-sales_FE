@@ -10,6 +10,7 @@ const LoginForm = () => {
     const [loginStatus, setLoginStatus] = useState(null);
     const handleLogin = async () => {
         try {
+            // k được dùng get để lấy username và password  vì sẽ bị lộ
             const response = await axios.get('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/User', {
                 username,
                 password
@@ -51,8 +52,8 @@ const LoginForm = () => {
                     <button className="google-login" onClick={() =>
                         window.location.href = '/loginGoogle'
                     }>
-                        <img src="channels4_profile-removebg-preview.png"
-                            className="google-logo"></img>
+                        <img src="../assets/GoogleLogo.png"
+                            className="google-logo" alt="Google Logo"></img>
                         Đăng nhập bằng Gmail
                     </button>
                     <Link to='/forgotPass'>Quên mật khẩu?</Link>

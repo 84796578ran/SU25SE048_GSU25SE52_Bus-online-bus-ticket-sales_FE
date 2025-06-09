@@ -3,7 +3,7 @@ import '../manageRoute/ManageRoute.css';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
-import Menu from '../../../components/menu/Menu';
+import Menu from '../../../components/Manager/menu/Menu';
 import { format } from 'date-fns';
 import Pagination from '../../../components/pagination/Pagination';
 const ManageRoute = () => {
