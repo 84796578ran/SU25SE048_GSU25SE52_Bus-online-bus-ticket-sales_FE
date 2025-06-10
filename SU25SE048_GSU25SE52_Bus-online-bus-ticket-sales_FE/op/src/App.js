@@ -1,15 +1,17 @@
 import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import RegisterForm from './services/register/Register';
-import ForgotPassword from './services/forgotPassword/ForgotPass';
+import RegisterForm from './register/Register';
+import ForgotPassword from './forgotPassword/ForgotPass';
 import ManageRoute from './pages/manager/manageRoute/ManageRoute';
-import LoginForm from './services/login/Login';
+import LoginForm from './login/Login';
 import ManageUsers from './pages/manager/manageUser/ManageUser';
 import HomePage from './pages/admin/home/HomePage';
 import About from './components/about/About';
 import Contact from './components/contact/Contact';
 import CreateTrip from './pages/manager/createTrip/CreateTrip';
-import BusBooking from './pages/manager/layoutBanVe/BusSeatBooking';
+import BusBooking from './layoutBanVe/BusSeatBooking';
+import PopularRoutes from './pages/admin/home/PopularRoutes';
+import PromotionBanner from './pages/admin/home/PromotionBanner';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
           <Route path='/manageUser' element={<ManageUsers />} />
           <Route path='/manageRoute' element={<ManageRoute />} />
           <Route path='/manageBus' element={<CreateTrip />} />
+          <Route path='/PopularRoutes' element={<PopularRoutes />} />
+          <Route path='/PromotionBanner' element={<PromotionBanner />} />
         </Routes>
       </BrowserRouter>
     </div>

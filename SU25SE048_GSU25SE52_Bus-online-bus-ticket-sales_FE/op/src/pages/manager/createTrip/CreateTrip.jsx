@@ -4,11 +4,7 @@ import '../createTrip/CreateTrip.css';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
-<<<<<<< HEAD
-=======
-
 import { useNavigate, useParams } from "react-router-dom";
->>>>>>> trung
 import Menu from "../../../components/Manager/menu/Menu";
 registerLocale('vi', vi);
 const CreateTrip = () => {
