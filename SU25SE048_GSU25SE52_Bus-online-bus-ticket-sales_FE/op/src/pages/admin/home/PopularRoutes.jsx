@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPopularRoutes } from '../../../services/api';
+import { getPopularRoutes } from '../../../services/api';
+
 const PopularRoutes = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         const loadRoutes = async () => {
-            const data = await fetchPopularRoutes();
+            const data = await getPopularRoutes();
             setRoutes(data);
             setLoading(false);
         };
