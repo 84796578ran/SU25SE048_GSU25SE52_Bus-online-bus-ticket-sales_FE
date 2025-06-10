@@ -1,6 +1,6 @@
 import axios from 'axios';
 const API_BASE_URL = 'https://your-api-endpoint.com/api';
-export const fetchPopularRoutes = async () => {
+export const getPopularRoutes = async () => {
     try {
         const response = await axios.get(`${API_BASE_URL}/routes/popular`);
         return response.data;
@@ -20,7 +20,7 @@ export const searchTrips = async (departure, destination, date) => {
         return [];
     }
 };
-export const fetchPromotions = async () => {
+export const getPromotions = async () => {
     try {
         const response = await axios.get(`${API_BASE_URL}/promotions`);
         return response.data;
