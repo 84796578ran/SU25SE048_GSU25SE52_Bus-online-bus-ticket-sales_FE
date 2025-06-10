@@ -4,10 +4,17 @@ import '../createTrip/CreateTrip.css';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
+<<<<<<< HEAD
+=======
+
+import { useNavigate, useParams } from "react-router-dom";
+>>>>>>> trung
 import Menu from "../../../components/Manager/menu/Menu";
 registerLocale('vi', vi);
 const CreateTrip = () => {
+    const navigate = useNavigate();
     const [startDate, setStartDate] = useState(null);
+    const [dateError, setDateError] = useState('');
     const [endDate, setEndDate] = useState(null);
     const [formData, setFormData] = useState({
         tripID: '',
@@ -18,18 +25,51 @@ const CreateTrip = () => {
         timeEnd: '',
         description: '',
         typeBusID: '',
-        FromLocation: '',
-        EndLocation: '',
+        fromLocation: '',
+        endLocation: '',
         routID: ''
     });
+    // Xử lý khi thay đổi ngày khởi hành
+    const handleStartDateChange = (date) => {
+        setStartDate(date);
+        setFormData(prev => ({
+            ...prev,
+            timeStart: date.toISOString()
+        }));
+        validateDates(date, endDate);
+    };
 
+    // Xử lý khi thay đổi ngày kết thúc
+    const handleEndDateChange = (date) => {
+        setEndDate(date);
+        setFormData(prev => ({
+            ...prev,
+            timeEnd: date.toISOString()
+        }));
+        validateDates(startDate, date);
+    };
+    const { id } = useParams();
     const [busTypes, setBusTypes] = useState([]);
     const [routes, setRoutes] = useState([]);
     const [timeSlots, setTimeSlots] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
-
+    const [isEditing, setIsEditing] = useState(false);
+    // Hàm kiểm tra validation ngày
+    const validateDates = (start, end) => {
+        const now = new Date();
+        if (start && start <= now) {
+            setDateError('Thời gian khởi hành phải lớn hơn thời gian hiện tại');
+            return false;
+        }
+        if (start && end && end <= start) {
+            setDateError('Thời gian kết thúc phải lớn hơn thời gian khởi hành');
+            return false;
+        }
+        setDateError('');
+        return true;
+    };
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -42,6 +82,26 @@ const CreateTrip = () => {
                 setBusTypes(busTypesRes.data);
                 setRoutes(routesRes.data);
                 setTimeSlots(timeSlotsRes.data);
+                if (id) {
+                    const tripRes = await axios.get(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`);
+                    const tripData = tripRes.data;
+                    setFormData({
+                        tripID: tripData.tripID,
+                        price: tripData.price,
+                        status: tripData.status,
+                        timeID: tripData.timeID,
+                        timeStart: tripData.timeStart,
+                        timeEnd: tripData.timeEnd,
+                        description: tripData.description,
+                        typeBusID: tripData.typeBusID,
+                        fromLocation: tripData.fromLocation,
+                        endLocation: tripData.endLocation,
+                        routID: tripData.routID
+                    });
+                    if (tripData.timeStart) setStartDate(new Date(tripData.timeStart));
+                    if (tripData.timeEnd) setEndDate(new Date(tripData.timeEnd));
+                    setIsEditing(true);
+                }
             } catch (err) {
                 setError('Failed to load initial data. Please try again later.');
             } finally {
@@ -49,7 +109,7 @@ const CreateTrip = () => {
             }
         };
         fetchInitialData();
-    }, []);
+    }, [id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -61,27 +121,37 @@ const CreateTrip = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Kiểm tra validation trước khi submit
+        if (!validateDates(startDate, endDate)) {
+            return;
+        }
         setIsLoading(true);
         setError(null);
         setSuccess(false);
 
         try {
-            const response = await axios.post('https://6842b377e1347494c31da299.mockapi.io/Trip', formData);
-            if (response.status === 201) {
-                setSuccess(true);
-                setFormData({
-                    tripID: '',
-                    price: '',
-                    status: '',
-                    timeID: '',
-                    timeStart: '',
-                    timeEnd: '',
-                    description: '',
-                    typeBusID: '',
-                    FromLocation: '',
-                    EndLocation: '',
-                    routID: ''
-                });
+            if (isEditing) {
+                // Cập nhật chuyến đi hiện có
+                await axios.put(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`, formData);
+                setSuccess('Trip updated successfully!');
+            } else {
+                await axios.post('https://6842b377e1347494c31da299.mockapi.io/Trip', formData);
+                if (!isEditing) {
+                    setSuccess(true);
+                    setFormData({
+                        tripID: '',
+                        price: '',
+                        status: '',
+                        timeID: '',
+                        timeStart: '',
+                        timeEnd: '',
+                        description: '',
+                        typeBusID: '',
+                        fromLocation: '',
+                        endLocation: '',
+                        routID: ''
+                    });
+                }
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create trip. Please check your inputs.');
@@ -89,8 +159,25 @@ const CreateTrip = () => {
             setIsLoading(false);
         }
     };
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this trip?')) return;
 
-    if (isLoading && !formData.TripID) {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            await axios.delete(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`);
+            setSuccess('Trip deleted successfully!');
+            setTimeout(() => {
+                navigate('/manageBus'); // Chuyển hướng sau khi xóa
+            }, 1500);
+        } catch (err) {
+            setError('Failed to delete trip. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    if (isLoading && !formData.tripID) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
@@ -104,7 +191,7 @@ const CreateTrip = () => {
             <Menu />
             <div className="create-trip-container">
                 <div className="create-trip-header">
-                    <h2>Tạo chuyến xe</h2>
+                    <h2>{isEditing ? 'Chỉnh sửa chuyến xe' : 'Tạo chuyến xe'}</h2>
                 </div>
 
                 {error && (
@@ -121,25 +208,66 @@ const CreateTrip = () => {
                         <svg className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Trip created successfully!</span>
+                        <span>Tạo chuyến thành công!</span>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="trip-form">
                     <div className="form-grid">
+
                         <div className="form-group">
-                            <label htmlFor="TripID">Trip ID <span className="required">*</span></label>
+                            <label htmlFor="fromLocation">Vị trí bắt đầu <span className="required">*</span></label>
                             <input
                                 type="text"
-                                id="TripID"
-                                name="TripID"
-                                value={formData.TripID}
+                                id="fromLocation"
+                                name="fromLocation"
+                                value={formData.fromLocation}
                                 onChange={handleChange}
-                                placeholder="Enter unique trip ID"
                                 required
                             />
                         </div>
 
+                        <div className="form-group">
+                            <label htmlFor="endLocation">Vị trí kết thúc <span className="required">*</span></label>
+                            <input
+                                type="text"
+                                id="endLocation"
+                                name="endLocation"
+                                value={formData.endLocation}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="timeStart">Thời gian khởi hành <span className="required">*</span></label>
+                            <DatePicker
+                                id="timeStart"
+                                selected={startDate}
+                                onChange={handleStartDateChange}
+                                dateFormat="dd/MM/yyyy"
+                                locale="vi"
+                                className="date-picker-input"
+                                required minDate={new Date()}
+                            />
+                            {dateError && (
+                                <div className="error-message" style={{ color: 'var(--error-color)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                                    {dateError}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="timeEnd">Thời gian kết thúc <span className="required">*</span></label>
+                            <DatePicker
+                                id="timeEnd"
+                                selected={endDate}
+                                onChange={handleEndDateChange}
+                                dateFormat="dd/MM/yyyy"
+                                locale="vi"
+                                className="date-picker-input"
+                                required minDate={startDate}
+                            />
+                        </div>
                         <div className="form-group">
                             <label htmlFor="price">Giá <span className="required">*</span></label>
                             <div className="input-with-symbol">
@@ -154,24 +282,6 @@ const CreateTrip = () => {
                                 />
                             </div>
                         </div>
-
-                        <div className="form-group">
-                            <label htmlFor="status">Trạng thái <span className="required">*</span></label>
-                            <div className="select-wrapper">
-                                <select
-                                    id="status"
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                    required
-                                >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <div className="form-group">
                             <label htmlFor="typeBusID">ID loại xe<span className="required">*</span></label>
                             <div className="select-wrapper">
@@ -186,66 +296,6 @@ const CreateTrip = () => {
                             </div>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="FromLocation">Vị trí bắt đầu <span className="required">*</span></label>
-                            <input
-                                type="text"
-                                id="FromLocation"
-                                name="FromLocation"
-                                value={formData.FromLocation}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="EndLocation">Vị trí kết thúc <span className="required">*</span></label>
-                            <input
-                                type="text"
-                                id="EndLocation"
-                                name="EndLocation"
-                                value={formData.EndLocation}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="timeStart">Thời gian khởi hành <span className="required">*</span></label>
-                            <DatePicker
-                                id="timeStart"
-                                selected={startDate}
-                                onChange={(date) => {
-                                    setStartDate(date);
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        timeStart: date.toISOString()
-                                    }));
-                                }}
-                                dateFormat="dd/MM/yyyy"
-                                locale="vi"
-                                className="date-picker-input"
-                                required
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="timeEnd">Thời gian kết thúc <span className="required">*</span></label>
-                            <DatePicker
-                                id="timeEnd"
-                                selected={endDate}
-                                onChange={(date) => {
-                                    setEndDate(date);
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        timeEnd: date.toISOString()
-                                    }));
-                                }}
-                                dateFormat="dd/MM/yyyy"
-                                locale="vi"
-                                className="date-picker-input"
-                                required
-                            />
-                        </div>
                         <div className="form-group full-width">
                             <label htmlFor="description">Mô tả</label>
                             <textarea
@@ -260,14 +310,24 @@ const CreateTrip = () => {
                     </div>
 
                     <div className="form-actions">
-                        <button type="submit" disabled={isLoading} className="submit-btn">
+                        {isEditing && (
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={isLoading}
+                                className="btn delete-btn"
+                            >
+                                {isLoading ? 'Đang xóa...' : 'Xóa chuyến'}
+                            </button>
+                        )}
+                        <button type="submit" disabled={isLoading} className="btn submit-btn fit-content-btn">
                             {isLoading ? (
                                 <>
                                     <span className="spinner-btn"></span>
-                                    Creating...
+                                    {isEditing ? 'Đang cập nhật...' : 'Đang tạo...'}
                                 </>
                             ) : (
-                                'Create Trip'
+                                isEditing ? 'Cập nhật chuyến đi' : 'Tạo chuyến đi'
                             )}
                         </button>
                     </div>
