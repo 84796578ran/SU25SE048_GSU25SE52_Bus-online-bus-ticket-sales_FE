@@ -15,7 +15,7 @@ const Header = () => {
             <div className="logo-container">
                 <Link to="/home">
                     <img
-                        src='z6610397187736_0129b5400c3fb8991bfc9acb047eea2a-removebg-preview.png'
+                        src='Logo.png'
                         className='logo-img'
                         alt="Website Logo"
                     />
