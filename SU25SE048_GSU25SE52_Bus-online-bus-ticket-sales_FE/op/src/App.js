@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import RegisterForm from './services/register/Register';
 import ManageRoute from './pages/manager/manageRoute/ManageRoute';
 import LoginForm from './services/login/Login';
-import ManageUsers from './pages/manager/manageUser/ManageUser';
 import HomePage from './pages/admin/home/HomePage';
 import About from './components/about/About';
 import Contact from './components/contact/Contact';
@@ -23,8 +22,7 @@ function App() {
           <Route path='/services' element={<BusBooking />} />
           <Route path='/home' element={<HomePage />} />
           <Route path='/forgotPass' element={<ForgotPassword />} />
-          <Route path='/manageUser' element={<ManageUsers />} />
-          <Route path='/manageRoute' element={<ManageRoute />} />
+                    <Route path='/manageRoute' element={<ManageRoute />} />
           <Route path='/manageBus' element={<CreateTrip />} />
         </Routes>
       </BrowserRouter>
