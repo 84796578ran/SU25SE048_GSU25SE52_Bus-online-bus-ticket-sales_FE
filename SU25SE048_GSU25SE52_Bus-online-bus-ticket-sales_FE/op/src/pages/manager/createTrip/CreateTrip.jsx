@@ -24,7 +24,7 @@ const CreateTrip = () => {
         typeBusID: '',
         fromLocation: '',
         endLocation: '',
-        routID: ''
+        routeID: ''
     });
     // Xử lý khi thay đổi ngày khởi hành
     const handleStartDateChange = (date) => {
@@ -73,15 +73,17 @@ const CreateTrip = () => {
                 setIsLoading(true);
                 const [busTypesRes, routesRes, timeSlotsRes] = await Promise.all([
                     axios.get('/api/bus-types'),
-                    axios.get('/api/routes'),
+                    axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route'),
                     axios.get('/api/time-slots')
                 ]);
                 setBusTypes(busTypesRes.data);
-                setRoutes(routesRes.data);
+                setRoutes(routesRes.data.filter(route => !route.isDeleted));
                 setTimeSlots(timeSlotsRes.data);
                 if (id) {
-                    const tripRes = await axios.get(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`);
+                    const tripRes = await axios.get(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`);
                     const tripData = tripRes.data;
+                    // Tìm route tương ứng để hiển thị thông tin
+                    const route = routesRes.data.find(r => r.routeID === tripData.routeID);
                     setFormData({
                         tripID: tripData.tripID,
                         price: tripData.price,
@@ -91,8 +93,8 @@ const CreateTrip = () => {
                         timeEnd: tripData.timeEnd,
                         description: tripData.description,
                         typeBusID: tripData.typeBusID,
-                        fromLocation: tripData.fromLocation,
-                        endLocation: tripData.endLocation,
+                        fromLocation: route?.fromLocation || tripData.fromLocation,
+                        endLocation: route?.toLocation || tripData.endLocation,
                         routID: tripData.routID
                     });
                     if (tripData.timeStart) setStartDate(new Date(tripData.timeStart));
@@ -114,6 +116,17 @@ const CreateTrip = () => {
             ...prev,
             [name]: value
         }));
+        if (name === 'routeID') {
+            const selectedRoute = routes.find(route => route.routeID === value);
+            if (selectedRoute) {
+                setFormData(prev => ({
+                    ...prev,
+                    routeID: value,
+                    fromLocation: selectedRoute.fromLocation,
+                    endLocation: selectedRoute.toLocation
+                }))
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -129,10 +142,10 @@ const CreateTrip = () => {
         try {
             if (isEditing) {
                 // Cập nhật chuyến đi hiện có
-                await axios.put(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`, formData);
+                await axios.put(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`, formData);
                 setSuccess('Trip updated successfully!');
             } else {
-                await axios.post('https://6842b377e1347494c31da299.mockapi.io/Trip', formData);
+                await axios.post('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip', formData);
                 if (!isEditing) {
                     setSuccess(true);
                     setFormData({
@@ -163,7 +176,7 @@ const CreateTrip = () => {
         setError(null);
 
         try {
-            await axios.delete(`https://6842b377e1347494c31da299.mockapi.io/Trip/${id}`);
+            await axios.delete(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`);
             setSuccess('Trip deleted successfully!');
             setTimeout(() => {
                 navigate('/manageBus'); // Chuyển hướng sau khi xóa
@@ -211,7 +224,23 @@ const CreateTrip = () => {
 
                 <form onSubmit={handleSubmit} className="trip-form">
                     <div className="form-grid">
-
+                        <div className="form-group">
+                            <label htmlFor="routeID">Tuyến đường <span className="required">*</span></label>
+                            <select
+                                id="routeID"
+                                name="routeID"
+                                value={formData.routeID}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">-- Chọn tuyến đường --</option>
+                                {routes.map(route => (
+                                    <option key={route.id} value={route.routeID}>
+                                        {route.name} ({route.fromLocation} - {route.toLocation})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="form-group">
                             <label htmlFor="fromLocation">Vị trí bắt đầu <span className="required">*</span></label>
                             <input
