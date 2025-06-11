@@ -310,14 +310,15 @@ const CreateTrip = () => {
                         <div className="form-group">
                             <label htmlFor="typeBusID">Chọn xe<span className="required">*</span></label>
                             <div className="select-wrapper">
-                                <input
-                                    id="typeBusID"
-                                    name="typeBusID"
-                                    value={formData.typeBusID}
-                                    onChange={handleChange}
-                                    required
-                                >
-                                </input>
+                                <select id="typeBusID" name="typeBusID" value={formData.typeBusID}
+                                    onChange={handleChange} required>
+                                    <option value="">-- Chọn loại xe --</option>
+                                    {busTypes.map(bus => (
+                                        <option key={bus.typeBusID} value={bus.typeBusID}>
+                                            {bus.typeName} (Số chỗ: {bus.seatCount})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

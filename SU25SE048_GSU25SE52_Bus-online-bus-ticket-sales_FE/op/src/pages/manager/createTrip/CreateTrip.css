@@ -156,7 +156,7 @@
 
 .select-wrapper select {
     appearance: none;
-    padding-right: 36px;
+    padding-right: 2.5rem;
     cursor: pointer;
 }
 
