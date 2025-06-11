@@ -3,7 +3,7 @@ import '../manageRoute/ManageRoute.css';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
-import Menu from '../../../components/Manager/menu/Menu';
+import Menu from '../menu/Menu';
 import { format } from 'date-fns';
 import Pagination from '../../../components/pagination/Pagination';
 const ManageRoute = () => {
@@ -228,7 +228,7 @@ const ManageRoute = () => {
                             className="create-button"
                             onClick={() => setShowCreateModal(true)}
                         >
-                            Create New Route
+                            Tạo tuyến đường
                         </button>
                     </div>
                     {loading ? (
@@ -311,7 +311,7 @@ const ManageRoute = () => {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Điểm bắt đầu:</label>
+                                        <label>Điểm bắt đầu/Bến xe khởi hành:</label>
                                         <input
                                             type="text"
                                             name="fromLocation"
@@ -321,7 +321,7 @@ const ManageRoute = () => {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Điểm kết thúc:</label>
+                                        <label>Điểm kết thúc/Trạm cuối:</label>
                                         <input
                                             type="text"
                                             name="toLocation"
@@ -358,7 +358,7 @@ const ManageRoute = () => {
                                     </div>
                                     <div className="form-actions">
                                         <button type="submit" className="submit-button" disabled={loading}>
-                                            {loading ? 'Processing...' : editingId ? 'Update Route' : 'Create Route'}
+                                            {loading ? 'Processing...' : editingId ? 'Update Route' : 'Tạo tuyến đường'}
                                         </button>
                                     </div>
                                 </form>

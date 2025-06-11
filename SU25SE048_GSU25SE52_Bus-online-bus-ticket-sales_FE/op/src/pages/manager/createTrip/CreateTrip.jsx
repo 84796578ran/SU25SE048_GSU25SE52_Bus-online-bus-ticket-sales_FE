@@ -6,7 +6,7 @@ import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
 
 import { useNavigate, useParams } from "react-router-dom";
-import Menu from "../../../components/Manager/menu/Menu";
+import Menu from "../menu/Menu";
 registerLocale('vi', vi);
 const CreateTrip = () => {
     const navigate = useNavigate();
