@@ -24,7 +24,7 @@ const Menu = () => {
                         Quản lý tuyến đường</Link>
                 </li>
                 <li className="menu-item">
-                    <Link to="/manageBus">
+                    <Link to="/manager">
                         <i className="fas fa-bus"></i>
                         Quản lý chuyến xe</Link>
                 </li>

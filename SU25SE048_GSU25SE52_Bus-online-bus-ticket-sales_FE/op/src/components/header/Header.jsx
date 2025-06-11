@@ -34,15 +34,6 @@ const Header = () => {
                     </li>
                     <li className='nav-item'>
                         <Link
-                            to="/about"
-                            className={`nav-link ${isActive('/about') ? 'active' : ''}`}
-                        >
-                            <FaInfoCircle />
-                            <span>Giới thiệu</span>
-                        </Link>
-                    </li>
-                    <li className='nav-item'>
-                        <Link
                             to="/services"
                             className={`nav-link ${isActive('/services') ? 'active' : ''}`}
                         >
@@ -57,6 +48,15 @@ const Header = () => {
                         >
                             <FaEnvelope />
                             <span>Liên hệ</span>
+                        </Link>
+                    </li>
+                    <li className='nav-item'>
+                        <Link
+                            to="/about"
+                            className={`nav-link ${isActive('/about') ? 'active' : ''}`}
+                        >
+                            <FaInfoCircle />
+                            <span>Giới thiệu</span>
                         </Link>
                     </li>
                 </ul>

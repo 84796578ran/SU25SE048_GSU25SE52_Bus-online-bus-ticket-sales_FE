@@ -4,7 +4,6 @@ import '../createTrip/CreateTrip.css';
 import DatePicker, { registerLocale } from "react-datepicker";
 import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
-
 import { useNavigate, useParams } from "react-router-dom";
 import Menu from "../menu/Menu";
 registerLocale('vi', vi);
@@ -309,7 +308,7 @@ const CreateTrip = () => {
                             </div>
                         </div>
                         <div className="form-group">
-                            <label htmlFor="typeBusID">ID loại xe<span className="required">*</span></label>
+                            <label htmlFor="typeBusID">Chọn xe<span className="required">*</span></label>
                             <div className="select-wrapper">
                                 <input
                                     id="typeBusID"
