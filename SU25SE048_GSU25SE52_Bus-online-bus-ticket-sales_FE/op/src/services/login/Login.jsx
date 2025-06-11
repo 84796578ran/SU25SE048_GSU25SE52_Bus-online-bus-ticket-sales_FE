@@ -70,7 +70,7 @@ const LoginForm = () => {
                             <button className="google-login" onClick={() =>
                                 window.location.href = '/loginGoogle'
                             }>
-                                <img src="channels4_profile-removebg-preview.png"
+                                <img src="GoogleLogo.png"
                                     className="google-logo"></img>
                                 Đăng nhập bằng Gmail
                             </button>

@@ -22,8 +22,8 @@ function App() {
           <Route path='/services' element={<BusBooking />} />
           <Route path='/home' element={<HomePage />} />
           <Route path='/forgotPass' element={<ForgotPassword />} />
-                    <Route path='/manageRoute' element={<ManageRoute />} />
-          <Route path='/manageBus' element={<CreateTrip />} />
+          <Route path='/manageRoute' element={<ManageRoute />} />
+          <Route path='/manager' element={<CreateTrip />} />
         </Routes>
       </BrowserRouter>
     </div>
