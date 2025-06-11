@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchPromotions } from '../../../services/api';
+import { getPromotions } from '../../../services/api';
 
 const PromotionBanner = () => {
     const [promotions, setPromotions] = useState([]);
@@ -7,7 +7,7 @@ const PromotionBanner = () => {
 
     useEffect(() => {
         const loadPromotions = async () => {
-            const data = await fetchPromotions();
+            const data = await getPromotions();
             setPromotions(data);
         };
         loadPromotions();
