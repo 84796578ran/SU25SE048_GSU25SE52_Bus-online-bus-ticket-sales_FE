@@ -1,56 +1,113 @@
-.about {
-    flex: 1;
-    margin-left: 280px;
-    /* Đảm bảo bằng chiều rộng của Header */
-    padding: 20px;
-}
-
-.main-content {
-    padding: 50px;
-}
-
+/* About.css */
 .page-container {
     display: flex;
     min-height: 100vh;
+
 }
 
-.about p {
-    color: #000;
-    font-weight: normal;
+.about-section {
+    flex: 1;
+    padding: 40px 0;
+    background-color: #f9f9f9;
 }
 
-.highlight {
-    color: #00f;
+.about-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    padding: 0 20px;
 }
 
-.buttons {
-    margin-top: 20px;
+.about-text {
+    flex: 1;
 }
 
-.btn {
-    padding: 10px 20px;
-    margin: 10px;
+.about-image {
+    flex: 1;
+}
+
+.about-image img {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.brand {
+    color: #2a52be;
+    font-weight: 700;
+}
+
+.slogan {
+    font-size: 1.2rem;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.feature-item {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+.feature-item h3 {
+    color: #2a52be;
+    margin-bottom: 10px;
+}
+
+.feature-item p {
+    color: #666;
+    line-height: 1.5;
+}
+
+.cta-button {
+    background-color: #2a52be;
+    color: white;
     border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    border-radius: 50px;
     cursor: pointer;
-    width: auto;
-    /* Điều chỉnh chiều rộng dựa trên nội dung */
-    display: inline-block;
-    /* Đảm bảo nút không bị kéo dài toàn bộ chiều ngang */
-    text-align: center;
-    /* Căn chỉnh văn bản bên trong nút */
-    min-width: 100px;
-    /* Đặt một giá trị tối thiểu để nút không quá nhỏ */
+    transition: all 0.3s ease;
+    font-weight: 600;
+    width: fit-content;
+    box-shadow: 0 4px 10px rgba(42, 82, 190, 0.3);
 }
 
-.book-now {
-    background-color: #00f;
-    color: #fff;
-    position: relative;
-    left: -12px;
+.cta-button:hover {
+    background-color: #1a3a8f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(42, 82, 190, 0.4);
 }
 
-.learn-more {
-    background-color: #fff;
-    color: #000;
-    border: 1px solid #000;
+/* Responsive design */
+@media (max-width: 768px) {
+    .about-content {
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .about-image {
+        order: -1;
+        width: 100%;
+    }
 }
