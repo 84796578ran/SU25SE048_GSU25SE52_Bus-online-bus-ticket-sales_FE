@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import '../contact/Contact.css';
 import Header from '../header/Header';
-import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaPaperPlane, FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from 'react-icons/fa';
 import Footer from '../footer/Footer';
 
 const Contact = () => {

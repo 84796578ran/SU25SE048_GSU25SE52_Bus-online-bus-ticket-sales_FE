@@ -1,7 +1,7 @@
 .contact-content {
     flex: 1;
-    margin-left: 280px;
-    padding: 0;
+    margin-left: 0;
+    padding: 0 0 0 50px;
     display: flex;
     flex-direction: column;
     background-color: #f9f9f9;
@@ -16,7 +16,8 @@
 .contact-hero {
     background: linear-gradient(135deg, #3498db, #2c3e50);
     color: white;
-    padding: 4rem 2rem;
+    padding: 2rem 2rem;
+    width: 100%;
     text-align: center;
 }
 
@@ -34,22 +35,23 @@
 .contact-container {
     display: flex;
     max-width: 1200px;
-    margin: 3rem auto;
-    padding: 0 2rem;
+    padding: 2rem 1rem;
     gap: 2rem;
+    margin: 0 0 0 50px;
 }
 
 /* Contact Info */
 .contact-info {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
 
 .info-card {
+    text-align: left;
     background: white;
-    padding: 2rem;
+    padding: 1rem 1rem;
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
