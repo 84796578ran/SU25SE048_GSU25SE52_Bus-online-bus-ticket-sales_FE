@@ -9,6 +9,7 @@ import Contact from './components/contact/Contact';
 import CreateTrip from './pages/manager/createTrip/CreateTrip';
 import BusBooking from './pages/manager/layoutBanVe/BusSeatBooking';
 import ForgotPassword from './services/forgotPassword/ForgotPass';
+import ManageUsers from './pages/manager/manageUser/ManageUser';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/manageRoute' element={<ManageRoute />} />
           <Route path='/manager' element={<CreateTrip />} />
+          <Route path='/manageStaff' element={<ManageUsers />} />
         </Routes>
       </BrowserRouter>
     </div>
