@@ -5,17 +5,20 @@
     border-radius: 14px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+    margin-left: 400px;
 }
 
 .register-layout {
     display: flex;
     min-height: 100vh;
-    padding-left: 280px;
+    padding-left: 0px;
     /* Đảm bảo nội dung không bị che bởi sidebar */
-    justify-content: center;
+    justify-content: flex-start;
     /* Căn giữa theo chiều ngang */
     align-items: center;
     /* Căn giữa theo chiều dọc */
+    gap: 50px;
 }
 
 input:focus {
@@ -71,4 +74,3 @@ button:hover {
 .login-link a:hover {
     text-decoration: underline;
 }
-
