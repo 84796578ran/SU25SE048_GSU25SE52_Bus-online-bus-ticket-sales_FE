@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import '../manageUser/ManageUser.css';
+import Menu from "../menu/Menu";
 const ManageUsers = () => {
     // State for users list and form data
     const [users, setUsers] = useState([]);
@@ -147,177 +148,154 @@ const ManageUsers = () => {
         }
     }
     return (
-        <div className="manage-users-container">
-            <h2>
-                {editingId ? 'Edit User' : 'Add New User'}
-            </h2>
-            {/* User Form */}
-            <form onSubmit={handleSubmit} className="user-form">
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Full Name</label>
-                        <input
-                            type="text"
-                            name="full_name"
-                            value={formData.full_name}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                </div>
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Phone</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Address</label>
-                        <input
-                            type="text"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                </div>
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Role</label>
-                        <select
-                            name="role_id"
-                            value={formData.role_id}
-                            onChange={handleInputChange}
-                            required
-                        >
-                            {roles.map(role => (
-                                <option key={role.id} value={role.id}>{role.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Company</label>
-                        <select name="company_id"
-                            value={formData.company_id || ''}
-                            onChange={handleInputChange}>
-                            <option value="">None</option>
-                            {
-                                companies.map(company => (
-                                    <option key={company.id} value={company.id}>
-                                        {company.name}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
-                </div>
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Password</label>
-                        <input type="password" name="password"
-                            value={formData.password} onChange={handleInputChange}
-                            required={!editingId} minLength='6' />
-                    </div>
-                </div>
-                <div className="form-row">
-                    <div className="form-group checkbox-group">
-                        <label>
+        <div className="manage-users-page">
+            <Menu />
+            <div className="manage-users-container">
+                <h2>
+                    {editingId ? 'Chỉnh sửa người dùng' : 'Thêm người dùng'}
+                </h2>
+                {/* User Form */}
+                <form onSubmit={handleSubmit} className="user-form">
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Email</label>
                             <input
-                                type="checkbox"
-                                name="isActive"
-                                checked={formData.isActive}
+                                type="email"
+                                name="email"
+                                value={formData.email}
                                 onChange={handleInputChange}
+                                required
                             />
-                            Active
-                        </label>
+                        </div>
+                        <div className="form-group">
+                            <label>Họ và tên</label>
+                            <input
+                                type="text"
+                                name="full_name"
+                                value={formData.full_name}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
                     </div>
-                </div>
-                <div className="form-actions">
-                    <button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Processing...' : (editingId ? 'Update User' : 'Add User')}
-                    </button>
-                    {editingId && (
-                        <button type="button" onClick={resetForm} disabled={isLoading}>
-                            Cancel
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Số điện thoại</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Địa chỉ</label>
+                            <input
+                                type="text"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Mật khẩu</label>
+                            <input type="password" name="password"
+                                value={formData.password} onChange={handleInputChange}
+                                required={!editingId} minLength='6' />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group checkbox-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="isActive"
+                                    checked={formData.isActive}
+                                    onChange={handleInputChange}
+                                />
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                    <div className="form-actions">
+                        <button type="submit" disabled={isLoading}>
+                            {isLoading ? 'Processing...' : (editingId ? 'Cập nhật người dùng' : 'Thêm người dùng')}
                         </button>
-                    )}
-                </div>
-            </form>
-            {/*Users List */}
-            <h2>User List</h2>
-            {isLoading && !users.length ? (
-                <div className="loading">Loading users...</div>
-            ) : (
-                <div className="users-table-container">
-                    <table className="users-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.map(user => (
-                                <tr key={user.id} className={!user.isActive ? 'inactive' : ''}>
-                                    <td>
-                                        {user.id}
-                                    </td>
-                                    <td>
-                                        {user.full_name}
-                                    </td>
-                                    <td>
-                                        {user.email}
-                                    </td>
-                                    <td>
-                                        {user.phone}
-                                    </td>
-                                    <td>
-                                        {roles.find(r => r.id === user.role_id)?.name ||
-                                            user.role_id}
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${user.isActive ?
-                                            'active' : 'inactive'
-                                            }`}>
-                                            {
-                                                user.isActive ? 'Active' : 'Inactive'
-                                            }
-                                        </span>
-                                    </td>
-                                    <td className="actions">
-                                        <button onClick={() => handleEdit(user)}>Edit</button>
-                                        <button onClick={() => toggleActiveStatus(user.id, user.isActive)}>
-                                            {user.isActive ? 'Deactivate' : 'Activate'}
-                                        </button>
-                                        <button onClick={() => handleDelete(user.id)}>Delete</button>
-                                    </td>
+                        {editingId && (
+                            <button type="button" onClick={resetForm} disabled={isLoading}>
+                                Hủy
+                            </button>
+                        )}
+                    </div>
+                </form>
+                {/*Users List */}
+                <h2>Danh sách người dùng</h2>
+                {isLoading && !users.length ? (
+                    <div className="loading">Loading users...</div>
+                ) : (
+                    <div className="users-table-container">
+                        <table className="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Họ và Tên</th>
+                                    <th>Email</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            </thead>
+                            <tbody>
+                                {users.map(user => (
+                                    <tr key={user.id} className={!user.isActive ? 'inactive' : ''}>
+                                        <td>
+                                            {user.id}
+                                        </td>
+                                        <td>
+                                            {user.full_name}
+                                        </td>
+                                        <td>
+                                            {user.email}
+                                        </td>
+                                        <td>
+                                            {user.address}
+                                        </td>
+                                        <td>
+                                            {user.phone}
+                                        </td>
+                                        <td>
+                                            {roles.find(r => r.id === user.role_id)?.name ||
+                                                user.role_id}
+                                        </td>
+                                        <td>
+                                            <span className={`status-badge ${user.isActive ?
+                                                'active' : 'inactive'
+                                                }`}>
+                                                {
+                                                    user.isActive ? 'Active' : 'Inactive'
+                                                }
+                                            </span>
+                                        </td>
+                                        <td className="actions">
+                                            <button onClick={() => handleEdit(user)}>Sửa</button>
+                                            <button onClick={() => toggleActiveStatus(user.id, user.isActive)}>
+                                                {user.isActive ? 'Không kích hoạt' : 'Kích hoạt'}
+                                            </button>
+                                            <button onClick={() => handleDelete(user.id)}>Xóa</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

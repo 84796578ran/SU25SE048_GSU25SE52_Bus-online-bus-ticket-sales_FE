@@ -29,9 +29,9 @@ const Menu = () => {
                         Quản lý chuyến xe</Link>
                 </li>
                 <li className="menu-item">
-                    <Link to="/manageStaff">
+                    <Link to="/manageUser">
                         <i className="fas fa-users"></i>
-                        Quản lý nhân viên</Link>
+                        Quản lý người dùng</Link>
                 </li>
             </ul>
         </div>

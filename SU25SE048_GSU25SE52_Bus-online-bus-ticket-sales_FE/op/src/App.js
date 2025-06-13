@@ -25,7 +25,7 @@ function App() {
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/manageRoute' element={<ManageRoute />} />
           <Route path='/manager' element={<CreateTrip />} />
-          <Route path='/manageStaff' element={<ManageUsers />} />
+          <Route path='/manageUser' element={<ManageUsers />} />
         </Routes>
       </BrowserRouter>
     </div>
