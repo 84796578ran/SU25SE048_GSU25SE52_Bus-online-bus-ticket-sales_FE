@@ -33,7 +33,7 @@ const ManageUsers = () => {
         setIsLoading(true);
         try {
             const response = await axios.get(API_URL);
-            setUsers(response.data);
+            setUsers(response.data.filter(user => !user.isDeleted));
         } catch (error) {
             toast.error('Failed to fetch users: ' + error.message);
         } finally {
@@ -113,23 +113,23 @@ const ManageUsers = () => {
             company_id: user.company_id,
             password: user.password,
             isActive: user.isActive,
-            isDeleted: user.isDeleted
+            isDeleted: true
         });
         setEditingId(user.id);
     };
-    // Delete user (soft delete)
-    const handleDelete = async (id) => {
-        if (window.confirm('Bạn có chắc chắn xóa không')) {
-            setIsLoading(true);
-            try {
-                await axios.delete(`${API_URL}/${id}`);
-                toast.success('User deleted successfully');
-                fetchUsers();
-            } catch (error) {
-                toast.error('Failed to delete user: ' + error.message);
-            } finally {
-                setIsLoading(false);
-            }
+    const deleteUser = async (id) => {
+        setIsLoading(true);
+        try {
+            await axios.put(`${API_URL}/${id}`, {
+                ...users.find(user => user.id === id),
+                isDeleted: true
+            });
+            toast.success('User deleted successfully');
+            fetchUsers();
+        } catch (error) {
+            toast.error('Failed to delete user: ' + error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
     // Toggle user active status
@@ -287,7 +287,7 @@ const ManageUsers = () => {
                                             <button onClick={() => toggleActiveStatus(user.id, user.isActive)}>
                                                 {user.isActive ? 'Không kích hoạt' : 'Kích hoạt'}
                                             </button>
-                                            <button onClick={() => handleDelete(user.id)}>Xóa</button>
+                                            <button onClick={() => deleteUser(user.id)}>Xóa</button>
                                         </td>
                                     </tr>
                                 ))}
