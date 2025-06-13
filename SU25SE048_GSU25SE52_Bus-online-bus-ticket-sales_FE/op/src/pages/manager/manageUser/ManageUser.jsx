@@ -113,7 +113,7 @@ const ManageUsers = () => {
             company_id: user.company_id,
             password: user.password,
             isActive: user.isActive,
-            isDeleted: true
+            isDeleted: false
         });
         setEditingId(user.id);
     };
