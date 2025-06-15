@@ -31,7 +31,7 @@ const Menu = () => {
                 <li className="menu-item">
                     <Link to="/manageUser">
                         <i className="fas fa-users"></i>
-                        Quản lý người dùng</Link>
+                        Quản lý nhân viên</Link>
                 </li>
             </ul>
         </div>

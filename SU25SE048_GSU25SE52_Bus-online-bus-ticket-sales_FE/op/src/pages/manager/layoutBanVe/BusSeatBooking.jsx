@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import './BusSeatBooking.css';
 import Header from "../../../components/header/Header";
+import Footer from "../../../components/footer/Footer";
 const BusBooking = () => {
     const busInfo = {
         name: 'Xe Limousine VIP',
@@ -172,6 +173,7 @@ const BusBooking = () => {
                         </button>
                     </div>
                 </div>
+                <Footer className="no-sidebar-footer" />
             </div>
         </div>
     )

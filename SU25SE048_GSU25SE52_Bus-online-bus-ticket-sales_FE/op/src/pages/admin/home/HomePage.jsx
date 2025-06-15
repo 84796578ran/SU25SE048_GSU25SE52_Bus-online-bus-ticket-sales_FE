@@ -5,6 +5,7 @@ import '../home/HomePage.css';
 import SearchForm from "./SearchForm";
 import PromotionBanner from "../home/PromotionBanner";
 import Header from "../../../components/header/Header";
+import Footer from "../../../components/footer/Footer";
 const HomePage = () => {
     const [searchResults, setSearchResults] = useState(null);
     return (
@@ -64,6 +65,7 @@ const HomePage = () => {
                     )}
                 </main>
             </div>
+            <Footer />
         </div>
     );
 };

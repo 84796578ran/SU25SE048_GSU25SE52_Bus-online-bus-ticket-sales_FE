@@ -6,6 +6,8 @@ import { vi } from "date-fns/locale/vi";
 import 'react-datepicker/dist/react-datepicker.css';
 import { useNavigate, useParams } from "react-router-dom";
 import Menu from "../menu/Menu";
+import { toast } from "react-toastify";
+import Footer from "../../../components/footer/Footer";
 registerLocale('vi', vi);
 const CreateTrip = () => {
     const navigate = useNavigate();
@@ -20,7 +22,7 @@ const CreateTrip = () => {
         timeStart: '',
         timeEnd: '',
         description: '',
-        typeBusID: '',
+        TypeBusID: '',
         fromLocation: '',
         endLocation: '',
         routeID: ''
@@ -47,6 +49,8 @@ const CreateTrip = () => {
     const { id } = useParams();
     const [busTypes, setBusTypes] = useState([]);
     const [routes, setRoutes] = useState([]);
+    const [filteredRoutes, setFilteredRoutes] = useState([]);
+    const [selectedRoute, setSelectedRoute] = useState(null);
     const [timeSlots, setTimeSlots] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -66,23 +70,50 @@ const CreateTrip = () => {
         setDateError('');
         return true;
     };
+    const fetchBusTypes = async () => {
+        try {
+            const response = await axios.get('https://6842b377e1347494c31da299.mockapi.io/Bustype');
+            setBusTypes(response.data);
+        } catch (error) {
+            toast.error('Failed to load bus types');
+            console.error('Error fetching bus types:', error);
+        }
+    }
+    const fetchRoutes = async () => {
+        try {
+            const response = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+            const activeRoutes = response.data.filter(route => !route.isDeleted);
+            setRoutes(activeRoutes);
+            setFilteredRoutes(activeRoutes);
+        } catch (error) {
+            toast.error('Failed to load routes');
+            console.error('Error fetching routes:', error);
+        }
+    }
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+                const activeRoutes = response.data.filter(route => !route.isDeleted);
+                setRoutes(activeRoutes);
+                setFilteredRoutes(activeRoutes);
+            } catch (error) {
+                toast.error('Failed to load routes');
+            }
+        };
+        fetchData();
+    }, []);
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setIsLoading(true);
-                const [busTypesRes, routesRes, timeSlotsRes] = await Promise.all([
-                    axios.get('/api/bus-types'),
-                    axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route'),
-                    axios.get('/api/time-slots')
-                ]);
-                setBusTypes(busTypesRes.data);
-                setRoutes(routesRes.data.filter(route => !route.isDeleted));
-                setTimeSlots(timeSlotsRes.data);
+                await fetchBusTypes();
+                await fetchRoutes();
                 if (id) {
                     const tripRes = await axios.get(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`);
                     const tripData = tripRes.data;
                     // Tìm route tương ứng để hiển thị thông tin
-                    const route = routesRes.data.find(r => r.routeID === tripData.routeID);
+                    const route = routes.find(r => r.routeID === tripData.routeID);
                     setFormData({
                         tripID: tripData.tripID,
                         price: tripData.price,
@@ -91,17 +122,16 @@ const CreateTrip = () => {
                         timeStart: tripData.timeStart,
                         timeEnd: tripData.timeEnd,
                         description: tripData.description,
-                        typeBusID: tripData.typeBusID,
+                        TypeBusID: tripData.TypeBusID,
                         fromLocation: route?.fromLocation || tripData.fromLocation,
                         endLocation: route?.toLocation || tripData.endLocation,
-                        routID: tripData.routID
+                        routeID: tripData.routeID
                     });
                     if (tripData.timeStart) setStartDate(new Date(tripData.timeStart));
                     if (tripData.timeEnd) setEndDate(new Date(tripData.timeEnd));
                     setIsEditing(true);
                 }
             } catch (err) {
-                setError('Failed to load initial data. Please try again later.');
             } finally {
                 setIsLoading(false);
             }
@@ -111,10 +141,16 @@ const CreateTrip = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        // Xử lý riêng cho trường price
+        if (name === 'price') {
+            // Chỉ cho phép số và không nhỏ hơn 0
+            const numericValue = value === '' ? '' : Math.max(0, Number(value));
+            setFormData(prev => ({
+                ...prev,
+                [name]: numericValue
+            }));
+            return;
+        }
         if (name === 'routeID') {
             const selectedRoute = routes.find(route => route.routeID === value);
             if (selectedRoute) {
@@ -125,6 +161,11 @@ const CreateTrip = () => {
                     endLocation: selectedRoute.toLocation
                 }))
             }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
         }
     };
 
@@ -134,11 +175,22 @@ const CreateTrip = () => {
         if (!validateDates(startDate, endDate)) {
             return;
         }
+        if (!formData.routeID) {
+            toast.error('Vui lòng chọn tuyến đường');
+            return;
+        }
         setIsLoading(true);
         setError(null);
         setSuccess(false);
 
         try {
+            const tripData = {
+                ...formData,
+                // Đảm bảo các trường dữ liệu cần thiết
+                status: formData.status || 'active',
+                timeStart: startDate.toISOString(),
+                timeEnd: endDate.toISOString()
+            }
             if (isEditing) {
                 // Cập nhật chuyến đi hiện có
                 await axios.put(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`, formData);
@@ -155,10 +207,10 @@ const CreateTrip = () => {
                         timeStart: '',
                         timeEnd: '',
                         description: '',
-                        typeBusID: '',
+                        TypeBusID: '',
                         fromLocation: '',
                         endLocation: '',
-                        routID: ''
+                        routeID: ''
                     });
                 }
             }
@@ -233,8 +285,8 @@ const CreateTrip = () => {
                                 required
                             >
                                 <option value="">-- Chọn tuyến đường --</option>
-                                {routes.map(route => (
-                                    <option key={route.id} value={route.routeID}>
+                                {filteredRoutes.map(route => (
+                                    <option key={route.routeID} value={route.routeID}>
                                         {route.name} ({route.fromLocation} - {route.toLocation})
                                     </option>
                                 ))}
@@ -295,17 +347,30 @@ const CreateTrip = () => {
                         </div>
                         <div className="form-group">
                             <label htmlFor="price">Giá <span className="required">*</span></label>
-                            <div className="input-with-symbol">
+                            <div className="price-input-container">
                                 <input
-                                    type="number"
+                                    type="text"
                                     id="price"
                                     name="price"
                                     value={formData.price}
                                     onChange={handleChange}
                                     min="0"
                                     required
+                                    onKeyDown={(e) => {
+                                        // Ngăn chặn nhập ký tự '-' (âm)
+                                        if (e.key === '-' || e.key === 'e') {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                 />
+                                <span className="price-unit">VND</span>
                             </div>
+                            {/* Hiển thị thông báo lỗi nếu có */}
+                            {formData.price < 0 && (
+                                <small style={{ color: 'var(--error-color)' }}>
+                                    Giá không được nhỏ hơn 0
+                                </small>
+                            )}
                         </div>
                         <div className="form-group">
                             <label htmlFor="typeBusID">Chọn xe<span className="required">*</span></label>
@@ -314,8 +379,8 @@ const CreateTrip = () => {
                                     onChange={handleChange} required>
                                     <option value="">-- Chọn loại xe --</option>
                                     {busTypes.map(bus => (
-                                        <option key={bus.typeBusID} value={bus.typeBusID}>
-                                            {bus.typeName} (Số chỗ: {bus.seatCount})
+                                        <option key={bus.id} value={bus.id}>
+                                            {bus.name} (Số chỗ: {bus.numberOfSeat})
                                         </option>
                                     ))}
                                 </select>
@@ -359,6 +424,7 @@ const CreateTrip = () => {
                     </div>
                 </form>
             </div>
+            <Footer />
         </div>
     );
 };

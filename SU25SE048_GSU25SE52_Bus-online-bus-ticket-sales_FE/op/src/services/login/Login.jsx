@@ -3,6 +3,7 @@ import axios from "axios";
 import { data, Link, useNavigate } from "react-router-dom";
 import './Login.css';
 import Header from "../../components/header/Header";
+import Footer from "../../components/footer/Footer";
 const LoginForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -47,38 +48,41 @@ const LoginForm = () => {
     return (
         <div className="login-page">
             <Header />
-            <div className="login-content">
-                <div className="login-container">
-                    <h2>Đăng nhập</h2>
-                    {loginStatus === true && (
-                        <div className="success-message">
-                            Đăng nhập thành công
-                        </div>
-                    )}
-                    {(loginStatus === null || loginStatus === false) && (
-                        <form onSubmit={handleLogin}>
-                            <input type="text" placeholder="Tên đăng nhập hoặc số điện thoại"
-                                value={username} onChange={(e) => setUsername(e.target.value)} required />
-                            <input type="password" placeholder="Mật khẩu" value={password}
-                                onChange={(e) => setPassword(e.target.value)} required />
-                            <button type="submit">
-                                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-                            </button>
-                            {loginStatus === false && errorMessage && (
-                                <p className="error-message">{errorMessage}</p>
-                            )}
-                            <button className="google-login" onClick={() =>
-                                window.location.href = '/loginGoogle'
-                            }>
-                                <img src="GoogleLogo.png"
-                                    className="google-logo"></img>
-                                Đăng nhập bằng Gmail
-                            </button>
-                            <Link to='/forgotPass'>Quên mật khẩu?</Link>
-                        </form>
-                    )}
+            <div className="login-wrapper">
+                <div className="login-content">
+                    <div className="login-container">
+                        <h2>Đăng nhập</h2>
+                        {loginStatus === true && (
+                            <div className="success-message">
+                                Đăng nhập thành công
+                            </div>
+                        )}
+                        {(loginStatus === null || loginStatus === false) && (
+                            <form onSubmit={handleLogin}>
+                                <input type="text" placeholder="Tên đăng nhập hoặc số điện thoại"
+                                    value={username} onChange={(e) => setUsername(e.target.value)} required />
+                                <input type="password" placeholder="Mật khẩu" value={password}
+                                    onChange={(e) => setPassword(e.target.value)} required />
+                                <button type="submit">
+                                    {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                                </button>
+                                {loginStatus === false && errorMessage && (
+                                    <p className="error-message">{errorMessage}</p>
+                                )}
+                                <button className="google-login" onClick={() =>
+                                    window.location.href = '/loginGoogle'
+                                }>
+                                    <img src="GoogleLogo.png"
+                                        className="google-logo"></img>
+                                    Đăng nhập bằng Gmail
+                                </button>
+                                <Link to='/forgotPass'>Quên mật khẩu?</Link>
+                            </form>
+                        )}
+                    </div>
                 </div>
             </div>
+            <Footer />
         </div>
     )
 }

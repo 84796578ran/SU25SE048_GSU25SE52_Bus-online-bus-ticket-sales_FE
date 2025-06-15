@@ -25,19 +25,22 @@
 /* Main Container */
 .create-trip-wrapper {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
     background-color: var(--bg-color);
+    width: 100%;
 }
 
 .create-trip-container {
     flex: 1;
+    margin-left: 330px;
     max-width: 1000px;
-    margin: 2rem auto;
     padding: 2.5rem;
     background-color: var(--white);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    width: 90%;
 }
 
 .create-trip-header {
@@ -67,6 +70,7 @@
 
 .form-grid {
     display: grid;
+    margin-left: 100px;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-bottom: 1.5rem;
@@ -125,19 +129,31 @@
 /* Special Input Styles */
 .input-with-symbol {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
-.input-with-symbol .currency-symbol {
+.input-with-symbol input {
+    padding-right: 50px !important;
+    /* Tạo khoảng trống cho đơn vị tiền tệ */
+    width: 100%;
+}
+
+.price-input-container {
+    position: relative;
+}
+
+.price-input-container input {
+    padding-right: 40px;
+}
+
+.price-unit {
     position: absolute;
-    left: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.input-with-symbol .form-control {
-    padding-left: 30px !important;
+    font-size: 0.9rem;
 }
 
 .select-wrapper {
@@ -154,9 +170,56 @@
     font-size: 1.2rem;
 }
 
+/* Thêm vào CreateTrip.css */
+.route-info {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--primary-light);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.route-info p {
+    margin: 5px 0;
+    color: var(--text-secondary);
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
 .select-wrapper select {
     appearance: none;
     padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* Hiệu ứng cho select */
+.select-wrapper {
+    position: relative;
+}
+
+.select-wrapper::after {
+    content: "▼";
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+    font-size: 0.8rem;
+}
+
+.currency-symbol {
+    position: absolute;
+    right: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+select {
+    appearance: none;
+    padding-right: 2rem;
     cursor: pointer;
 }
 

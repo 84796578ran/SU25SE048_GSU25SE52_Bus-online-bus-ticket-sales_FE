@@ -4,9 +4,16 @@
     background-color: #f8f8f8;
     border-radius: 14px;
     text-align: center;
+    margin-left: 240px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    margin-top: 10px;
-    margin-left: 400px;
+}
+
+/* Thêm vào file Register.css */
+.main-content {
+    min-height: calc(100vh - [chiều cao footer]);
+    /* Điều chỉnh chiều cao footer tùy theo thiết kế của bạn */
+    display: flex;
+    flex-direction: column;
 }
 
 .register-layout {
@@ -14,7 +21,7 @@
     min-height: 100vh;
     padding-left: 0px;
     /* Đảm bảo nội dung không bị che bởi sidebar */
-    justify-content: flex-start;
+    justify-content: center;
     /* Căn giữa theo chiều ngang */
     align-items: center;
     /* Căn giữa theo chiều dọc */

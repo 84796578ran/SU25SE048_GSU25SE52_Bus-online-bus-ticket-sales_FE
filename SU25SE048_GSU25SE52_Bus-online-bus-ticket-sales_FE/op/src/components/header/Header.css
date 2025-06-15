@@ -7,6 +7,7 @@
     height: 134vh;
     width: 220px;
     left: 0;
+    position: fixed;
     top: 0;
     box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
     z-index: 1000;

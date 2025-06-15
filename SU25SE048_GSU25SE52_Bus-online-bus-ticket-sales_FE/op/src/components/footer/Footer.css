@@ -153,9 +153,8 @@
     background: #2c3e50;
     color: white;
     padding: 2rem 0 0.5rem;
-    margin-top: auto;
-    width: 150%;
-    margin-left: -390px;
+    margin-top: 20px;
+    width: 100%;
 }
 
 .footer-title::after {
@@ -168,10 +167,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
-    padding-bottom: 0rem;
     padding: 0 2rem;
-    width: 100%;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
 }
 
 .footer-brand {

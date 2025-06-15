@@ -1,7 +1,8 @@
 /* Menu.css */
 .menu-container {
     width: 280px;
-    height: 127vh;
+    height: 139vh;
+    position: fixed;
     background-color: #d9d9d9;
     color: white;
     font-family: 'Arial', sans-serif;

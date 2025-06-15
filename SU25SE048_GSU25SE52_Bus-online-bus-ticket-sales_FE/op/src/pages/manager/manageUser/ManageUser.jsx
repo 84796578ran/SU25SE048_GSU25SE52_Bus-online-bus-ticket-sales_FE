@@ -3,9 +3,12 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import '../manageUser/ManageUser.css';
 import Menu from "../menu/Menu";
+import Footer from "../../../components/footer/Footer";
+import { FaTimes } from "react-icons/fa";
 const ManageUsers = () => {
     // State for users list and form data
     const [users, setUsers] = useState([]);
+    const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         full_name: '',
@@ -80,6 +83,7 @@ const ManageUsers = () => {
             isDeleted: false
         });
         setEditingId(null);
+        setShowForm(false);
     };
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -151,89 +155,103 @@ const ManageUsers = () => {
         <div className="manage-users-page">
             <Menu />
             <div className="manage-users-container">
-                <h2>
-                    {editingId ? 'Chỉnh sửa người dùng' : 'Thêm người dùng'}
-                </h2>
-                {/* User Form */}
-                <form onSubmit={handleSubmit} className="user-form">
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Họ và tên</label>
-                            <input
-                                type="text"
-                                name="full_name"
-                                value={formData.full_name}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Số điện thoại</label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Địa chỉ</label>
-                            <input
-                                type="text"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Mật khẩu</label>
-                            <input type="password" name="password"
-                                value={formData.password} onChange={handleInputChange}
-                                required={!editingId} minLength='6' />
-                        </div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group checkbox-group">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="isActive"
-                                    checked={formData.isActive}
-                                    onChange={handleInputChange}
-                                />
-                                Active
-                            </label>
-                        </div>
-                    </div>
-                    <div className="form-actions">
-                        <button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Processing...' : (editingId ? 'Cập nhật người dùng' : 'Thêm người dùng')}
-                        </button>
-                        {editingId && (
-                            <button type="button" onClick={resetForm} disabled={isLoading}>
-                                Hủy
-                            </button>
-                        )}
-                    </div>
-                </form>
                 {/*Users List */}
-                <h2>Danh sách người dùng</h2>
+                <h2>Danh sách nhân viên</h2>
+                <button className="add-user-btn" onClick={() => {
+                    resetForm();
+                    setShowForm(true)
+                }}>
+                    Thêm nhân viên
+                </button>
+                {showForm && (
+                    <div className="user-form-modal">
+                        <div className="user-form-container">
+                            <div className="form-header">
+                                <h3>{editingId ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}</h3>
+                                <button
+                                    className="close-form-btn"
+                                    onClick={resetForm}
+                                >
+                                    <FaTimes />
+                                </button>
+                            </div>
+                            <form className="user-form" onSubmit={handleSubmit}>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Email</label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Họ và tên</label>
+                                        <input
+                                            type="text"
+                                            name="full_name"
+                                            value={formData.full_name}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Số điện thoại</label>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Địa chỉ</label>
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            value={formData.address}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Mật khẩu</label>
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            required={!editingId}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-actions">
+                                    <button
+                                        type="button"
+                                        className="cancel-btn"
+                                        onClick={resetForm}
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="submit-btn"
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? 'Đang xử lý...' : (editingId ? 'Cập nhật' : 'Thêm mới')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
                 {isLoading && !users.length ? (
                     <div className="loading">Loading users...</div>
                 ) : (
@@ -241,14 +259,11 @@ const ManageUsers = () => {
                         <table className="users-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Mã nhân viên</th>
                                     <th>Họ và Tên</th>
                                     <th>Email</th>
-                                    <th>Địa chỉ</th>
                                     <th>Số điện thoại</th>
-                                    <th>Vai trò</th>
-                                    <th>Trạng thái</th>
-                                    <th>Hành động</th>
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -264,30 +279,7 @@ const ManageUsers = () => {
                                             {user.email}
                                         </td>
                                         <td>
-                                            {user.address}
-                                        </td>
-                                        <td>
                                             {user.phone}
-                                        </td>
-                                        <td>
-                                            {roles.find(r => r.id === user.role_id)?.name ||
-                                                user.role_id}
-                                        </td>
-                                        <td>
-                                            <span className={`status-badge ${user.isActive ?
-                                                'active' : 'inactive'
-                                                }`}>
-                                                {
-                                                    user.isActive ? 'Active' : 'Inactive'
-                                                }
-                                            </span>
-                                        </td>
-                                        <td className="actions">
-                                            <button onClick={() => handleEdit(user)}>Sửa</button>
-                                            <button onClick={() => toggleActiveStatus(user.id, user.isActive)}>
-                                                {user.isActive ? 'Không kích hoạt' : 'Kích hoạt'}
-                                            </button>
-                                            <button onClick={() => deleteUser(user.id)}>Xóa</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -296,6 +288,8 @@ const ManageUsers = () => {
                     </div>
                 )}
             </div>
+            <Footer />
+
         </div>
     )
 }

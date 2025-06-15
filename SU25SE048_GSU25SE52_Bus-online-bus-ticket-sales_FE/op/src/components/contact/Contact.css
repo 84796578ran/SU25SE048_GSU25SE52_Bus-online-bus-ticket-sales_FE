@@ -1,8 +1,8 @@
 .contact-content {
     flex: 1;
-    margin-left: 0;
+    margin-left: 220px;
     padding: 0 0 0 50px;
-    transform: translateX(-160px);
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background-color: #f9f9f9;
@@ -155,7 +155,7 @@
     background: #2c3e50;
     color: white;
     padding: 3rem 2rem 1rem;
-    margin-top: auto;
+    width: 100%;
 }
 
 .footer-title::after {

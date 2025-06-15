@@ -2,13 +2,31 @@
 .page-container {
     display: flex;
     min-height: 100vh;
-
+    flex-direction: column;
 }
 
 .about-section {
     flex: 1;
     padding: 40px 0;
     background-color: #f9f9f9;
+}
+
+/* Phần nội dung chính */
+.main-content {
+    margin-left: 220px;
+    /* Bằng chiều rộng của header */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header {
+    left: 0;
+    top: 0;
+    height: 100vh;
+    position: fixed;
+    width: 220px;
 }
 
 .about-content {
@@ -99,11 +117,35 @@
     box-shadow: 0 6px 15px rgba(42, 82, 190, 0.4);
 }
 
+.footer {
+    width: calc(100% - 220px);
+    margin-left: 220px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .about-content {
         flex-direction: column;
         gap: 30px;
+    }
+
+    .page-container {
+        flex-direction: column;
+    }
+
+    .header {
+        position: static;
+        width: 100%;
+        height: auto;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .footer {
+        width: 100%;
+        margin-left: 0;
     }
 
     .about-image {

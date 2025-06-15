@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import Menu from '../menu/Menu';
 import { format } from 'date-fns';
 import Pagination from '../../../components/pagination/Pagination';
+import Footer from '../../../components/footer/Footer';
 const ManageRoute = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -64,6 +65,8 @@ const ManageRoute = () => {
         console.log('Form data before submit:', formData); // Thêm dòng này để debug
 
         try {
+            const updatedResponse = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+            setRoutes(updatedResponse.data);
             const data = {
                 name: formData.name,
                 routeID: formData.routeID,
@@ -514,7 +517,9 @@ const ManageRoute = () => {
                             </div>
                         </div>
                     )}
+                    <Footer />
                 </div>
+
             </div>
         </div>
     )
