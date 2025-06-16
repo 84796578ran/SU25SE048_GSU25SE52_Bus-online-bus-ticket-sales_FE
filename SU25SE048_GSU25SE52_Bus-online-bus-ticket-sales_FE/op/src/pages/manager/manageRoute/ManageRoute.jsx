@@ -517,9 +517,10 @@ const ManageRoute = () => {
                             </div>
                         </div>
                     )}
-                    <Footer />
+                    <div className='page-footer'>
+                        <Footer />
+                    </div>
                 </div>
-
             </div>
         </div>
     )

@@ -152,144 +152,148 @@ const ManageUsers = () => {
         }
     }
     return (
-        <div className="manage-users-page">
-            <Menu />
-            <div className="manage-users-container">
-                {/*Users List */}
-                <h2>Danh sách nhân viên</h2>
-                <button className="add-user-btn" onClick={() => {
-                    resetForm();
-                    setShowForm(true)
-                }}>
-                    Thêm nhân viên
-                </button>
-                {showForm && (
-                    <div className="user-form-modal">
-                        <div className="user-form-container">
-                            <div className="form-header">
-                                <h3>{editingId ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}</h3>
-                                <button
-                                    className="close-form-btn"
-                                    onClick={resetForm}
-                                >
-                                    <FaTimes />
-                                </button>
+        <div className="page-layout">
+            <div className="main-content-wrapper">
+                <Menu />
+                <div className="content-container">
+                    <div className="manage-users-container">
+                        {/*Users List */}
+                        <h2>Danh sách nhân viên</h2>
+                        <button className="add-user-btn" onClick={() => {
+                            resetForm();
+                            setShowForm(true)
+                        }}>
+                            Thêm nhân viên
+                        </button>
+                        {showForm && (
+                            <div className="user-form-modal">
+                                <div className="user-form-container">
+                                    <div className="form-header">
+                                        <h3>{editingId ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}</h3>
+                                        <button
+                                            className="close-form-btn"
+                                            onClick={resetForm}
+                                        >
+                                            <FaTimes />
+                                        </button>
+                                    </div>
+                                    <form className="user-form" onSubmit={handleSubmit}>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Email</label>
+                                                <input
+                                                    type="email"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Họ và tên</label>
+                                                <input
+                                                    type="text"
+                                                    name="full_name"
+                                                    value={formData.full_name}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Số điện thoại</label>
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={formData.phone}
+                                                    onChange={handleInputChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Địa chỉ</label>
+                                                <input
+                                                    type="text"
+                                                    name="address"
+                                                    value={formData.address}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Mật khẩu</label>
+                                                <input
+                                                    type="password"
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={handleInputChange}
+                                                    required={!editingId}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="form-actions">
+                                            <button
+                                                type="button"
+                                                className="cancel-btn"
+                                                onClick={resetForm}
+                                            >
+                                                Hủy
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="submit-btn"
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? 'Đang xử lý...' : (editingId ? 'Cập nhật' : 'Thêm mới')}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
-                            <form className="user-form" onSubmit={handleSubmit}>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Email</label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Họ và tên</label>
-                                        <input
-                                            type="text"
-                                            name="full_name"
-                                            value={formData.full_name}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Số điện thoại</label>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Địa chỉ</label>
-                                        <input
-                                            type="text"
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Mật khẩu</label>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            value={formData.password}
-                                            onChange={handleInputChange}
-                                            required={!editingId}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-actions">
-                                    <button
-                                        type="button"
-                                        className="cancel-btn"
-                                        onClick={resetForm}
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="submit-btn"
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? 'Đang xử lý...' : (editingId ? 'Cập nhật' : 'Thêm mới')}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                        )}
+                        {isLoading && !users.length ? (
+                            <div className="loading">Loading users...</div>
+                        ) : (
+                            <div className="users-table-container">
+                                <table className="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã nhân viên</th>
+                                            <th>Họ và Tên</th>
+                                            <th>Email</th>
+                                            <th>Số điện thoại</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.map(user => (
+                                            <tr key={user.id} >
+                                                <td>
+                                                    {user.id}
+                                                </td>
+                                                <td>
+                                                    {user.full_name}
+                                                </td>
+                                                <td>
+                                                    {user.email}
+                                                </td>
+                                                <td>
+                                                    {user.phone}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
-                )}
-                {isLoading && !users.length ? (
-                    <div className="loading">Loading users...</div>
-                ) : (
-                    <div className="users-table-container">
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>Mã nhân viên</th>
-                                    <th>Họ và Tên</th>
-                                    <th>Email</th>
-                                    <th>Số điện thoại</th>
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map(user => (
-                                    <tr key={user.id} className={!user.isActive ? 'inactive' : ''}>
-                                        <td>
-                                            {user.id}
-                                        </td>
-                                        <td>
-                                            {user.full_name}
-                                        </td>
-                                        <td>
-                                            {user.email}
-                                        </td>
-                                        <td>
-                                            {user.phone}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                </div>
+                <div className="manage-footer">
+                    <Footer />
+                </div>
             </div>
-            <Footer />
-
         </div>
     )
 }

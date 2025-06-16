@@ -150,6 +150,10 @@
     transform: translateY(-2px);
 }
 
+.contact-foot {
+    margin-left: -50px;
+}
+
 /* Footer Styles */
 .contact-footer {
     background: #2c3e50;

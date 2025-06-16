@@ -41,7 +41,9 @@ const Contact = () => {
                         </div>
                     </div>
                 </div>
-                <Footer />
+                <div className='contact-foot'>
+                    <Footer />
+                </div>
             </div>
         </div>
     )

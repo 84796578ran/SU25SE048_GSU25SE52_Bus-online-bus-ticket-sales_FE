@@ -424,7 +424,9 @@ const CreateTrip = () => {
                     </div>
                 </form>
             </div>
-            <Footer />
+            <div className="create-footer">
+                <Footer />
+            </div>
         </div>
     );
 };

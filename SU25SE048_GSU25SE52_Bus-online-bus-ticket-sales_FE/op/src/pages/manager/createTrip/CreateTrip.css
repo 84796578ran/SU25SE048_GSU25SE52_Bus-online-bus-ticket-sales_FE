@@ -31,6 +31,11 @@
     width: 100%;
 }
 
+.create-footer {
+    margin-left: -40px;
+    margin-top: -130px;
+}
+
 .create-trip-container {
     flex: 1;
     margin-left: 330px;

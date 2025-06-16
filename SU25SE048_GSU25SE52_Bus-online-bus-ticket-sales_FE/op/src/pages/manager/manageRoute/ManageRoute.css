@@ -3,8 +3,8 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     /* Đảm bảo container chiếm ít nhất toàn bộ chiều cao màn hình */
+    min-height: 100vh;
 }
 
 /* Thêm vào ManageRoute.css */
@@ -90,7 +90,7 @@ h1 {
 }
 
 .routes-table-container {
-    overflow-x: auto;
+    overflow-x: hidden;
     flex: 1;
 }
 
@@ -98,7 +98,6 @@ h1 {
     width: 100%;
     margin-left: 100px;
     table-layout: fixed;
-    border-collapse: collapse;
     margin-top: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -120,9 +119,10 @@ h1 {
     background-color: #f5f5f5;
 }
 
-.footer-container {
-    margin-top: auto;
-    /* Đẩy footer xuống dưới cùng */
+/* Thêm vào ManageRoute.css */
+.page-footer {
+    margin-top: 100px;
+    margin-left: -170px;
 }
 
 .description-cell {
@@ -440,6 +440,8 @@ small {
     padding: 20px;
     display: flex;
     flex-direction: column;
+    margin-left: 220px;
+    min-height: calc(100vh - 40px);
 }
 
 .form-control {
