@@ -121,8 +121,9 @@ h1 {
 
 /* Thêm vào ManageRoute.css */
 .page-footer {
-    margin-top: 100px;
+    margin-top: 210px;
     margin-left: -170px;
+    margin-right: 96px;
 }
 
 .description-cell {

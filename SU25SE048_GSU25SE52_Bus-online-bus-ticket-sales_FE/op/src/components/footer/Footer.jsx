@@ -3,7 +3,10 @@ import '../footer/Footer.css';
 import { Link } from 'react-router-dom';
 const Footer = () => {
     return (
-        <footer className="contact-footer">
+        <footer className="contact-footer" style={{
+            marginLeft: '40px', width: '100%',
+            marginTop: '150px'
+        }}>
             <div className="footer-container">
                 <div className="footer-brand">
                     <h3 className="footer-logo">TIỆN ÍCH</h3>
