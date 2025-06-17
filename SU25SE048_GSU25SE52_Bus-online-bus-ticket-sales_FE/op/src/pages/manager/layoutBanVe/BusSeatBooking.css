@@ -55,8 +55,8 @@
 }
 
 /* Thêm vào file CSS của bạn */
-.no-sidebar-footer {
-    margin-left: 0 !important;
+.bus-footer {
+    margin-top: 156px;
 }
 
 .main-content {

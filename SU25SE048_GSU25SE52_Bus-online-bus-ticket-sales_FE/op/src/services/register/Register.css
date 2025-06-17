@@ -4,6 +4,7 @@
     background-color: #f8f8f8;
     border-radius: 14px;
     text-align: center;
+    align-self: center;
     margin-left: 240px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
@@ -14,6 +15,20 @@
     /* Điều chỉnh chiều cao footer tùy theo thiết kế của bạn */
     display: flex;
     flex-direction: column;
+}
+
+.register-footer {
+    margin-left: 0px;
+    width: 100%;
+    margin-top: 70px;
+}
+
+.content-wrapper {
+    display: flex;
+    flex: 1;
+    /* Độ rộng của header */
+    padding: 20px;
+    margin-left: 450px;
 }
 
 .register-layout {
