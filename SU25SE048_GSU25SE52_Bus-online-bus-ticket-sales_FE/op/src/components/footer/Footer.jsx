@@ -5,7 +5,7 @@ const Footer = () => {
     return (
         <footer className="contact-footer" style={{
             marginLeft: '40px', width: '100%',
-            marginTop: '150px'
+            marginTop: '150px', transform: 'translateX(-70px)'
         }}>
             <div className="footer-container">
                 <div className="footer-brand">

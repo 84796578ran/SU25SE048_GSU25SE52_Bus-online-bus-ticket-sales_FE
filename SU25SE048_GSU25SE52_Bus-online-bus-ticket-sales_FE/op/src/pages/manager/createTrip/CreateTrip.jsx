@@ -15,17 +15,17 @@ const CreateTrip = () => {
     const [dateError, setDateError] = useState('');
     const [endDate, setEndDate] = useState(null);
     const [formData, setFormData] = useState({
-        tripID: '',
+        tripId: '',
         price: '',
-        status: 'active',
-        timeID: '',
+        status: 0,
+        timeId: '',
         timeStart: '',
         timeEnd: '',
         description: '',
-        TypeBusID: '',
+        typeBusID: '',
         fromLocation: '',
         endLocation: '',
-        routeID: ''
+        routeId: ''
     });
     // Xử lý khi thay đổi ngày khởi hành
     const handleStartDateChange = (date) => {
@@ -110,15 +110,15 @@ const CreateTrip = () => {
                 await fetchBusTypes();
                 await fetchRoutes();
                 if (id) {
-                    const tripRes = await axios.get(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`);
+                    const tripRes = await axios.get(`https://localhost:7197/api/Trip/${id}`);
                     const tripData = tripRes.data;
                     // Tìm route tương ứng để hiển thị thông tin
-                    const route = routes.find(r => r.routeID === tripData.routeID);
+                    const route = routes.find(r => r.routeId === tripData.routeId);
                     setFormData({
-                        tripID: tripData.tripID,
+                        tripId: tripData.tripID,
                         price: tripData.price,
                         status: tripData.status,
-                        timeID: tripData.timeID,
+                        timeId: tripData.timeId,
                         timeStart: tripData.timeStart,
                         timeEnd: tripData.timeEnd,
                         description: tripData.description,
@@ -196,14 +196,14 @@ const CreateTrip = () => {
                 await axios.put(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`, formData);
                 setSuccess('Trip updated successfully!');
             } else {
-                await axios.post('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip', formData);
+                await axios.post('https://localhost:7197/api/Trip', formData);
                 if (!isEditing) {
                     setSuccess(true);
                     setFormData({
-                        tripID: '',
+                        tripId: '',
                         price: '',
                         status: '',
-                        timeID: '',
+                        timeId: '',
                         timeStart: '',
                         timeEnd: '',
                         description: '',
@@ -238,7 +238,7 @@ const CreateTrip = () => {
             setIsLoading(false);
         }
     };
-    if (isLoading && !formData.tripID) {
+    if (isLoading && !formData.tripId) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>

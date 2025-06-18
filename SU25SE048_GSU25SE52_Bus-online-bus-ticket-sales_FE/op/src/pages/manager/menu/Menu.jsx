@@ -9,9 +9,9 @@ const Menu = () => {
             </div>
             <ul className="menu-list">
                 <li className="menu-item">
-                    <Link to="/stats">
+                    <Link to="/manage">
                         <i className="fas fa-chart-bar"></i>
-                        Thống kê</Link>
+                        Quản lý</Link>
                 </li>
                 <li className="menu-item">
                     <Link to="/search">
@@ -19,7 +19,7 @@ const Menu = () => {
                         Tìm kiếm</Link>
                 </li>
                 <li className="menu-item">
-                    <Link to="/manageRoute">
+                    <Link to="/manage-route">
                         <i className="fas fa-route"></i>
                         Quản lý tuyến đường</Link>
                 </li>

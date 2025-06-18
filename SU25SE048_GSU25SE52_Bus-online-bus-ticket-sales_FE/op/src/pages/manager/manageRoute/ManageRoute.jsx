@@ -10,17 +10,28 @@ import Footer from '../../../components/footer/Footer';
 const ManageRoute = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [companies, setCompanies] = useState([]);
     const [formData, setFormData] = useState({
-        name: '',
         fromLocation: '',
-        routeID: '',
+        routeId: '',
         toLocation: '',
         time: '',
+        duration: '',
+        distance: '',
+        description: '',
         issuedPlace: '',
-        issuedDate: new Date(),
-        routeLicense: null,
-        isActive: true
+        createAt: new Date(),
+        routeLicense: '',
+        isActive: true,
+        companyId: ''
     });
+    const [companyFormData, setCompanyFormData] = useState({
+        CompanyID: '',
+        name: '',
+        address: '',
+        TaxNumber: ''
+    });
+    const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -28,8 +39,10 @@ const ManageRoute = () => {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const response = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
-                setRoutes(response.data);
+                const routesResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
+                setRoutes(routesResponse.data);
+                const companiesResponse = await axios.get('https://localhost:7197/api/Company/GetAllCompany');
+                setCompanies(companiesResponse.data);
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching routes:', error);
@@ -39,7 +52,79 @@ const ManageRoute = () => {
         };
         fetchRoutes();
     }, []);
+    // Hàm tạo công ty mới
+    const handleCreateCompany = async (e) => {
+        e.preventDefault();
+        try {
+            const data = new FormData();
+            data.append('name', companyFormData.name);
+            data.append('address', companyFormData.address);
+            data.append('TaxNumber', companyFormData.TaxNumber);
+            setLoading(true);
+            const response = await axios.post('https://localhost:7197/api/Company/CreateCompany', data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
 
+            toast.success('Tạo công ty thành công!');
+            // Cập nhật danh sách công ty
+            const updatedResponse = await axios.get('https://localhost:7197/api/Company/GetAllCompany');
+            setCompanies(updatedResponse.data);
+            setShowCreateCompanyModal(false);
+            setCompanyFormData({
+                name: '',
+                address: '',
+                TaxNumber: '',
+            });
+        } catch (error) {
+            console.error('Error creating company:', error);
+            toast.error('Failed to create company');
+        } finally {
+            setLoading(false);
+        }
+    };
+    // Cập nhật route
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const data = new FormData();
+            data.append('routeId', formData.routeId);
+            data.append('fromLocation', formData.fromLocation);
+            data.append('toLocation', formData.toLocation);
+            data.append('duration', parseInt(formData.duration)); // Convert to integer
+            data.append('distance', 0); // You need to add this field to your form
+            data.append('description', formData.description || ''); // You need to add this field to your form
+            data.append('companyId', formData.companyId || 0); // You need to add this field to your form
+            data.append('isCreate', true); // Thêm trường bắt buộc
+            data.append('isDelete', false);
+            if (formData.routeLicense) {
+                data.append('routeLicense', formData.routeLicense);
+            }
+            setLoading(true);
+            const response = await axios.put(
+                `https://localhost:7197/api/Route/UpdateRoute/${editingId}`,
+                data,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            toast.success('Cập nhật tuyến đường thành công!');
+            // Lấy lại danh sách mới nhất từ server
+            const updatedResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
+            setRoutes(updatedResponse.data);
+            setEditingId(null);
+            setShowDetailModal(false);
+        } catch (error) {
+            console.error('Error updating route:', error);
+            // Xử lý lỗi...
+        } finally {
+            setLoading(false);
+        }
+    };
     // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -58,52 +143,133 @@ const ManageRoute = () => {
     // Create new route
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.routeLicense && !editingId) {
-            toast.error('Journey license is required');
+        /// Validate required fields
+        if (!formData.routeId || !formData.fromLocation || !formData.toLocation || !formData.companyId) {
+            toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
             return;
         }
-        console.log('Form data before submit:', formData); // Thêm dòng này để debug
+        console.log('Form data:', {
+            routeId: formData.routeId,
+            fromLocation: formData.fromLocation,
+            toLocation: formData.toLocation,
+            duration: formData.duration,
+            createAt: formData.createAt,
+            routeLicense: formData.routeLicense ? formData.routeLicense.name : 'No file'
+        }); // Thêm dòng này để debug
 
         try {
-            const updatedResponse = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
-            setRoutes(updatedResponse.data);
-            const data = {
-                name: formData.name,
-                routeID: formData.routeID,
-                time: formData.time,
+            const data = new FormData();
+            data.append('routeId', formData.routeId);
+            data.append('fromLocation', formData.fromLocation);
+            data.append('toLocation', formData.toLocation);
+            data.append('duration', parseInt(formData.duration));
+            data.append('distance', 0); // Giá trị mặc định
+            data.append('description', formData.description || '');
+            data.append('companyId', formData.companyId);
+            if (formData.routeLicense) {
+                data.append('License', formData.routeLicense);
+            }
+            console.log('Sending form data:', {
+                routeId: formData.routeId,
                 fromLocation: formData.fromLocation,
                 toLocation: formData.toLocation,
-                routeLicense: formData.routeLicense,
-                issuedDate: formData.issuedDate,
-                issuedPlace: formData.issuedPlace,
-                isActive: formData.isActive,
-                isDeleted: false
-            }
+                companyId: formData.companyId
+            });
             setLoading(true);
-            const response = await axios.post('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route', data);
-            if (response.data && response.data.id) {
+            const response = await axios.post('https://localhost:7197/api/Route/CreateRoute', data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            // Thêm giao diện tạo công ty
+            const renderCreateCompanyModal = () => (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h2>Tạo công ty mới</h2>
+                            <button className="close-button" onClick={() => setShowCreateCompanyModal(false)}>
+                                &times;
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateCompany}>
+                            <div className='form-group'>
+                                <label>Số hiệu tuyến đường:</label>
+                                <input
+                                    type="text"
+                                    name="routeId"
+                                    value={formData.routeId}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                            <div className='form-group'>
+                                <label>Tên công ty:</label>
+                                <input
+                                    type="text"
+                                    name="companyName"
+                                    value={companyFormData.companyName}
+                                    onChange={(e) => setCompanyFormData({ ...companyFormData, companyName: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className='form-group'>
+                                <label>Địa chỉ:</label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    value={companyFormData.address}
+                                    onChange={(e) => setCompanyFormData({ ...companyFormData, address: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className='form-group'>
+                                <label>Số điện thoại:</label>
+                                <input
+                                    type="text"
+                                    name="phone"
+                                    value={companyFormData.phone}
+                                    onChange={(e) => setCompanyFormData({ ...companyFormData, phone: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className='form-group'>
+                                <label>Email:</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={companyFormData.email}
+                                    onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className='form-group'>
+                                <label>Giấy phép kinh doanh:</label>
+                                <input
+                                    type="file"
+                                    name="license"
+                                    onChange={(e) => setCompanyFormData({ ...companyFormData, license: e.target.files[0] })}
+                                    required
+                                />
+                            </div>
+                            <div className="form-actions">
+                                <button type="submit" className="submit-button" disabled={loading}>
+                                    {loading ? 'Processing...' : 'Tạo công ty'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+            if (response.data) {
                 toast.success('Tạo tuyến đường thành công!');
                 setRoutes([
                     ...routes,
                     response.data
                 ]);
-                const updatedResponse = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+                const updatedResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
                 setRoutes(updatedResponse.data);
                 setShowCreateModal(false);
                 resetFormData();
-            }
-            if (editingId) {
-                // Update existing route
-                const response = await axios.put(
-                    `https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route/${editingId}`,
-                    data
-                );
-                toast.success('Cập nhật tuyến đường thành công!');
-                setRoutes(routes.map(route =>
-                    route.id === editingId ? response.data : route
-                ));
-                setEditingId(null);
-                setShowDetailModal(false);
             }
         } catch (error) {
             console.error('Error creating route:', error);
@@ -124,7 +290,6 @@ const ManageRoute = () => {
     // Handle edit route
     const handleEdit = (route) => {
         setFormData({
-            name: route.name,
             company_id: route.company_id,
             station_id: route.station_id,
             estimatedDuration: route.estimatedDuration,
@@ -135,19 +300,32 @@ const ManageRoute = () => {
         setShowEditModal(true);
     };
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return format(date, 'dd/MM/yyyy');
+        try {
+            if (!dateString) return 'N/A'; // Xử lý trường hợp null/undefined
+
+            const date = new Date(dateString);
+
+            // Kiểm tra nếu date không hợp lệ
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date:', dateString);
+                return 'N/A';
+            }
+            return format(date, 'dd/MM/yyyy');
+        } catch (error) {
+            console.error('Error formatting date:', error, dateString);
+            return 'N/A';
+        }
     }
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có muốn xóa không?')) {
             try {
-                await axios.put(`https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route/${id}`, {
-                    isDeleted: true
+                await axios.put(`https://localhost:7197/api/Route/DeleteRoute/${id}`, {
+                    isDelete: true
                 });
                 setRoutes(routes.map(route =>
                     route.id === id ? {
                         ...route,
-                        isDeleted: true
+                        isDelete: true
                     } : route
                 ));
                 toast.success('Route deleted successfully');
@@ -162,15 +340,12 @@ const ManageRoute = () => {
     // Hàm xử lý khi nhấn vào hàng
     const handleRowClick = (route) => {
         setFormData({
-            name: route.name,
-            routeID: route.routeID,
-            time: route.time,
+            routeId: route.routeId,
             fromLocation: route.fromLocation,
             toLocation: route.toLocation,
-            issuedDate: new Date(route.issuedDate),
-            issuedPlace: route.issuedPlace,
-            isActive: route.isActive,
-            routeLicense: route.routeLicense
+            issuedDate: route.issuedDate ? new Date(route.issuedDate) : new Date(), // Fallback to current date if invalid,
+            issuedPlace: route.issuedPlace || '', // Thêm trường này nếu chưa có
+            isActive: route.isActive !== undefined ? route.isActive : true // Thêm trường này nếu chưa có
         });
         setEditingId(route.id);
         setSelectedRoute(route);
@@ -184,11 +359,20 @@ const ManageRoute = () => {
 
     // Lọc các route không bị xóa và lấy các item cho trang hiện tại
     const currentRoutes = routes
-        .filter(route => !route.isDeleted)
+        .filter(route => !route.isDelete)
         .slice(indexOfFirstItem, indexOfLastItem);
-
+    const safeDateFormat = (dateString, formatStr = 'dd/MM/yyyy') => {
+        try {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? 'N/A' : format(date, formatStr);
+        } catch (error) {
+            console.error('Date formatting error:', error);
+            return 'N/A';
+        }
+    }
     // Tính tổng số trang
-    const totalPages = Math.ceil(routes.filter(route => !route.isDeleted).length / itemsPerPage);
+    const totalPages = Math.ceil(routes.filter(route => !route.isDelete).length / itemsPerPage);
     // Toggle route active status
     const toggleActive = async (id, currentStatus) => {
         try {
@@ -213,11 +397,9 @@ const ManageRoute = () => {
     // Reset form data
     const resetFormData = () => {
         setFormData({
-            name: '',
-            time: '',
             fromLocation: '',
             toLocation: '',
-            routeLicense: null,
+            RouteLicense: null,
             isActive: true
         });
     };
@@ -242,37 +424,30 @@ const ManageRoute = () => {
                                 <thead>
                                     <tr>
                                         <th>Số hiệu tuyến đường</th>
-                                        <th>Tên</th>
+                                        <th>Điểm xuất phát</th>
+                                        <th>Điểm kết thúc</th>
                                         <th>Ngày cấp</th>
-                                        <th>Nơi cấp</th>
-                                        <th>Trạng thái</th>
                                     </tr>
+
                                 </thead>
                                 <tbody>
                                     {
-                                        currentRoutes.filter(route => !route.isDeleted).map(route => (
+                                        currentRoutes.filter(route => !route.isDelete).map(route => (
                                             <tr key={route.id}
                                                 onClick={() => handleRowClick(route)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <td>
-                                                    {route.routeID}
+                                                    {route.routeId}
                                                 </td>
                                                 <td>
-                                                    {route.name}
+                                                    {route.fromLocation}
                                                 </td>
                                                 <td>
-                                                    {
-                                                        formatDate(route.issuedDate)
-                                                    }
+                                                    {route.toLocation}
                                                 </td>
                                                 <td>
-                                                    {route.issuedPlace}
-                                                </td>
-                                                <td>
-                                                    <span className={`status-badge ${route.isActive ? 'active' : 'inactive'}`}>
-                                                        {route.isActive ? "Active" : "Inactive"}
-                                                    </span>
+                                                    {safeDateFormat(route.createAt)}
                                                 </td>
                                             </tr>
                                         ))
@@ -300,15 +475,15 @@ const ManageRoute = () => {
                                 <form onSubmit={handleSubmit}>
                                     <div className='form-group'>
                                         <label>Số hiệu tuyến đường:</label>
-                                        <input type="text" name="routeID"
-                                            value={formData.routeID} onChange={handleInputChange} required />
+                                        <input type="text" name="routeId"
+                                            value={formData.routeId} onChange={handleInputChange} required />
                                     </div>
                                     <div className="form-group">
-                                        <label>Tên chuyến đi:</label>
+                                        <label>Thời gian di chuyển (phút):</label>
                                         <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
+                                            type="number"
+                                            name="duration"
+                                            value={formData.duration}
                                             onChange={handleInputChange}
                                             required
                                         />
@@ -333,21 +508,35 @@ const ManageRoute = () => {
                                             required
                                         />
                                     </div>
-                                    <div className='form-group'>
-                                        <label>Ngày cấp:</label>
-                                        <DatePicker selected={formData.issuedDate}
-                                            onChange={(date) => setFormData({
-                                                ...formData,
-                                                issuedDate: date
-                                            })}
-                                            dateFormat="dd/MM/yyyy"
-                                            className='form-control' required />
+                                    <div className="form-group">
+                                        <label>Khoảng cách:</label>
+                                        <input
+                                            type="text"
+                                            name="distance"
+                                            value={formData.distance}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
                                     </div>
-                                    <div className='form-group'>
-                                        <label>Nơi cấp:</label>
-                                        <input type='text' name='issuedPlace'
-                                            value={formData.issuedPlace} onChange={handleInputChange}
-                                            required />
+                                    <div className="form-group">
+                                        <label>Mô tả:</label>
+                                        <input
+                                            type="text"
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Company ID:</label>
+                                        <input
+                                            type="text"
+                                            name="companyId"
+                                            value={formData.companyId}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <label>Giấy cấp phép hành trình:</label>
@@ -361,7 +550,7 @@ const ManageRoute = () => {
                                     </div>
                                     <div className="form-actions">
                                         <button type="submit" className="submit-button" disabled={loading}>
-                                            {loading ? 'Processing...' : editingId ? 'Update Route' : 'Tạo tuyến đường'}
+                                            {loading ? 'Đang xử lý...' : 'Tạo tuyến đường'}
                                         </button>
                                     </div>
                                 </form>
@@ -389,8 +578,8 @@ const ManageRoute = () => {
                                         <label>Số hiệu tuyến đường:</label>
                                         <input
                                             type="text"
-                                            name="routeID"
-                                            value={formData.routeID}
+                                            name="routeId"
+                                            value={formData.routeId}
                                             onChange={handleInputChange}
                                             disabled={!editingId}
                                         />
@@ -489,15 +678,13 @@ const ManageRoute = () => {
                                                     onClick={() => {
                                                         setEditingId(null);
                                                         setFormData({
-                                                            name: selectedRoute.name,
-                                                            routeID: selectedRoute.routeID,
-                                                            time: selectedRoute.time,
+                                                            routeId: selectedRoute.routeId,
                                                             fromLocation: selectedRoute.fromLocation,
                                                             toLocation: selectedRoute.toLocation,
                                                             issuedDate: new Date(selectedRoute.issuedDate),
                                                             issuedPlace: selectedRoute.issuedPlace,
                                                             isActive: selectedRoute.isActive,
-                                                            routeLicense: selectedRoute.routeLicense
+                                                            RouteLicense: selectedRoute.RouteLicense
                                                         });
                                                     }}
                                                 >
@@ -517,7 +704,7 @@ const ManageRoute = () => {
                             </div>
                         </div>
                     )}
-                    <div className='page-footer'>
+                    <div className='manage-route-footer'>
                         <Footer />
                     </div>
                 </div>

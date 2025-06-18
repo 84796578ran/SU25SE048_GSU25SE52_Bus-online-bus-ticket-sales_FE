@@ -5,7 +5,7 @@ import '../login/Login.css';
 import Header from "../../components/header/Header";
 import Footer from "../../components/footer/Footer";
 const LoginForm = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
     const [errorMessage, setErrorMessage] = useState('');
@@ -16,22 +16,22 @@ const LoginForm = () => {
         setIsLoading(true);
         setErrorMessage('');
         try {
-            const checkUserResponse = await axios.get('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/User');
-            const match = checkUserResponse.data.find(user => user.username === username
+            const checkUserResponse = await axios.get('https://localhost:7197/api/SystemUser/GetAllSystemUser');
+            const match = checkUserResponse.data.find(user => user.email === email
                 && user.password === password
             );
             if (match) {
                 const response = {
                     data: {
                         success: true,
-                        redirectTo: '/manageRoute'
+                        redirectTo: '/manage-route'
                     }
                 }
                 if (response.data.success) {
                     setLoginStatus(true);
                     localStorage.setItem('user', JSON.stringify(response.data.user));
                     localStorage.setItem('token', response.data.token);
-                    const redirectTo = response.data.redirectTo || '/manageRoute';
+                    const redirectTo = response.data.redirectTo || '/manage-route';
                     navigate(redirectTo);
                 } else {
                     throw new Error('Sai tên đăng nhập hoặc mật khẩu');
@@ -60,8 +60,8 @@ const LoginForm = () => {
                             )}
                             {(loginStatus === null || loginStatus === false) && (
                                 <form onSubmit={handleLogin}>
-                                    <input type="text" placeholder="Tên đăng nhập hoặc số điện thoại"
-                                        value={username} onChange={(e) => setUsername(e.target.value)} required />
+                                    <input type="text" placeholder="Email"
+                                        value={email} onChange={(e) => setEmail(e.target.value)} required />
                                     <input type="password" placeholder="Mật khẩu" value={password}
                                         onChange={(e) => setPassword(e.target.value)} required />
                                     <button type="submit">
@@ -83,7 +83,9 @@ const LoginForm = () => {
                         </div>
                     </div>
                 </div>
-                <Footer />
+                <div className="login-footer">
+                    <Footer />
+                </div>
             </div>
         </div>
     )
