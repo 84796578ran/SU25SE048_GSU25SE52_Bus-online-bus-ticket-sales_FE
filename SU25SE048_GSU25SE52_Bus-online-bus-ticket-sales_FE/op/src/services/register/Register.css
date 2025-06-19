@@ -6,7 +6,8 @@
     margin: 0 auto;
     text-align: center;
     align-self: center;
-    margin-left: 340px;
+    margin-left: 400px;
+    margin-top: 56px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -19,10 +20,10 @@
 }
 
 .register-footer {
-    margin-left: 240px;
-    width: calc(100% - 240px);
+    margin-left: 40px;
+    width: calc(100% - 70px);
     padding: 20px 0;
-    margin-top: auto;
+    margin-top: 109px;
 }
 
 .content-wrapper {

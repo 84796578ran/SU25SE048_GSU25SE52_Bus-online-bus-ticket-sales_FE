@@ -153,10 +153,10 @@
     background: #2c3e50;
     color: white;
     padding: 2rem 0 0.5rem;
-    margin-top: auto;
-    width: calc(100% - 280px);
+    margin-top: 10px;
+    width: calc(100% - 140px) !important;
     display: grid;
-    margin-left: 0;
+
 }
 
 .footer-title::after {

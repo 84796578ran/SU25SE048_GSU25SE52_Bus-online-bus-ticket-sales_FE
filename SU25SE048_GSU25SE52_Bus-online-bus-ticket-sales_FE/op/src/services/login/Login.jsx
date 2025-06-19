@@ -24,14 +24,14 @@ const LoginForm = () => {
                 const response = {
                     data: {
                         success: true,
-                        redirectTo: '/manage-route'
+                        redirectTo: '/bookTicket'
                     }
                 }
                 if (response.data.success) {
                     setLoginStatus(true);
                     localStorage.setItem('user', JSON.stringify(response.data.user));
                     localStorage.setItem('token', response.data.token);
-                    const redirectTo = response.data.redirectTo || '/manage-route';
+                    const redirectTo = response.data.redirectTo || '/bookTicket';
                     navigate(redirectTo);
                 } else {
                     throw new Error('Sai tên đăng nhập hoặc mật khẩu');
