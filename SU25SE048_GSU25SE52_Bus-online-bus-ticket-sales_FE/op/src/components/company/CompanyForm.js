@@ -13,7 +13,8 @@ const CompanyForm = ({ company, onSuccess, onCancel }) => {
         companyId: '',
         logo: null,
         maxPercent: 0,
-        minPercent: 0
+        minPercent: 0,
+        createAt: ''
     });
     const handleFileChange = (e) => {
         setFormData({
@@ -43,7 +44,8 @@ const CompanyForm = ({ company, onSuccess, onCancel }) => {
             formDataToSend.append('phone', formData.phone || '');
             formDataToSend.append('address', formData.address || '');
             formDataToSend.append('website', formData.website || '');
-            formDataToSend.append('status', String(formData.status))
+            formDataToSend.append('createAt', formData.createAt || '');
+            formDataToSend.append('status', formData.status || 0);
             formDataToSend.append('taxNumber', formData.taxNumber || '');
             formDataToSend.append('description', formData.description || '');
             formDataToSend.append('maxPercent', Number(formData.maxPercent) || 0);

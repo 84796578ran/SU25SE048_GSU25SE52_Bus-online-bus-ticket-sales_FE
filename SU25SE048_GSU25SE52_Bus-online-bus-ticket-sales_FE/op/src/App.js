@@ -11,6 +11,7 @@ import BusBooking from './pages/manager/layoutBanVe/BusSeatBooking';
 import ForgotPassword from './services/forgotPassword/ForgotPass';
 import ManageUsers from './pages/manager/manageUser/ManageUser';
 import CompanyManagement from './pages/manager/manageCompany/ManageCompany';
+import TicketBooking from './pages/customer/bookTicket/BookTicket';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path='/manager' element={<CreateTrip />} />
           <Route path='/manageUser' element={<ManageUsers />} />
           <Route path='/manage' element={<CompanyManagement />} />
+          <Route path='/bookTicket' element={<TicketBooking />} />
         </Routes>
       </BrowserRouter>
     </div>

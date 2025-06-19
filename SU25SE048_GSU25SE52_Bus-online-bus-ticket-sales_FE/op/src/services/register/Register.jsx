@@ -61,11 +61,12 @@ const RegisterForm = () => {
                             </p>
                         </form>
                     </div>
+                    <div className='register-footer'>
+                        <Footer />
+                    </div>
                 </div>
             </div>
-            <div className='register-footer'>
-                <Footer />
-            </div>
+
         </div>
     )
 }

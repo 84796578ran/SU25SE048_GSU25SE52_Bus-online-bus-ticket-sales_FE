@@ -164,6 +164,7 @@ const ManageRoute = () => {
             data.append('toLocation', formData.toLocation);
             data.append('duration', parseInt(formData.duration));
             data.append('distance', 0); // Giá trị mặc định
+            data.append('createAt', formData.createAt);
             data.append('description', formData.description || '');
             data.append('companyId', formData.companyId);
             if (formData.routeLicense) {

@@ -3,9 +3,10 @@
     padding: 20px;
     background-color: #f8f8f8;
     border-radius: 14px;
+    margin: 0 auto;
     text-align: center;
     align-self: center;
-    margin-left: 240px;
+    margin-left: 340px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -18,9 +19,10 @@
 }
 
 .register-footer {
-    margin-left: 0px;
-    width: 100%;
-    margin-top: 70px;
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    padding: 20px 0;
+    margin-top: auto;
 }
 
 .content-wrapper {
@@ -28,7 +30,8 @@
     flex: 1;
     /* Độ rộng của header */
     padding: 20px;
-    margin-left: 450px;
+    margin-left: 240px;
+    flex-direction: column;
 }
 
 .register-layout {
@@ -41,6 +44,7 @@
     align-items: center;
     /* Căn giữa theo chiều dọc */
     gap: 50px;
+    width: 100%;
 }
 
 input:focus {
