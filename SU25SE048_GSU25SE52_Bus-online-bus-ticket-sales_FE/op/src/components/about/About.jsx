@@ -37,7 +37,10 @@ function About() {
                         </div>
                     </div>
                 </div>
-                <Footer />
+                <div className='about-footer'>
+                    <Footer
+                    />
+                </div>
             </div>
         </div>
     )

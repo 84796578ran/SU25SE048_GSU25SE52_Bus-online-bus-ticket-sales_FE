@@ -173,7 +173,9 @@ const BusBooking = () => {
                         </button>
                     </div>
                 </div>
-                <Footer className="no-sidebar-footer" />
+                <div className="bus-footer">
+                    <Footer />
+                </div>
             </div>
         </div>
     )

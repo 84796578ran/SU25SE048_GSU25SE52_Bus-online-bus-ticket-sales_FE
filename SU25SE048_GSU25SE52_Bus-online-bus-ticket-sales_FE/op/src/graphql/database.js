@@ -1,7 +1,6 @@
 const { Sequelize } = require('sequelize');
-const sequelize = new Sequelize('your_database', 'your_username', 'your_password', {
-    host: 'localhost',
-    dialect: 'mssql'
+const sequelize = new Sequelize('BuyOnlineBusTicketSales', 'sa', 'Thanhtrung12345', {
+    dialect: 'SQL Server'
 });
 const Trip = sequelize.define('Trip', {
     TripID: {

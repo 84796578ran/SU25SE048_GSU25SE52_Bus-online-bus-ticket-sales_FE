@@ -3,6 +3,7 @@
     display: flex;
     min-height: 100vh;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 .about-section {
@@ -120,6 +121,11 @@
 .footer {
     width: calc(100% - 220px);
     margin-left: 220px;
+}
+
+.about-footer {
+    margin-top: 40px;
+    margin-left: -50px;
 }
 
 /* Responsive design */

@@ -3,8 +3,11 @@
     padding: 20px;
     background-color: #f8f8f8;
     border-radius: 14px;
+    margin: 0 auto;
     text-align: center;
-    margin-left: 240px;
+    align-self: center;
+    margin-left: 400px;
+    margin-top: 56px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -13,6 +16,22 @@
     min-height: calc(100vh - [chiều cao footer]);
     /* Điều chỉnh chiều cao footer tùy theo thiết kế của bạn */
     display: flex;
+    flex-direction: column;
+}
+
+.register-footer {
+    margin-left: 40px;
+    width: calc(100% - 70px);
+    padding: 20px 0;
+    margin-top: 109px;
+}
+
+.content-wrapper {
+    display: flex;
+    flex: 1;
+    /* Độ rộng của header */
+    padding: 20px;
+    margin-left: 240px;
     flex-direction: column;
 }
 
@@ -26,6 +45,7 @@
     align-items: center;
     /* Căn giữa theo chiều dọc */
     gap: 50px;
+    width: 100%;
 }
 
 input:focus {
