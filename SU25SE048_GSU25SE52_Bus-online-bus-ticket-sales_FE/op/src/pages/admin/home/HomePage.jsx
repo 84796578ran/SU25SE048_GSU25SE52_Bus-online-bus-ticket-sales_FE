@@ -65,7 +65,9 @@ const HomePage = () => {
                     )}
                 </main>
             </div>
-            <Footer />
+            <div className="home-page-footer">
+                <Footer />
+            </div>
         </div>
     );
 };

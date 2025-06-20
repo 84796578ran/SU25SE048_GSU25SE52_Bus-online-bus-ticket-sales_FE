@@ -18,13 +18,13 @@ const TicketBooking = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("https://your-api-endpoint.com/bookings", {
+            const response = await fetch("https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Ticket", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),
             });
             const result = await response.json();
-            alert("Đặt vé thành công: " + JSON.stringify(result));
+            alert("Đặt vé thành công: ");
         } catch (error) {
             alert("Đặt vé thất bại. Vui lòng thử lại.");
         }

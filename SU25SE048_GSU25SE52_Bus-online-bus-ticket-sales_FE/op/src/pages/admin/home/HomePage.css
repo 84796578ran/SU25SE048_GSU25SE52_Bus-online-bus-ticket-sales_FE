@@ -8,6 +8,11 @@
     padding: 20px;
 }
 
+.home-page-footer {
+    margin-top: 480px;
+    margin-left: -290px;
+}
+
 .home-page-container {
     display: flex;
     min-height: 100vh;

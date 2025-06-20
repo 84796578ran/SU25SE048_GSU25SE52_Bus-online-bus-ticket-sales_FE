@@ -177,7 +177,7 @@ const ManageRoute = () => {
                 companyId: formData.companyId
             });
             setLoading(true);
-            const response = await axios.post('https://localhost:7197/api/Route/CreateRoute', data, {
+            const response = await axios.post(`${process.env.apiUrl}/api/Route/CreateRoute`, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
