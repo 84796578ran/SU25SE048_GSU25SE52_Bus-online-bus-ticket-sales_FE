@@ -39,10 +39,8 @@ const ManageRoute = () => {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const routesResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
-                setRoutes(routesResponse.data);
-                const companiesResponse = await axios.get('https://localhost:7197/api/Company/GetAllCompany');
-                setCompanies(companiesResponse.data);
+                const response = await axios.get('${process.env.API_URL}');
+                setRoutes(response.data);
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching routes:', error);
@@ -52,80 +50,6 @@ const ManageRoute = () => {
         };
         fetchRoutes();
     }, []);
-    // Hàm tạo công ty mới
-    const handleCreateCompany = async (e) => {
-        e.preventDefault();
-        try {
-            const data = new FormData();
-            data.append('name', companyFormData.name);
-            data.append('address', companyFormData.address);
-            data.append('TaxNumber', companyFormData.TaxNumber);
-            setLoading(true);
-            const response = await axios.post('https://localhost:7197/api/Company/CreateCompany', data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-
-            toast.success('Tạo công ty thành công!');
-            // Cập nhật danh sách công ty
-            const updatedResponse = await axios.get('https://localhost:7197/api/Company/GetAllCompany');
-            setCompanies(updatedResponse.data);
-            setShowCreateCompanyModal(false);
-            setCompanyFormData({
-                name: '',
-                address: '',
-                TaxNumber: '',
-            });
-        } catch (error) {
-            console.error('Error creating company:', error);
-            toast.error('Failed to create company');
-        } finally {
-            setLoading(false);
-        }
-    };
-    // Cập nhật route
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        try {
-            const data = new FormData();
-            data.append('routeId', formData.routeId);
-            data.append('fromLocation', formData.fromLocation);
-            data.append('toLocation', formData.toLocation);
-            data.append('duration', parseInt(formData.duration)); // Convert to integer
-            data.append('distance', 0); // You need to add this field to your form
-            data.append('description', formData.description || ''); // You need to add this field to your form
-            data.append('companyId', formData.companyId || 0); // You need to add this field to your form
-            data.append('isCreate', true); // Thêm trường bắt buộc
-            data.append('isDelete', false);
-            if (formData.routeLicense) {
-                data.append('routeLicense', formData.routeLicense);
-            }
-            setLoading(true);
-            const response = await axios.put(
-                `https://localhost:7197/api/Route/UpdateRoute/${editingId}`,
-                data,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
-            );
-
-            toast.success('Cập nhật tuyến đường thành công!');
-            // Lấy lại danh sách mới nhất từ server
-            const updatedResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
-            setRoutes(updatedResponse.data);
-            setEditingId(null);
-            setShowDetailModal(false);
-        } catch (error) {
-            console.error('Error updating route:', error);
-            // Xử lý lỗi...
-        } finally {
-            setLoading(false);
-        }
-    };
-    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -133,14 +57,12 @@ const ManageRoute = () => {
             [name]: value
         });
     };
-    // Handle file input changes
     const handleFileChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.files[0]
         });
     };
-    // Create new route
     const handleSubmit = async (e) => {
         e.preventDefault();
         /// Validate required fields
@@ -148,14 +70,7 @@ const ManageRoute = () => {
             toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
             return;
         }
-        console.log('Form data:', {
-            routeId: formData.routeId,
-            fromLocation: formData.fromLocation,
-            toLocation: formData.toLocation,
-            duration: formData.duration,
-            createAt: formData.createAt,
-            routeLicense: formData.routeLicense ? formData.routeLicense.name : 'No file'
-        }); // Thêm dòng này để debug
+        console.log('Form data before submit:', formData); 
 
         try {
             const data = new FormData();

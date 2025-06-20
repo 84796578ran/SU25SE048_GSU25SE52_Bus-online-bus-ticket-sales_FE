@@ -2,8 +2,6 @@ import { useState } from "react";
 import axios from "axios";
 import { data, Link, useNavigate } from "react-router-dom";
 import '../login/Login.css';
-import Header from "../../components/header/Header";
-import Footer from "../../components/footer/Footer";
 const LoginForm = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -48,10 +46,11 @@ const LoginForm = () => {
     };
     return (
         <div className="login-page">
-            <Header />
-            <div className="login-main-content">
-                <div className="login-wrapper">
-                    <div className="login-content">
+            <div className ="screen-split-container">
+                <div className="screen-left">
+                            <img src="/Logo.png" alt="Logo" className="login-logo" />
+                        </div>  
+                <div className="screen-right">                                       
                         <div className="login-container">
                             <h2>Đăng nhập</h2>
                             {loginStatus === true && (
@@ -84,11 +83,7 @@ const LoginForm = () => {
                         </div>
                     </div>
                 </div>
-                <div className="login-footer">
-                    <Footer />
-                </div>
             </div>
-        </div>
     )
 }
 export default LoginForm;
