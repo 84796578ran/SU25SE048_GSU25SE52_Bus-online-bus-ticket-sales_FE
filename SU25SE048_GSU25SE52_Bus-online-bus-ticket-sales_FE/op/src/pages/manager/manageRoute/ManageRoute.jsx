@@ -28,7 +28,7 @@ const ManageRoute = () => {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const response = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+                const response = await axios.get('${process.env.API_URL}');
                 setRoutes(response.data);
                 setLoading(false);
             } catch (error) {
@@ -39,8 +39,6 @@ const ManageRoute = () => {
         };
         fetchRoutes();
     }, []);
-
-    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({
@@ -48,21 +46,19 @@ const ManageRoute = () => {
             [name]: value
         });
     };
-    // Handle file input changes
     const handleFileChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.files[0]
         });
     };
-    // Create new route
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.routeLicense && !editingId) {
             toast.error('Journey license is required');
             return;
         }
-        console.log('Form data before submit:', formData); // Thêm dòng này để debug
+        console.log('Form data before submit:', formData); 
 
         try {
             const updatedResponse = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
