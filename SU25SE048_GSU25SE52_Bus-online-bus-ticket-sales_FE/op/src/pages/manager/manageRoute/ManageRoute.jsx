@@ -141,23 +141,6 @@ const ManageRoute = () => {
         setEditingId(route.id);
         setShowEditModal(true);
     };
-    const formatDate = (dateString) => {
-        try {
-            if (!dateString) return 'N/A'; // Xử lý trường hợp null/undefined
-
-            const date = new Date(dateString);
-
-            // Kiểm tra nếu date không hợp lệ
-            if (isNaN(date.getTime())) {
-                console.warn('Invalid date:', dateString);
-                return 'N/A';
-            }
-            return format(date, 'dd/MM/yyyy');
-        } catch (error) {
-            console.error('Error formatting date:', error, dateString);
-            return 'N/A';
-        }
-    }
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có muốn xóa không?')) {
             try {
@@ -301,6 +284,7 @@ const ManageRoute = () => {
                                 onPageChange={(page) => setCurrentPage(page)} />
                         </div>
                     )}
+
                     {/* Create Route Modal */}
                     {showCreateModal && (
                         <div className="modal-overlay">
@@ -541,6 +525,7 @@ const ManageRoute = () => {
                                                 </button>
                                             </>
                                         )}
+
                                     </div>
                                 </form>
                             </div>

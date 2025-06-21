@@ -4,8 +4,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
     return (
         <footer className="contact-footer" style={{
-            marginLeft: '40px', width: '100%',
-            marginTop: '150px'
+            width: '100%'
         }}>
             <div className="footer-container">
                 <div className="footer-brand">
