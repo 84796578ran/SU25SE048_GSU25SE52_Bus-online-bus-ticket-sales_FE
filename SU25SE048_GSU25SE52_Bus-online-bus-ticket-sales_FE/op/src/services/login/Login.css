@@ -1,57 +1,16 @@
-<<<<<<< HEAD
-.login-container {
-    max-width: 350px;
-    margin-top: 20px;
-    margin-left: -190px;
-    padding: 25px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    background-color: #f9f9f9;
-}
-
-.login-footer {
-    margin-top: 10px;
-    margin-left: -350px;
-}
-
-.login-wrapper {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-left: 220px;
-    /* Bằng với chiều rộng của header */
-    width: calc(100% - 220px);
-    min-height: calc(100vh - [chiều cao footer]);
-    /* Thay bằng chiều cao thực tế của footer */
-}
-
-.login-main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-=======
-html, body, #root {
+html,
+body,
+#root {
     margin: 0;
     padding: 0;
     height: 100%;
     width: 100%;
     overflow: hidden;
     font-family: Arial, sans-serif;
->>>>>>> 5fd36839279024f822158469afec0e36910d94cf
 }
 
 .login-page {
     display: flex;
-<<<<<<< HEAD
-    flex-direction: column;
-    height: 100vh;
-    margin-left: 220px;
-    /* Bằng chiều rộng của header */
-    width: calc(100% - 220px);
-=======
     justify-content: center;
     align-items: center;
     min-height: 100vh;
@@ -109,7 +68,6 @@ html, body, #root {
     align-items: center;
     width: 100%;
     padding: 0;
->>>>>>> 5fd36839279024f822158469afec0e36910d94cf
 }
 
 .login-container h2 {
@@ -164,8 +122,10 @@ html, body, #root {
 }
 
 .google-login {
-    background-color: #ffffff; /* Sửa thành màu trắng cho nút Google */
-    color: #4285F4; /* Màu chữ xanh của Google */
+    background-color: #ffffff;
+    /* Sửa thành màu trắng cho nút Google */
+    color: #4285F4;
+    /* Màu chữ xanh của Google */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -174,7 +134,8 @@ html, body, #root {
 }
 
 .google-login:hover {
-    background-color: #f0f0f0; /* Hơi xám khi hover */
+    background-color: #f0f0f0;
+    /* Hơi xám khi hover */
 }
 
 .google-logo {
