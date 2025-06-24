@@ -8,7 +8,7 @@
     padding: 20px;
 }
 
-.home-page-footer {
+.search-ticket-footer {
     margin-top: 680px;
     width: 100%;
     margin-left: 0px;
@@ -26,7 +26,7 @@
     /* Thêm dòng này để bật cuộn dọc khi nội dung vượt quá */
     height: 100vh;
     /* Đảm bảo container chiếm toàn bộ chiều cao viewport */
-    position: fixed;
+    position: relative;
     /* Giữ container cố định */
     right: 0;
     /* Căn sang phải */

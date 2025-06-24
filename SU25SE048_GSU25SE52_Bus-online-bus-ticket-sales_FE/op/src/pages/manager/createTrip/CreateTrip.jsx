@@ -196,7 +196,7 @@ const CreateTrip = () => {
                 await axios.put(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`, formData);
                 setSuccess('Trip updated successfully!');
             } else {
-                await axios.post('https://localhost:7197/api/Trip', formData);
+                await axios.post('https://localhost:7197/api/Trip/CreateTrip', formData);
                 if (!isEditing) {
                     setSuccess(true);
                     setFormData({

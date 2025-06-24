@@ -1,4 +1,4 @@
-import './Pagination.css';
+import '../pagination/Pagination.css';
 import PropTypes from 'prop-types';
 import { useMemo } from 'react';
 

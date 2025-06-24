@@ -7,13 +7,13 @@ const Header = () => {
 
     // Kiểm tra active route bao gồm cả các sub-routes
     const isActive = (path) => {
-        return location.pathname.startsWith(path);
+        return location.pathname === path;
     };
 
     return (
         <header className="header">
             <div className="logo-container">
-                <Link to="/home">
+                <Link to="/">
                     <img
                         src='Logo.png'
                         className='logo-img'
@@ -25,8 +25,8 @@ const Header = () => {
                 <ul className='nav-list'>
                     <li className='nav-item'>
                         <Link
-                            to="/home"
-                            className={`nav-link ${isActive('/home') ? 'active' : ''}`}
+                            to="/"
+                            className={`nav-link ${isActive('/') ? 'active' : ''}`}
                         >
                             <FaHome />
                             <span>Trang chủ</span>
@@ -67,7 +67,7 @@ const Header = () => {
                     <FaUserPlus />
                     <span style={{ marginLeft: '8px' }}>Đăng ký</span>
                 </Link>
-                <Link to="/" className='auth-link login'>
+                <Link to="/login" className='auth-link login'>
                     <FaSignInAlt />
                     <span style={{ marginLeft: '8px' }}>Đăng nhập</span>
                 </Link>

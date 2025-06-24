@@ -1,4 +1,6 @@
-html, body, #root {
+html,
+body,
+#root {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -120,8 +122,10 @@ html, body, #root {
 }
 
 .google-login {
-    background-color: #ffffff; /* Sửa thành màu trắng cho nút Google */
-    color: #4285F4; /* Màu chữ xanh của Google */
+    background-color: #ffffff;
+    /* Sửa thành màu trắng cho nút Google */
+    color: #4285F4;
+    /* Màu chữ xanh của Google */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -130,7 +134,8 @@ html, body, #root {
 }
 
 .google-login:hover {
-    background-color: #f0f0f0; /* Hơi xám khi hover */
+    background-color: #f0f0f0;
+    /* Hơi xám khi hover */
 }
 
 .google-logo {

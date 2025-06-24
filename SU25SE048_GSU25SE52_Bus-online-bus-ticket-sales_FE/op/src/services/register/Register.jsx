@@ -57,7 +57,7 @@ const RegisterForm = () => {
                             </button>
                             <button type="submit">Đăng ký</button>
                             <p className='login-link'>
-                                Đã có tài khoản? <Link to='/'>Đăng nhập</Link>
+                                Đã có tài khoản? <Link to='/login'>Đăng nhập</Link>
                             </p>
                         </form>
                     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import './BusSeatBooking.css';
+import '../layoutBanVe/BusSeatBooking.css';
 import Header from "../../../components/header/Header";
 import Footer from "../../../components/footer/Footer";
 const BusBooking = () => {

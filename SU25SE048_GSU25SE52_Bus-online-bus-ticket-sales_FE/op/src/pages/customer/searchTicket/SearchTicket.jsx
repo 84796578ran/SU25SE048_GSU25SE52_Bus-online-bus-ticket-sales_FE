@@ -1,15 +1,23 @@
-import { useState } from "react";
-import PopularRoutes from "./PopularRoutes";
-
-import '../home/HomePage.css';
-import SearchForm from "./SearchForm";
-import PromotionBanner from "../home/PromotionBanner";
-import Header from "../../../components/header/Header";
-import Footer from "../../../components/footer/Footer";
-const HomePage = () => {
+import { useState } from 'react';
+import '../searchTicket/SearchTicket.css';
+import Header from '../../../components/header/Header';
+import PromotionBanner from './PromotionBanner';
+import SearchForm from './SearchForm';
+import PopularRoutes from './PopularRoutes';
+import Footer from '../../../components/footer/Footer';
+import { useNavigate } from 'react-router-dom';
+const SearchTicket = () => {
     const [searchResults, setSearchResults] = useState(null);
+    const navigate = useNavigate();
+    const [selectedTrip, setSelectedTrip] = useState(null);
+    const handleBookTicket = (trip) => {
+        setSelectedTrip(trip);
+        navigate('/bookTicket', {
+            state: { trip }
+        })
+    }
     return (
-        <div className="home-page-container">
+        <div className='home-page-container'>
             <Header />
             <div className="home-page">
                 <main>
@@ -49,6 +57,9 @@ const HomePage = () => {
                                                 <p>
                                                     Giá vé: {trip.price.toLocaleString()} VND
                                                 </p>
+                                                <button onClick={() => handleBookTicket(trip)} className='book-button'>
+                                                    Đặt vé
+                                                </button>
                                             </div>
                                         ))
                                     ) : (
@@ -65,10 +76,10 @@ const HomePage = () => {
                     )}
                 </main>
             </div>
-            <div className="home-page-footer">
+            <div className='search-ticket-footer'>
                 <Footer />
             </div>
         </div>
-    );
-};
-export default HomePage;
+    )
+}
+export default SearchTicket;
