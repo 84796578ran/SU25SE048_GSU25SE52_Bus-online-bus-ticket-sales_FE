@@ -7,7 +7,7 @@ const Header = () => {
 
     // Kiểm tra active route bao gồm cả các sub-routes
     const isActive = (path) => {
-        return location.pathname.startsWith(path);
+        return location.pathname === path;
     };
 
     return (

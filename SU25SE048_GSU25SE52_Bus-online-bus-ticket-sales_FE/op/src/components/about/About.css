@@ -3,13 +3,16 @@
     display: flex;
     min-height: 100vh;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .about-section {
     flex: 1;
     padding: 40px 0;
     background-color: #f9f9f9;
+    overflow-y: auto;
+    height: calc(110vh - 170px);
+    /* Điều chỉnh nếu cần */
 }
 
 /* Phần nội dung chính */
@@ -124,8 +127,8 @@
 }
 
 .about-footer {
-    margin-top: 40px;
-    margin-left: -50px;
+    margin-top: 10px;
+    margin-left: -190px;
 }
 
 /* Responsive design */

@@ -27,13 +27,6 @@ const ManageRoute = () => {
         companyId: '',
         isDelete: false,
     });
-    const [companyFormData, setCompanyFormData] = useState({
-        CompanyID: '',
-        name: '',
-        address: '',
-        TaxNumber: ''
-    });
-    const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -76,20 +69,16 @@ const ManageRoute = () => {
 
         try {
             const data = new FormData();
-            data.append('routeId', formData.routeId);
-            data.append('fromLocation', formData.fromLocation);
-            data.append('toLocation', formData.toLocation);
-            data.append('duration', parseInt(formData.duration));
-            data.append('distance', 0); // Giá trị mặc định
-            data.append('createAt', formData.createAt);
-            data.append('description', formData.description || '');
-            data.append('isCreate', true);
-            data.append('isDelete', false);
-            data.append('companyId', formData.companyId);
+            data.append('RouteId', formData.routeId);
+            data.append('FromLocation', formData.fromLocation);
+            data.append('ToLocation', formData.toLocation);
+            data.append('Duration', parseInt(formData.duration));
+            data.append('Distance', 0); // Giá trị mặc định
+            data.append('Description', formData.description || '');
+            data.append('CompanyId', parseInt(formData.companyId));
             if (formData.routeLicense) {
-                data.append('routeLicense', formData.routeLicense);
+                data.append('License', formData.routeLicense);
             }
-            data.append('companyName', formData.companyName);
             console.log('Sending form data:', {
                 routeId: formData.routeId,
                 fromLocation: formData.fromLocation,

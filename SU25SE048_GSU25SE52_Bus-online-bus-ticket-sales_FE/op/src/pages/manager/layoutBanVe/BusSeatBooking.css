@@ -57,8 +57,7 @@
 /* Thêm vào file CSS của bạn */
 .bus-footer {
     margin-top: 156px;
-    margin-left: -50px;
-    width: calc(100% - 200px);
+    margin-left: 0px;
 }
 
 .main-content {

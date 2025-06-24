@@ -1,33 +1,154 @@
-.ticket-form {
-    width: 300px;
-    margin: 0 auto;
+.booking-page {
     padding: 20px;
-    margin-top: 90px;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.booking-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 20px;
+}
+
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.seat-selection {
+    flex: 1;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.seat-legend {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.seat-box {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.seat-box.available {
+    background-color: #d5f5e3;
+    border: 1px solid #2ecc71;
+    color: #27ae60;
+}
+
+.seat-box.booked {
+    background-color: #fadbd8;
+    border: 1px solid #e74c3c;
+    color: #c0392b;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.seat-box.selected {
+    background-color: #3498db;
+    border: 1px solid #2980b9;
+    color: white;
+}
+
+.selected-seats-info {
+    padding: 10px;
+    background: #eaf2f8;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.trip-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.trip-detail {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.total-price {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.ticket-form {
+    padding: 20px;
     border-radius: 8px;
     background-color: #f1f1f1;
+    margin-top: -10px;
 }
 
 .ticket-form h2 {
     text-align: center;
     color: #2c3e50;
+    margin-bottom: 20px;
 }
 
 .ticket-form input {
     width: 100%;
     margin: 8px 0;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
+.booked-badge {
+    position: absolute;
+    font-size: 10px;
+    color: white;
+    background: red;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transform: translateY(-10px);
+}
+
 .ticket-form button {
-    width: 100%;
-    padding: 10px;
+    width: fit-content;
+    padding: 12px;
     background-color: #27ae60;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 1em;
+    margin-top: 10px;
 }
 
 .ticket-form button:hover {
