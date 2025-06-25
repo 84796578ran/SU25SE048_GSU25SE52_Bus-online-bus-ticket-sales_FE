@@ -13,7 +13,17 @@ const SearchTicket = () => {
     const handleBookTicket = (trip) => {
         setSelectedTrip(trip);
         navigate('/bookTicket', {
-            state: { trip }
+            state: {
+                trip: {
+                    id: trip.tripId,
+                    FromLocation: trip.fromLocation,
+                    EndLocation: trip.endLocation,
+                    timeStart: trip.timeStart,
+                    timeEnd: trip.timeEnd,
+                    price: trip.price,
+                    busName: trip.busName
+                }
+            }
         })
     }
     return (
@@ -41,21 +51,21 @@ const SearchTicket = () => {
                                 <div className="trips-list">
                                     {searchResults.data?.searchTrips?.length > 0 ? (
                                         searchResults.data.searchTrips.map(trip => (
-                                            <div key={trip.id} className="trip-card">
+                                            <div key={trip.tripId} className="trip-card">
                                                 <h3>
-                                                    {trip.FromLocation} → {trip.EndLocation}
+                                                    {trip.fromLocation} → {trip.endLocation}
                                                 </h3>
                                                 <p>
-                                                    Thời gian bắt đầu: {trip.timeStart}
+                                                    Thời gian bắt đầu: {new Date(trip.timeStart).toLocaleString()}
                                                 </p>
                                                 <p>
-                                                    Thời gian kết thúc: {trip.timeEnd}
-                                                </p>
-                                                <p>
-                                                    Khoảng cách: {trip.distance} km
+                                                    Thời gian kết thúc: {new Date(trip.timeEnd).toLocaleString()}
                                                 </p>
                                                 <p>
                                                     Giá vé: {trip.price.toLocaleString()} VND
+                                                </p>
+                                                <p>
+                                                    Nhà xe: {trip.busName}
                                                 </p>
                                                 <button onClick={() => handleBookTicket(trip)} className='book-button'>
                                                     Đặt vé

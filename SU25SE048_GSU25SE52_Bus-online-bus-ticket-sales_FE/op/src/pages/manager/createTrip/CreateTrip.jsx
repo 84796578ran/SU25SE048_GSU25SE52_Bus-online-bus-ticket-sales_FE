@@ -15,17 +15,12 @@ const CreateTrip = () => {
     const [dateError, setDateError] = useState('');
     const [endDate, setEndDate] = useState(null);
     const [formData, setFormData] = useState({
-        tripId: '',
-        price: '',
-        status: 0,
-        timeId: '',
         timeStart: '',
         timeEnd: '',
-        description: '',
-        typeBusID: '',
-        fromLocation: '',
-        endLocation: '',
-        routeId: ''
+        price: 0,
+        routeId: '',
+        busId: '',
+        description: ''
     });
     // Xử lý khi thay đổi ngày khởi hành
     const handleStartDateChange = (date) => {
@@ -175,8 +170,12 @@ const CreateTrip = () => {
         if (!validateDates(startDate, endDate)) {
             return;
         }
-        if (!formData.routeID) {
+        if (!formData.routeId) {
             toast.error('Vui lòng chọn tuyến đường');
+            return;
+        }
+        if (!formData.busId) {
+            toast.error('Vui lòng chọn xe');
             return;
         }
         setIsLoading(true);
@@ -185,36 +184,29 @@ const CreateTrip = () => {
 
         try {
             const tripData = {
-                ...formData,
-                // Đảm bảo các trường dữ liệu cần thiết
-                status: formData.status || 'active',
                 timeStart: startDate.toISOString(),
-                timeEnd: endDate.toISOString()
+                timeEnd: endDate.toISOString(),
+                price: Number(formData.price),
+                routeId: Number(formData.routeId),
+                busId: Number(formData.busId),
+                description: formData.description
             }
-            if (isEditing) {
-                // Cập nhật chuyến đi hiện có
-                await axios.put(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`, formData);
-                setSuccess('Trip updated successfully!');
-            } else {
-                await axios.post('https://localhost:7197/api/Trip/CreateTrip', formData);
-                if (!isEditing) {
-                    setSuccess(true);
-                    setFormData({
-                        tripId: '',
-                        price: '',
-                        status: '',
-                        timeId: '',
-                        timeStart: '',
-                        timeEnd: '',
-                        description: '',
-                        TypeBusID: '',
-                        fromLocation: '',
-                        endLocation: '',
-                        routeID: ''
-                    });
-                }
-            }
-        } catch (err) {
+            await axios.post('https://localhost:7197/api/Trip/CreateTrip', tripData);
+            toast.success('Tạo chuyến đi thành công!');
+            setSuccess(true);
+            // Reset form sau khi tạo thành công
+            setFormData({
+                timeStart: '',
+                timeEnd: '',
+                price: 0,
+                routeId: '',
+                busId: '',
+                description: ''
+            });
+            setStartDate(null);
+            setEndDate(null);
+        }
+        catch (err) {
             setError(err.response?.data?.message || 'Failed to create trip. Please check your inputs.');
         } finally {
             setIsLoading(false);
@@ -276,63 +268,52 @@ const CreateTrip = () => {
                 <form onSubmit={handleSubmit} className="trip-form">
                     <div className="form-grid">
                         <div className="form-group">
-                            <label htmlFor="routeID">Tuyến đường <span className="required">*</span></label>
+                            <label htmlFor="routeId">Tuyến đường <span className="required">*</span></label>
                             <select
-                                id="routeID"
-                                name="routeID"
-                                value={formData.routeID}
+                                id="routeId"
+                                name="routeId"
+                                value={formData.routeId}
                                 onChange={handleChange}
                                 required
                             >
                                 <option value="">-- Chọn tuyến đường --</option>
                                 {filteredRoutes.map(route => (
-                                    <option key={route.routeID} value={route.routeID}>
+                                    <option key={route.routeId} value={route.routeId}>
                                         {route.name} ({route.fromLocation} - {route.toLocation})
                                     </option>
                                 ))}
                             </select>
                         </div>
+                        {/* Trường busId */}
                         <div className="form-group">
-                            <label htmlFor="fromLocation">Vị trí bắt đầu <span className="required">*</span></label>
-                            <input
-                                type="text"
-                                id="fromLocation"
-                                name="fromLocation"
-                                value={formData.fromLocation}
+                            <label htmlFor="busId">Chọn xe <span className="required">*</span></label>
+                            <select
+                                id="busId"
+                                name="busId"
+                                value={formData.busId}
                                 onChange={handleChange}
                                 required
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="endLocation">Vị trí kết thúc <span className="required">*</span></label>
-                            <input
-                                type="text"
-                                id="endLocation"
-                                name="endLocation"
-                                value={formData.endLocation}
-                                onChange={handleChange}
-                                required
-                            />
+                            >
+                                <option value="">-- Chọn xe --</option>
+                                {busTypes.map(bus => (
+                                    <option key={bus.id} value={bus.id}>
+                                        {bus.name} (Số chỗ: {bus.numberOfSeat})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="form-group">
-                            <label htmlFor="timeStart">Thời gian khởi hành <span className="required">*</span></label>
+                            <label htmlFor="timeStart">Thời gian bắt đầu <span className="required">*</span></label>
                             <DatePicker
                                 id="timeStart"
                                 selected={startDate}
-                                onChange={handleStartDateChange}
+                                onChange={handleEndDateChange}
                                 dateFormat="dd/MM/yyyy"
                                 locale="vi"
                                 className="date-picker-input"
-                                required minDate={new Date()}
+                                required minDate={startDate}
                             />
-                            {dateError && (
-                                <div className="error-message" style={{ color: 'var(--error-color)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                                    {dateError}
-                                </div>
-                            )}
                         </div>
-
                         <div className="form-group">
                             <label htmlFor="timeEnd">Thời gian kết thúc <span className="required">*</span></label>
                             <DatePicker
@@ -372,21 +353,6 @@ const CreateTrip = () => {
                                 </small>
                             )}
                         </div>
-                        <div className="form-group">
-                            <label htmlFor="typeBusID">Chọn xe<span className="required">*</span></label>
-                            <div className="select-wrapper">
-                                <select id="typeBusID" name="typeBusID" value={formData.typeBusID}
-                                    onChange={handleChange} required>
-                                    <option value="">-- Chọn loại xe --</option>
-                                    {busTypes.map(bus => (
-                                        <option key={bus.id} value={bus.id}>
-                                            {bus.name} (Số chỗ: {bus.numberOfSeat})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
                         <div className="form-group full-width">
                             <label htmlFor="description">Mô tả</label>
                             <textarea

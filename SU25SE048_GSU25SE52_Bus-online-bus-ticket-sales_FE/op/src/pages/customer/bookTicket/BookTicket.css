@@ -11,6 +11,37 @@
     gap: 20px;
 }
 
+.booking-footer {
+    margin: 10px auto;
+    margin-left: 330px;
+    padding: 20px;
+    margin-top: 10px;
+    width: fit-content;
+}
+
+.ticket-form label {
+    text-align: left;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95em;
+}
+
+/* Thêm vào file CSS */
+.selected-first {
+    background-color: #3498db;
+    border: 1px solid #2980b9;
+    color: white;
+}
+
+.selected-second {
+    background-color: #9b59b6;
+    border: 1px solid #8e44ad;
+    color: white;
+}
+
 .left-panel {
     flex: 1;
     display: flex;
@@ -18,11 +49,24 @@
     gap: 20px;
 }
 
+.trip-selection {
+    margin-bottom: 30px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
 .seat-selection {
     flex: 1;
     padding: 20px;
     background: #f8f9fa;
     border-radius: 8px;
+}
+
+.seat-selection h3 {
+    margin: 15px 0 10px;
+    color: #2c3e50;
+    font-size: 1.1em;
 }
 
 .right-panel {

@@ -5,7 +5,11 @@ import { useLocation } from "react-router-dom";
 const TicketBooking = () => {
     const location = useLocation();
     const { trip, isTransfer = false, secondTrip = null } = location.state || {};
-    const [selectedSeats, setSelectedSeats] = useState([]);
+    const [selectedSeats, setSelectedSeats] = useState({
+        firstTrip: null,
+        secondTrip: null
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [bookedSeats, setBookedSeats] = useState([]);
     const [confirmedSeats, setConfirmedSeats] = useState([]);
@@ -33,30 +37,27 @@ const TicketBooking = () => {
             fetchBookedSeats();
         }
     }, [trip?.id]);
-    const handleSeatClick = (seatNumber) => {
-        if (bookedSeats.includes(seatNumber) || confirmedSeats.includes(seatNumber)) {
+    const handleSeatClick = (seatNumber, tripType = 'firstTrip') => {
+        if (reservedSeats.includes(seatNumber)) {
             return;
         }
-
-        if (isTransfer) {
-            // For transfer trips, allow selecting 2 seats (one for each trip)
-            if (selectedSeats.length < 2) {
-                if (!selectedSeats.includes(seatNumber)) {
-                    setSelectedSeats([...selectedSeats, seatNumber]);
-                } else {
-                    setSelectedSeats(selectedSeats.filter(seat => seat !== seatNumber));
+        setSelectedSeats(prev => {
+            if (prev[tripType] === seatNumber) {
+                return {
+                    ...prev,
+                    [tripType]: null
                 }
-            } else if (selectedSeats.includes(seatNumber)) {
-                setSelectedSeats(selectedSeats.filter(seat => seat !== seatNumber));
             }
-        } else {
-            // For single trip, only allow selecting 1 seat
-            if (selectedSeats.includes(seatNumber)) {
-                setSelectedSeats([]);
-            } else {
-                setSelectedSeats([seatNumber]);
+            // Nếu ghế đã được chọn cho chuyến khác thì không làm gì
+            const otherTripType = tripType === 'firstTrip' ? 'secondTrip' : 'firstTrip';
+            // Nếu ghế đã được chọn cho chuyến khác thì không làm gì
+            if (prev[otherTripType] === seatNumber) {
+                return prev;
             }
-        }
+            // Chọn ghế mới
+            return { ...prev, [tripType]: seatNumber };
+        });
+
     };
 
     const handleChange = (e) => {
@@ -65,22 +66,33 @@ const TicketBooking = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Kiểm tra xem có ghế nào trong selectedSeats đã bị đặt bởi người khác không
-        const isAnySeatBooked = selectedSeats.some(seat => bookedSeats.includes(seat)
+        setIsSubmitting(true);
+        // Kiểm tra thông tin form
+        if (!form.fullName || !form.phone) {
+            alert("Vui lòng điền đầy đủ thông tin khách hàng");
+            return;
+        }
+        // Kiểm tra ghế đã chọn
+        if (!selectedSeats.firstTrip || (isTransfer && !selectedSeats.secondTrip)) {
+            alert(`Vui lòng chọn ${isTransfer ? "ghế cho cả 2 chuyến" : "ghế"}`);
+            return;
+        }
+        // Kiểm tra ghế đã bị đặt
+        const seatsToCheck = isTransfer
+            ? [selectedSeats.firstTrip, selectedSeats.secondTrip]
+            : [selectedSeats.firstTrip];
+        const isAnySeatBooked = seatsToCheck.some(seat => reservedSeats.includes(seat)
             || confirmedSeats.includes(seat));
         if (isAnySeatBooked) {
             alert("Một số ghế bạn chọn đã được đặt. Vui lòng chọn ghế khác.");
             return;
         }
-        if (selectedSeats.length === 0 || (isTransfer && selectedSeats.length < 2)) {
-            alert(`Vui lòng chọn ${isTransfer ? "2 ghế" : "1 ghế"}`);
-            return;
-        }
-
         try {
             const bookingData = {
                 ...form,
-                seatNumber: isTransfer ? selectedSeats.join(", ") : selectedSeats[0],
+                seatNumber: isTransfer
+                    ? `Chuyến 1: ${selectedSeats.firstTrip}, Chuyến 2: ${selectedSeats.secondTrip}`
+                    : selectedSeats.firstTrip,
                 tripId: trip?.id,
                 secondTripId: isTransfer ? secondTrip?.id : null,
                 price: isTransfer ? (trip.price + secondTrip.price) : trip.price
@@ -93,13 +105,19 @@ const TicketBooking = () => {
             });
             if (response.ok) {
                 // Thêm ghế đã đặt vào danh sách confirmedSeats
-                setConfirmedSeats([...reservedSeats, ...selectedSeats]);
+                setConfirmedSeats([...confirmedSeats, ...seatsToCheck]);
                 alert("Đặt vé thành công!");
                 // Reset selected seats sau khi đặt thành công
-                setSelectedSeats([]);
+                setSelectedSeats({
+                    firstTrip: null,
+                    secondTrip: null
+                });
             }
         } catch (error) {
             alert("Đặt vé thất bại. Vui lòng thử lại.");
+        }
+        finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -129,36 +147,80 @@ const TicketBooking = () => {
                                 <div className="seat-box selected"></div>
                                 <span>Đang chọn</span>
                             </div>
+                            {isTransfer && (
+                                <div className="legend-item">
+                                    <div className="seat-box selected-second"></div>
+                                    <span>Chuyến trung chuyển</span>
+                                </div>
+                            )}
                         </div>
+                        <div className="trip-selection">
+                            <div className="seat-grid">
+                                {seatNumbers.map((seat) => {
+                                    const isBooked = reservedSeats.includes(seat);
+                                    const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                    const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                    let seatClass = "seat-box";
+                                    if (isBooked) {
+                                        seatClass += " booked";
+                                    } else if (isSelectedFirst) {
+                                        seatClass += " selected-first";
+                                    } else if (isSelectedSecond) {
+                                        seatClass += " selected-second";
+                                    }
+                                    else {
+                                        seatClass += " available";
+                                    }
 
-                        <div className="seat-grid">
-                            {seatNumbers.map((seat, index) => {
-                                const isBooked = reservedSeats.includes(seat);
-                                const isSelected = selectedSeats.includes(seat);
-                                let seatClass = "seat-box";
-                                if (isBooked) {
-                                    seatClass += " booked";
-                                } else if (isSelected) {
-                                    seatClass += " selected";
-                                } else {
-                                    seatClass += " available";
-                                }
-
-                                return (
-                                    <div
-                                        key={seat}
-                                        className={seatClass}
-                                        onClick={() => !isBooked && handleSeatClick(seat)}
-                                        title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
-                                    >
-                                        {seat}
-                                    </div>
-                                );
-                            })}
+                                    return (
+                                        <div
+                                            key={seat}
+                                            className={seatClass}
+                                            onClick={() => !isBooked && handleSeatClick(seat)}
+                                            title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                        >
+                                            {seat}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
+                        {/* Chọn ghế cho chuyến trung chuyển (nếu có)*/}
+                        {isTransfer && secondTrip && (
+                            <>
+                                <div className="seat-grid">
+                                    {seatNumbers.map((seat) => {
+                                        const isBooked = reservedSeats.includes(seat);
+                                        const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                        const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                        let seatClass = "seat-box";
+                                        if (isBooked) {
+                                            seatClass += " booked";
+                                        } else if (isSelectedSecond) {
+                                            seatClass += " selected-second";
+                                        } else if (isSelectedFirst) {
+                                            seatClass += " selected-first";
+                                        } else {
+                                            seatClass += " available";
+                                        }
+                                        return (
+                                            <div
+                                                key={`second-${seat}`}
+                                                className={seatClass}
+                                                onClick={() => !isBooked && handleSeatClick(seat, 'secondTrip')}
+                                                title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                            >
+                                                {seat}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
                     </div>
                     <form className="ticket-form" onSubmit={handleSubmit}>
                         <h2>Thông tin khách hàng</h2>
+                        <label>Họ và tên</label>
                         <input
                             name="fullName"
                             placeholder="Họ tên"
@@ -166,6 +228,7 @@ const TicketBooking = () => {
                             onChange={handleChange}
                             required
                         />
+                        <label>Số điện thoại</label>
                         <input
                             name="phone"
                             placeholder="Số điện thoại"
@@ -173,6 +236,7 @@ const TicketBooking = () => {
                             onChange={handleChange}
                             required
                         />
+                        <label>Email</label>
                         <input
                             name="email"
                             placeholder="Email"
@@ -180,11 +244,24 @@ const TicketBooking = () => {
                             value={form.email}
                             onChange={handleChange}
                         />
-
-                        <button type="submit">Xác nhận đặt vé</button>
+                        <label>Điểm đón</label>
+                        <input
+                            name="pickUp"
+                            placeholder="Điểm đón"
+                            type="text"
+                            value={form.pickUp}
+                            onChange={handleChange}
+                        />
+                        <label>Điểm trả</label>
+                        <input
+                            name="dropOff"
+                            placeholder="Điểm trả"
+                            type="text"
+                            value={form.dropOff}
+                            onChange={handleChange}
+                        />
                     </form>
                 </div>
-
                 <div className="right-panel">
                     {trip && (
                         <div className="trip-info">
@@ -213,12 +290,12 @@ const TicketBooking = () => {
                             </div>
                         </div>
                     )}
-
-
                 </div>
             </div>
+            <footer className="booking-footer">
+                <button type="submit" onClick={handleSubmit}>Đặt vé</button>
+            </footer>
         </div>
     );
 };
-
 export default TicketBooking;

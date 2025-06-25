@@ -30,20 +30,28 @@ const SearchForm = ({ onSearch }) => {
         e.preventDefault();
         onSearch({ loading: true });
         try {
-            const response = await axios.get('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip', {
-                params: {
-                    FromLocation: formData.departure,
-                    EndLocation: formData.destination,
-                },
-                headers: {
-                    'Content-Type': 'application/json'
+            // Format date to ISO string
+            const formattedDate = startDate.toISOString();
+
+            // Create request data object
+            const requestData = {
+                fromLocation: formData.departure,
+                toLocation: formData.destination,
+                date: formattedDate
+            };
+            const response = await axios.post('https://localhost:7197/api/Trip/search',
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 }
-            })
+            );
             if (response.data) {
                 onSearch({
                     loading: false,
                     data: {
-                        searchTrips: response.data
+                        searchTrips: response.data.directTrips
                     }
                 })
             } else {

@@ -18,12 +18,12 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<LoginForm />} />
+          <Route path='/login' element={<LoginForm />} />
           <Route path='/register' element={<RegisterForm />} />
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
           <Route path='/services' element={<BusBooking />} />
-          <Route path='/searchTicket' element={<SearchTicket />} />
+          <Route path='/' element={<SearchTicket />} />
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/manage-route' element={<ManageRoute />} />
           <Route path='/manager' element={<CreateTrip />} />
