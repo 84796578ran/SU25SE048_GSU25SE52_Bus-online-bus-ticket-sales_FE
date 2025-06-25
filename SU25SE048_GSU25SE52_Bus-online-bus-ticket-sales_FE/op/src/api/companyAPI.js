@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://localhost:7197/api/Company';
+const API_URL = `${process.env.REACT_APP_API_URL}/Company`;
 
 export const getCompanies = async () => {
     try {
