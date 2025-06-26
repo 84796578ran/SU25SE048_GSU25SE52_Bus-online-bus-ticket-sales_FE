@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_URL = `${process.env.REACT_APP_API_URL}/Company`;
+import { environment } from '../environment/environment';
 
 export const getCompanies = async () => {
     try {
-        const response = await axios.get(`${API_URL}/GetAllCompany`);
+        const response = await axios.get(`${environment.apiUrl}/Company/GetAllCompany`);
         return response.data;
     } catch (error) {
         console.error('Error fetching companies:', error);
@@ -14,7 +13,7 @@ export const getCompanies = async () => {
 
 export const createCompany = async (companyData) => {
     try {
-        const response = await axios.post(`${API_URL}/CreateCompany`, companyData, {
+        const response = await axios.post(`${environment.apiUrl}/Company/CreateCompany`, companyData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             }
@@ -30,7 +29,7 @@ export const createCompany = async (companyData) => {
 
 export const updateCompany = async (id, companyData) => {
     try {
-        const response = await axios.put(`${API_URL}/UpdateCompany/${id}`, companyData, {
+        const response = await axios.put(`${environment.apiUrl}/Company/UpdateCompany?id=${id}`, companyData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             }
@@ -44,7 +43,7 @@ export const updateCompany = async (id, companyData) => {
 
 export const deleteCompany = async (id) => {
     try {
-        const response = await axios.delete(`${API_URL}/DeleteCompany/${id}`);
+        const response = await axios.delete(`${environment.apiUrl}/Company/DeleteCompany?id=${id}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting company:', error);
