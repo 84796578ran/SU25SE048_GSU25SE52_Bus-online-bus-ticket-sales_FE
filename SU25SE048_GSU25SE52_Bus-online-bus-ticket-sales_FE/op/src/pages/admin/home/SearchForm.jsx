@@ -5,6 +5,7 @@ import vi from 'date-fns/locale/vi';
 import DatePicker from 'react-datepicker';
 import { registerLocale } from "react-datepicker";
 import axios from "axios";
+import { environment } from "../../../environment/environment";
 // Đăng ký ngôn ngữ tiếng Việt
 registerLocale('vi', vi);
 const SearchForm = ({ onSearch }) => {
@@ -33,7 +34,7 @@ const SearchForm = ({ onSearch }) => {
         e.preventDefault();
         onSearch({ loading: true });
         try {
-            const response = await axios.get('https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip', {
+            const response = await axios.get(`${environment.apiUrl}/SearchTickets/Trip`, {
                 params: {
                     FromLocation: formData.departure,
                     EndLocation: formData.destination,

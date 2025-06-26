@@ -3,6 +3,7 @@ import '../searchTicket/SearchForm.css';
 import { vi } from 'date-fns/locale/vi';
 import { useState } from 'react';
 import axios from 'axios';
+import { environment } from '../../../environment/environment';
 registerLocale('vi', vi);
 const SearchForm = ({ onSearch }) => {
     const [formData, setFormData] = useState({
@@ -39,7 +40,7 @@ const SearchForm = ({ onSearch }) => {
                 toLocation: formData.destination,
                 date: formattedDate
             };
-            const response = await axios.post('https://localhost:7197/api/Trip/search',
+            const response = await axios.post(`${environment.apiUrl}/Trip/search`,
                 requestData,
                 {
                     headers: {

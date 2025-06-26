@@ -11,7 +11,6 @@ const TicketBooking = () => {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [bookedSeats, setBookedSeats] = useState([]);
     const [confirmedSeats, setConfirmedSeats] = useState([]);
     const [reservedSeats, setReservedSeats] = useState([]);
     const [form, setForm] = useState({
@@ -120,11 +119,14 @@ const TicketBooking = () => {
             setIsSubmitting(false);
         }
     };
-
-    // Generate seat numbers from 01 to 28
-    const seatNumbers = Array.from({ length: 28 }, (_, i) =>
-        (i + 1).toString().padStart(2, '0')
-    );
+    const lowerDeckSeats = [
+        ['01', '02', '03', '04'],
+        ['05', '06', '07', '08'],
+        ['09', '10', '11', '12'],
+        ['13', '14', '15', '16']
+    ];
+    const upperDeckSeats = Array.from({ length: 12 }, (_, i) =>
+        (i + 17).toString().padStart(2, '0'));
     if (isLoading) {
         return <div>Loading...</div>
     }
@@ -132,92 +134,34 @@ const TicketBooking = () => {
         <div className="booking-page">
             <div className="booking-container">
                 <div className="left-panel">
-                    <div className="seat-selection">
-                        <h2>Chọn ghế</h2>
-                        <div className="seat-legend">
-                            <div className="legend-item">
-                                <div className="seat-box booked"></div>
-                                <span>Đã bán</span>
+                    {trip && (
+                        <div className="trip-info">
+                            <h3>Thông tin chuyến xe</h3>
+                            <div className="trip-detail">
+                                <h4>Chuyến chính</h4>
+                                <p><strong>Lộ trình:</strong> {trip.FromLocation} → {trip.EndLocation}</p>
+                                <p><strong>Thời gian:</strong> {trip.timeStart} - {trip.timeEnd}</p>
+                                <p><strong>Giá vé:</strong> {trip.price.toLocaleString()} VND</p>
                             </div>
-                            <div className="legend-item">
-                                <div className="seat-box available"></div>
-                                <span>Còn trống</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="seat-box selected"></div>
-                                <span>Đang chọn</span>
-                            </div>
-                            {isTransfer && (
-                                <div className="legend-item">
-                                    <div className="seat-box selected-second"></div>
-                                    <span>Chuyến trung chuyển</span>
+
+                            {isTransfer && secondTrip && (
+                                <div className="trip-detail">
+                                    <h4>Chuyến trung chuyển</h4>
+                                    <p><strong>Lộ trình:</strong> {secondTrip.FromLocation} → {secondTrip.EndLocation}</p>
+                                    <p><strong>Thời gian:</strong> {secondTrip.timeStart} - {secondTrip.timeEnd}</p>
+                                    <p><strong>Giá vé:</strong> {secondTrip.price.toLocaleString()} VND</p>
                                 </div>
                             )}
-                        </div>
-                        <div className="trip-selection">
-                            <div className="seat-grid">
-                                {seatNumbers.map((seat) => {
-                                    const isBooked = reservedSeats.includes(seat);
-                                    const isSelectedFirst = selectedSeats.firstTrip === seat;
-                                    const isSelectedSecond = selectedSeats.secondTrip === seat;
-                                    let seatClass = "seat-box";
-                                    if (isBooked) {
-                                        seatClass += " booked";
-                                    } else if (isSelectedFirst) {
-                                        seatClass += " selected-first";
-                                    } else if (isSelectedSecond) {
-                                        seatClass += " selected-second";
-                                    }
-                                    else {
-                                        seatClass += " available";
-                                    }
 
-                                    return (
-                                        <div
-                                            key={seat}
-                                            className={seatClass}
-                                            onClick={() => !isBooked && handleSeatClick(seat)}
-                                            title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
-                                        >
-                                            {seat}
-                                        </div>
-                                    );
-                                })}
+                            <div className="total-price">
+                                <h4>Tổng cộng:</h4>
+                                <p>{isTransfer && secondTrip
+                                    ? (trip.price + secondTrip.price).toLocaleString()
+                                    : trip.price.toLocaleString()} VND</p>
                             </div>
                         </div>
-                        {/* Chọn ghế cho chuyến trung chuyển (nếu có)*/}
-                        {isTransfer && secondTrip && (
-                            <>
-                                <div className="seat-grid">
-                                    {seatNumbers.map((seat) => {
-                                        const isBooked = reservedSeats.includes(seat);
-                                        const isSelectedSecond = selectedSeats.secondTrip === seat;
-                                        const isSelectedFirst = selectedSeats.firstTrip === seat;
-                                        let seatClass = "seat-box";
-                                        if (isBooked) {
-                                            seatClass += " booked";
-                                        } else if (isSelectedSecond) {
-                                            seatClass += " selected-second";
-                                        } else if (isSelectedFirst) {
-                                            seatClass += " selected-first";
-                                        } else {
-                                            seatClass += " available";
-                                        }
-                                        return (
-                                            <div
-                                                key={`second-${seat}`}
-                                                className={seatClass}
-                                                onClick={() => !isBooked && handleSeatClick(seat, 'secondTrip')}
-                                                title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
-                                            >
-                                                {seat}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    )}
+
                     <form className="ticket-form" onSubmit={handleSubmit}>
                         <h2>Thông tin khách hàng</h2>
                         <label>Họ và tên</label>
@@ -263,33 +207,161 @@ const TicketBooking = () => {
                     </form>
                 </div>
                 <div className="right-panel">
-                    {trip && (
-                        <div className="trip-info">
-                            <h3>Thông tin chuyến xe</h3>
-                            <div className="trip-detail">
-                                <h4>Chuyến chính</h4>
-                                <p><strong>Lộ trình:</strong> {trip.FromLocation} → {trip.EndLocation}</p>
-                                <p><strong>Thời gian:</strong> {trip.timeStart} - {trip.timeEnd}</p>
-                                <p><strong>Giá vé:</strong> {trip.price.toLocaleString()} VND</p>
+                    <div className="seat-selection">
+                        <h2>Chọn ghế</h2>
+                        <div className="seat-legend">
+                            <div className="legend-item">
+                                <div className="seat-box booked"></div>
+                                <span>Đã bán</span>
                             </div>
-
-                            {isTransfer && secondTrip && (
-                                <div className="trip-detail">
-                                    <h4>Chuyến trung chuyển</h4>
-                                    <p><strong>Lộ trình:</strong> {secondTrip.FromLocation} → {secondTrip.EndLocation}</p>
-                                    <p><strong>Thời gian:</strong> {secondTrip.timeStart} - {secondTrip.timeEnd}</p>
-                                    <p><strong>Giá vé:</strong> {secondTrip.price.toLocaleString()} VND</p>
+                            <div className="legend-item">
+                                <div className="seat-box available"></div>
+                                <span>Còn trống</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="seat-box selected"></div>
+                                <span>Đang chọn</span>
+                            </div>
+                            {isTransfer && (
+                                <div className="legend-item">
+                                    <div className="seat-box selected-second"></div>
+                                    <span>Chuyến trung chuyển</span>
                                 </div>
                             )}
+                        </div>
+                        <div className="trip-selection">
+                            <div className="seat-grid lower-deck">
+                                <h3>Tầng dưới</h3>
+                                {lowerDeckSeats.map((row, rowIndex) => (
+                                    <div key={`row-${rowIndex}`} className="seat-row" >
+                                        {row.map((seat) => {
+                                            const isBooked = reservedSeats.includes(seat);
+                                            const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                            const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                            let seatClass = "seat-box";
+                                            if (isBooked) {
+                                                seatClass += " booked";
+                                            } else if (isSelectedFirst) {
+                                                seatClass += " selected-first";
+                                            } else if (isSelectedSecond) {
+                                                seatClass += " selected-second";
+                                            } else {
+                                                seatClass += " available";
+                                            }
+                                            return (
+                                                <div
+                                                    key={seat}
+                                                    className={seatClass}
+                                                    onClick={() => !isBooked && handleSeatClick(seat)}
+                                                    title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                                >
+                                                    {seat}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+                            <h3>Tầng trên</h3>
+                            <div className="seat-grid upper-deck">
+                                {[0, 1, 2].map((rowIndex) => (
+                                    <div key={`upper-row-${rowIndex}`} className="seat-row">
+                                        {upperDeckSeats.slice(rowIndex * 4, (rowIndex + 1) * 4).map((seat) => {
+                                            const isBooked = reservedSeats.includes(seat);
+                                            const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                            const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                            let seatClass = "seat-box";
+                                            if (isBooked) {
+                                                seatClass += " booked";
+                                            } else if (isSelectedFirst) {
+                                                seatClass += " selected-first";
+                                            } else if (isSelectedSecond) {
+                                                seatClass += " selected-second";
+                                            } else {
+                                                seatClass += " available";
+                                            }
 
-                            <div className="total-price">
-                                <h4>Tổng cộng:</h4>
-                                <p>{isTransfer && secondTrip
-                                    ? (trip.price + secondTrip.price).toLocaleString()
-                                    : trip.price.toLocaleString()} VND</p>
+                                            return (
+                                                <div
+                                                    key={seat}
+                                                    className={seatClass}
+                                                    onClick={() => !isBooked && handleSeatClick(seat)}
+                                                    title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                                >
+                                                    {seat}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    )}
+                        {/* Chọn ghế cho chuyến trung chuyển (nếu có)*/}
+                        {isTransfer && secondTrip && (
+                            <>
+                                <h3>Chuyến trung chuyển - Tầng dưới</h3>
+                                <div className="seat-grid lower-deck">
+                                    {lowerDeckSeats.map((row, rowIndex) => (
+                                        <div key={`second-row-${rowIndex}`} style={{ display: 'flex', justifyContent: 'center' }}>
+                                            {row.map((seat) => {
+                                                const isBooked = reservedSeats.includes(seat);
+                                                const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                                const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                                let seatClass = "seat-box";
+                                                if (isBooked) {
+                                                    seatClass += " booked";
+                                                } else if (isSelectedSecond) {
+                                                    seatClass += " selected-second";
+                                                } else if (isSelectedFirst) {
+                                                    seatClass += " selected-first";
+                                                } else {
+                                                    seatClass += " available";
+                                                }
+                                                return (
+                                                    <div
+                                                        key={`second-${seat}`}
+                                                        className={seatClass}
+                                                        onClick={() => !isBooked && handleSeatClick(seat, 'secondTrip')}
+                                                        title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                                    >
+                                                        {seat}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                                <h3>Chuyến trung chuyển - Tầng trên</h3>
+                                <div className="seat-grid upper-deck">
+                                    {upperDeckSeats.map((seat) => {
+                                        const isBooked = reservedSeats.includes(seat);
+                                        const isSelectedSecond = selectedSeats.secondTrip === seat;
+                                        const isSelectedFirst = selectedSeats.firstTrip === seat;
+                                        let seatClass = "seat-box";
+                                        if (isBooked) {
+                                            seatClass += " booked";
+                                        } else if (isSelectedSecond) {
+                                            seatClass += " selected-second";
+                                        } else if (isSelectedFirst) {
+                                            seatClass += " selected-first";
+                                        } else {
+                                            seatClass += " available";
+                                        }
+                                        return (
+                                            <div
+                                                key={`second-${seat}`}
+                                                className={seatClass}
+                                                onClick={() => !isBooked && handleSeatClick(seat, 'secondTrip')}
+                                                title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
+                                            >
+                                                {seat}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
             <footer className="booking-footer">

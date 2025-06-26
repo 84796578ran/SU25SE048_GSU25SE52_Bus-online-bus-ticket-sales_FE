@@ -11,9 +11,36 @@
     gap: 20px;
 }
 
+
+
+/* Thêm vào file CSS */
+.lower-deck {
+    background-color: #e8f4f8;
+    flex-direction: column;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.upper-deck {
+    background-color: #f5e8f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.seat-selection h3 {
+    margin: 15px 0 10px;
+    color: #2c3e50;
+    font-size: 1.1em;
+    text-align: left;
+    padding-left: 10px;
+    border-left: 4px solid #3498db;
+}
+
 .booking-footer {
     margin: 10px auto;
-    margin-left: 330px;
+    margin-left: 390px;
     padding: 20px;
     margin-top: 10px;
     width: fit-content;
@@ -89,10 +116,19 @@
 }
 
 .seat-grid {
-    display: grid;
+    display: flex;
     grid-template-columns: repeat(4, 1fr);
+    flex-direction: column;
     gap: 10px;
     margin-bottom: 20px;
+    justify-items: center;
+}
+
+.seat-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    gap: 19px;
 }
 
 .seat-box {
@@ -104,7 +140,13 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    margin: 0 5px;
+    /* Thêm margin để tạo khoảng cách đều */
+    box-sizing: border-box;
+    /* Đảm bảo padding và border không làm thay đổi kích thước */
 }
+
+
 
 .seat-box.available {
     background-color: #d5f5e3;
