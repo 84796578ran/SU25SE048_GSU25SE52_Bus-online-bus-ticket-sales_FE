@@ -7,6 +7,7 @@ import Menu from '../menu/Menu';
 import { format } from 'date-fns';
 import Pagination from '../../../components/pagination/Pagination';
 import Footer from '../../../components/footer/Footer';
+import { environment } from '../../../environment/environment';
 const ManageRoute = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +35,7 @@ const ManageRoute = () => {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const response = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
+                const response = await axios.get(`${environment.apiUrl}/Route/GetAllRoute`);
                 setRoutes(response.data);
                 setLoading(false);
             } catch (error) {
@@ -86,7 +87,7 @@ const ManageRoute = () => {
                 companyId: formData.companyId
             });
             setLoading(true);
-            const response = await axios.post(`https://localhost:7197/api/Route/CreateRoute`, data, {
+            const response = await axios.post(`${environment.apiUrl}/Route/CreateRoute`, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -97,7 +98,7 @@ const ManageRoute = () => {
                     ...routes,
                     response.data
                 ]);
-                const updatedResponse = await axios.get('https://localhost:7197/api/Route/GetAllRoute');
+                const updatedResponse = await axios.get(`${environment.apiUrl}/Route/GetAllRoute`);
                 setRoutes(updatedResponse.data);
                 setShowCreateModal(false);
                 resetFormData();
@@ -133,7 +134,7 @@ const ManageRoute = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có muốn xóa không?')) {
             try {
-                await axios.put(`https://localhost:7197/api/Route/DeleteRoute/${id}`, {
+                await axios.put(`${environment.apiUrl}/Route/DeleteRoute/${id}`, {
                     isDelete: true
                 });
                 setRoutes(routes.map(route =>
@@ -187,27 +188,6 @@ const ManageRoute = () => {
     }
     // Tính tổng số trang
     const totalPages = Math.ceil(routes.filter(route => !route.isDelete).length / itemsPerPage);
-    // Toggle route active status
-    const toggleActive = async (id, currentStatus) => {
-        try {
-            await axios.patch(`https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route/${id}`,
-                {
-                    isActive: !currentStatus
-                }
-            );
-            setRoutes(routes.map(route =>
-                route.id === id ?
-                    {
-                        ...route,
-                        isActive: !currentStatus
-                    } : route
-            ));
-            toast.success('Route status updated');
-        } catch (error) {
-            console.error('Error updating route status:', error);
-            toast.error('Failed to update route status');
-        }
-    };
     // Reset form data
     const resetFormData = () => {
         setFormData({

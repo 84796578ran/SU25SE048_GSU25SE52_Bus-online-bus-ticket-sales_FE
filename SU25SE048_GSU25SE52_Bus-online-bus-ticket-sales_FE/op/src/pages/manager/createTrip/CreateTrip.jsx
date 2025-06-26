@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Menu from "../menu/Menu";
 import { toast } from "react-toastify";
 import Footer from "../../../components/footer/Footer";
+import { environment } from "../../../environment/environment";
 registerLocale('vi', vi);
 const CreateTrip = () => {
     const navigate = useNavigate();
@@ -45,8 +46,6 @@ const CreateTrip = () => {
     const [busTypes, setBusTypes] = useState([]);
     const [routes, setRoutes] = useState([]);
     const [filteredRoutes, setFilteredRoutes] = useState([]);
-    const [selectedRoute, setSelectedRoute] = useState(null);
-    const [timeSlots, setTimeSlots] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -105,7 +104,7 @@ const CreateTrip = () => {
                 await fetchBusTypes();
                 await fetchRoutes();
                 if (id) {
-                    const tripRes = await axios.get(`https://localhost:7197/api/Trip/${id}`);
+                    const tripRes = await axios.get(`${environment.apiUrl}/Trip/GetTripById?id=${id}`);
                     const tripData = tripRes.data;
                     // Tìm route tương ứng để hiển thị thông tin
                     const route = routes.find(r => r.routeId === tripData.routeId);
@@ -191,7 +190,7 @@ const CreateTrip = () => {
                 busId: Number(formData.busId),
                 description: formData.description
             }
-            await axios.post('https://localhost:7197/api/Trip/CreateTrip', tripData);
+            await axios.post(`${environment.apiUrl}/Trip/CreateTrip`, tripData);
             toast.success('Tạo chuyến đi thành công!');
             setSuccess(true);
             // Reset form sau khi tạo thành công
@@ -219,7 +218,7 @@ const CreateTrip = () => {
         setError(null);
 
         try {
-            await axios.delete(`https://68366847664e72d28e40a9cf.mockapi.io/api/SearchTickets/Trip/${id}`);
+            await axios.delete(`${environment.apiUrl}/Trip/DeleteTrip?${id}`);
             setSuccess('Trip deleted successfully!');
             setTimeout(() => {
                 navigate('/manageBus'); // Chuyển hướng sau khi xóa
