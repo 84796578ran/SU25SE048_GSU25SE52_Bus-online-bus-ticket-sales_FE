@@ -10,7 +10,7 @@ const TicketBooking = () => {
         secondTrip: null
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [confirmedSeats, setConfirmedSeats] = useState([]);
     const [reservedSeats, setReservedSeats] = useState([]);
     const [form, setForm] = useState({
@@ -36,26 +36,15 @@ const TicketBooking = () => {
             fetchBookedSeats();
         }
     }, [trip?.id]);
+    const [transferTrips, setTransferTrips] = useState([]);
     const handleSeatClick = (seatNumber, tripType = 'firstTrip') => {
         if (reservedSeats.includes(seatNumber)) {
             return;
         }
-        setSelectedSeats(prev => {
-            if (prev[tripType] === seatNumber) {
-                return {
-                    ...prev,
-                    [tripType]: null
-                }
-            }
-            // Nếu ghế đã được chọn cho chuyến khác thì không làm gì
-            const otherTripType = tripType === 'firstTrip' ? 'secondTrip' : 'firstTrip';
-            // Nếu ghế đã được chọn cho chuyến khác thì không làm gì
-            if (prev[otherTripType] === seatNumber) {
-                return prev;
-            }
-            // Chọn ghế mới
-            return { ...prev, [tripType]: seatNumber };
-        });
+        setSelectedSeats(prev => ({
+            ...prev,
+            [tripType]: prev[tripType] === seatNumber ? null : seatNumber
+        }));
 
     };
 
@@ -69,21 +58,25 @@ const TicketBooking = () => {
         // Kiểm tra thông tin form
         if (!form.fullName || !form.phone) {
             alert("Vui lòng điền đầy đủ thông tin khách hàng");
+            setIsSubmitting(false);
             return;
         }
+
         // Kiểm tra ghế đã chọn
         if (!selectedSeats.firstTrip || (isTransfer && !selectedSeats.secondTrip)) {
             alert(`Vui lòng chọn ${isTransfer ? "ghế cho cả 2 chuyến" : "ghế"}`);
+            setIsSubmitting(false);
             return;
         }
         // Kiểm tra ghế đã bị đặt
-        const seatsToCheck = isTransfer
-            ? [selectedSeats.firstTrip, selectedSeats.secondTrip]
-            : [selectedSeats.firstTrip];
+        const seatsToCheck = [selectedSeats.firstTrip];
+        if (isTransfer) seatsToCheck.push(selectedSeats.secondTrip);
+
         const isAnySeatBooked = seatsToCheck.some(seat => reservedSeats.includes(seat)
             || confirmedSeats.includes(seat));
         if (isAnySeatBooked) {
             alert("Một số ghế bạn chọn đã được đặt. Vui lòng chọn ghế khác.");
+            setIsSubmitting(false);
             return;
         }
         try {
@@ -94,7 +87,10 @@ const TicketBooking = () => {
                     : selectedSeats.firstTrip,
                 tripId: trip?.id,
                 secondTripId: isTransfer ? secondTrip?.id : null,
-                price: isTransfer ? (trip.price + secondTrip.price) : trip.price
+                price: isTransfer ? (trip.price + secondTrip.price) : trip.price,
+                bookedSeats: isTransfer
+                    ? [selectedSeats.firstTrip, selectedSeats.secondTrip]
+                    : [selectedSeats.firstTrip]
             };
 
             const response = await fetch("https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Ticket", {
@@ -111,6 +107,11 @@ const TicketBooking = () => {
                     firstTrip: null,
                     secondTrip: null
                 });
+                setReservedSeats(prev => [
+                    ...prev,
+                    ...bookingData.bookedSeats
+                ]);
+
             }
         } catch (error) {
             alert("Đặt vé thất bại. Vui lòng thử lại.");
@@ -140,24 +141,28 @@ const TicketBooking = () => {
                             <div className="trip-detail">
                                 <h4>Chuyến chính</h4>
                                 <p><strong>Lộ trình:</strong> {trip.FromLocation} → {trip.EndLocation}</p>
-                                <p><strong>Thời gian:</strong> {trip.timeStart} - {trip.timeEnd}</p>
+                                <p><strong>Thời gian:</strong> {new Date(trip.timeStart).toLocaleString()} - {new Date(trip.timeEnd).toLocaleString()}</p>
                                 <p><strong>Giá vé:</strong> {trip.price.toLocaleString()} VND</p>
                             </div>
 
-                            {isTransfer && secondTrip && (
-                                <div className="trip-detail">
-                                    <h4>Chuyến trung chuyển</h4>
-                                    <p><strong>Lộ trình:</strong> {secondTrip.FromLocation} → {secondTrip.EndLocation}</p>
-                                    <p><strong>Thời gian:</strong> {secondTrip.timeStart} - {secondTrip.timeEnd}</p>
-                                    <p><strong>Giá vé:</strong> {secondTrip.price.toLocaleString()} VND</p>
+                            {/* Các chuyến trung chuyển */}
+                            {isTransfer && transferTrips.map((transfer, index) => (
+                                <div key={`transfer-${index}`} className="trip-detail">
+                                    <h4>Chuyến trung chuyển {index + 1}</h4>
+                                    <p><strong>Lộ trình:</strong> {transfer.fromLocation} → {transfer.endLocation}</p>
+                                    <p><strong>Thời gian:</strong> {transfer.timeStart} - {transfer.timeEnd}</p>
+                                    <p><strong>Giá vé:</strong> {transfer.price.toLocaleString()} VND</p>
                                 </div>
-                            )}
+                            ))}
 
                             <div className="total-price">
                                 <h4>Tổng cộng:</h4>
-                                <p>{isTransfer && secondTrip
-                                    ? (trip.price + secondTrip.price).toLocaleString()
-                                    : trip.price.toLocaleString()} VND</p>
+                                <p>
+                                    {isTransfer
+                                        ? (trip.price + transferTrips.reduce((sum, t) => sum + t.price, 0)).toLocaleString()
+                                        : trip.price.toLocaleString()
+                                    } VND
+                                </p>
                             </div>
                         </div>
                     )}
@@ -252,7 +257,7 @@ const TicketBooking = () => {
                                                 <div
                                                     key={seat}
                                                     className={seatClass}
-                                                    onClick={() => !isBooked && handleSeatClick(seat)}
+                                                    onClick={() => !isBooked && handleSeatClick(seat, 'firstType')}
                                                     title={isBooked ? "Ghế đã đặt" : "Ghế trống"}
                                                 >
                                                     {seat}

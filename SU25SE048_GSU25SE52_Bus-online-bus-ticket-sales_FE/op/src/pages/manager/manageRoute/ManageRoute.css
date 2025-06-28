@@ -249,6 +249,7 @@ h1 {
 }
 
 .form-group label {
+    text-align: left;
     display: block;
     margin-bottom: 5px;
     font-weight: 500;

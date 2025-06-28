@@ -9,25 +9,27 @@ import { useNavigate } from 'react-router-dom';
 const SearchTicket = () => {
     const [searchResults, setSearchResults] = useState(null);
     const navigate = useNavigate();
-    const [selectedTrip, setSelectedTrip] = useState(null);
-    const handleBookTicket = (trip) => {
-        setSelectedTrip(trip);
+    const [selectedTrip, setSelectedTrips] = useState([]);
+    const handleBookTicket = (trips) => {
+        const tripsArray = Array.isArray(trips) ? trips : [trips];
+        setSelectedTrips(trips);
         navigate('/bookTicket', {
             state: {
                 trip: {
-                    id: trip.tripId,
-                    FromLocation: trip.fromLocation,
-                    EndLocation: trip.endLocation,
-                    timeStart: trip.timeStart,
-                    timeEnd: trip.timeEnd,
-                    price: trip.price,
-                    busName: trip.busName
-                }
+                    id: trips.tripId,
+                    FromLocation: trips.fromLocation,
+                    EndLocation: trips.endLocation,
+                    timeStart: trips.timeStart,
+                    timeEnd: trips.timeEnd,
+                    price: trips.price,
+                    busName: trips.busName
+                },
+                isTransfer: false
             }
         })
     }
     return (
-        <div className='home-page-container'>
+        <div className='home-page-container' style={{ overflowY: 'auto' }}>
             <Header />
             <div className="home-page">
                 <main>

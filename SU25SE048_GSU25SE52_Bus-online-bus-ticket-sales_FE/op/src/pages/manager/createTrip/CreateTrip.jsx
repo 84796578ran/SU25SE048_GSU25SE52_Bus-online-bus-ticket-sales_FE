@@ -75,7 +75,7 @@ const CreateTrip = () => {
     }
     const fetchRoutes = async () => {
         try {
-            const response = await axios.get('https://683ac9b843bb370a8673bd67.mockapi.io/api/BusRoutes/Route');
+            const response = await axios.get(`${environment.apiUrl}/Route/GetAllRoute`);
             const activeRoutes = response.data.filter(route => !route.isDeleted);
             setRoutes(activeRoutes);
             setFilteredRoutes(activeRoutes);
@@ -104,22 +104,13 @@ const CreateTrip = () => {
                 await fetchBusTypes();
                 await fetchRoutes();
                 if (id) {
+                    setIsLoading(true);
                     const tripRes = await axios.get(`${environment.apiUrl}/Trip/GetTripById?id=${id}`);
                     const tripData = tripRes.data;
-                    // Tìm route tương ứng để hiển thị thông tin
-                    const route = routes.find(r => r.routeId === tripData.routeId);
                     setFormData({
-                        tripId: tripData.tripID,
-                        price: tripData.price,
-                        status: tripData.status,
-                        timeId: tripData.timeId,
-                        timeStart: tripData.timeStart,
-                        timeEnd: tripData.timeEnd,
-                        description: tripData.description,
-                        TypeBusID: tripData.TypeBusID,
-                        fromLocation: route?.fromLocation || tripData.fromLocation,
-                        endLocation: route?.toLocation || tripData.endLocation,
-                        routeID: tripData.routeID
+                        ...tripData,
+                        routeId: tripData.routeId,
+                        busId: tripData.busId
                     });
                     if (tripData.timeStart) setStartDate(new Date(tripData.timeStart));
                     if (tripData.timeEnd) setEndDate(new Date(tripData.timeEnd));
@@ -145,8 +136,8 @@ const CreateTrip = () => {
             }));
             return;
         }
-        if (name === 'routeID') {
-            const selectedRoute = routes.find(route => route.routeID === value);
+        if (name === 'routeId') {
+            const selectedRoute = routes.find(route => route.routeId === value);
             if (selectedRoute) {
                 setFormData(prev => ({
                     ...prev,
@@ -165,6 +156,11 @@ const CreateTrip = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log('Form data before submission:', {
+            ...formData,
+            timeStart: startDate,
+            timeEnd: endDate
+        });
         // Kiểm tra validation trước khi submit
         if (!validateDates(startDate, endDate)) {
             return;
@@ -177,6 +173,10 @@ const CreateTrip = () => {
             toast.error('Vui lòng chọn xe');
             return;
         }
+        if (formData.price <= 0) {
+            toast.error('Giá phải lớn hơn 0');
+            return;
+        }
         setIsLoading(true);
         setError(null);
         setSuccess(false);
@@ -186,8 +186,8 @@ const CreateTrip = () => {
                 timeStart: startDate.toISOString(),
                 timeEnd: endDate.toISOString(),
                 price: Number(formData.price),
-                routeId: Number(formData.routeId),
-                busId: Number(formData.busId),
+                routeId: formData.routeId,
+                busId: formData.busId,
                 description: formData.description
             }
             await axios.post(`${environment.apiUrl}/Trip/CreateTrip`, tripData);
@@ -273,7 +273,6 @@ const CreateTrip = () => {
                                 name="routeId"
                                 value={formData.routeId}
                                 onChange={handleChange}
-                                required
                             >
                                 <option value="">-- Chọn tuyến đường --</option>
                                 {filteredRoutes.map(route => (
@@ -291,7 +290,6 @@ const CreateTrip = () => {
                                 name="busId"
                                 value={formData.busId}
                                 onChange={handleChange}
-                                required
                             >
                                 <option value="">-- Chọn xe --</option>
                                 {busTypes.map(bus => (
@@ -306,7 +304,7 @@ const CreateTrip = () => {
                             <DatePicker
                                 id="timeStart"
                                 selected={startDate}
-                                onChange={handleEndDateChange}
+                                onChange={handleStartDateChange}
                                 dateFormat="dd/MM/yyyy"
                                 locale="vi"
                                 className="date-picker-input"
