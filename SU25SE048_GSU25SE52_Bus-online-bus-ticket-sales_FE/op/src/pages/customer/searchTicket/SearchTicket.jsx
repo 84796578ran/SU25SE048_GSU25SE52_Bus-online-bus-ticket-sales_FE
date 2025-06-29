@@ -15,16 +15,7 @@ const SearchTicket = () => {
         setSelectedTrips(trips);
         navigate('/bookTicket', {
             state: {
-                trip: {
-                    id: trips.tripId,
-                    FromLocation: trips.fromLocation,
-                    EndLocation: trips.endLocation,
-                    timeStart: trips.timeStart,
-                    timeEnd: trips.timeEnd,
-                    price: trips.price,
-                    busName: trips.busName
-                },
-                isTransfer: false
+                trips: tripsArray,
             }
         })
     }
