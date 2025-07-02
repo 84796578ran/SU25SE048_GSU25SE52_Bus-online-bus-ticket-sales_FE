@@ -146,7 +146,7 @@ const TicketBooking = () => {
                                 <div key={`trip-${index}`} className="trip-detail">
                                     <h4>{index === 0 ? 'Chuyến chính' : `Chuyến trung chuyển ${index}`}</h4>
                                     <p><strong>Lộ trình:</strong> {trip.fromLocation} → {trip.endLocation}</p>
-                                    <p><strong>Thời gian:</strong> {new Date(trip.timeStart).toLocaleString()} - {new Date(trip.timeEnd).toLocaleString()}</p>
+                                    <p><strong>Thời gian:</strong> {trip.timeStart} - {trip.timeEnd}</p>
                                     <p><strong>Giá vé:</strong> {trip.price.toLocaleString()} VND</p>
                                 </div>
                             ))}

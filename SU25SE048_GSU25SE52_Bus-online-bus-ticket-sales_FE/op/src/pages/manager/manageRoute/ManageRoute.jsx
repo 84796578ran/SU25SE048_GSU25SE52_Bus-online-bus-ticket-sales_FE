@@ -11,7 +11,10 @@ import { environment } from '../../../environment/environment';
 const ManageRoute = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [companies, setCompanies] = useState([]);
+    const uniqueFromLocations = [
+        ...new Set(routes.map(route => route.fromLocation))
+    ];
+    const uniqueToLocations = [...new Set(routes.map(route => route.toLocation))];
     const [formData, setFormData] = useState({
         fromLocation: '',
         routeId: '',
@@ -285,23 +288,36 @@ const ManageRoute = () => {
                                     </div>
                                     <div className="form-group">
                                         <label>Điểm bắt đầu/Bến xe khởi hành:</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="fromLocation"
                                             value={formData.fromLocation}
                                             onChange={handleInputChange}
                                             required
-                                        />
+                                        >
+                                            <option value="">Chọn điểm bắt đầu</option>
+                                            {uniqueFromLocations.map((location, index) => (
+                                                <option key={`from-${index}`} value={location}>
+                                                    {location}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Điểm kết thúc/Trạm cuối:</label>
-                                        <input
+                                        <select
                                             type="text"
                                             name="toLocation"
                                             value={formData.toLocation}
                                             onChange={handleInputChange}
                                             required
-                                        />
+                                        >
+                                            <option value="">Chọn điểm kết thúc</option>
+                                            {uniqueToLocations.map((location, index) => (
+                                                <option key={`to-${index}`} value={location}>
+                                                    {location}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Khoảng cách:</label>

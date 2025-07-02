@@ -19,6 +19,12 @@ const SearchTicket = () => {
             }
         })
     }
+    // Hàm kiểm tra có kết quả tìm kiếm hay không
+    const hasSearchResults = (data) => {
+        return (data?.directTrips && data.directTrips.length > 0) ||
+            (data?.transferTrips && data.transferTrips.length > 0) ||
+            (data?.tripleTrips && data.tripleTrips.length > 0);
+    }
     return (
         <div className='home-page-container' style={{ overflowY: 'auto' }}>
             <Header />
@@ -36,38 +42,51 @@ const SearchTicket = () => {
                             {/* Hiển thị kết quả tìm kiếm ở đây */}
                             {searchResults.loading ? (
                                 <p>Đang tìm kiếm...</p>
-                            ) : searchResults.error ? (
-                                <p>
-                                    Không tìm thấy chuyến xe
-                                </p>
+                            ) : !hasSearchResults(searchResults.data) ? (
+                                <p>Không tìm thấy chuyến xe phù hợp</p>
                             ) : (
                                 <div className="trips-list">
-                                    {searchResults.data?.searchTrips?.length > 0 ? (
-                                        searchResults.data.searchTrips.map(trip => (
-                                            <div key={trip.tripId} className="trip-card">
-                                                <h3>
-                                                    {trip.fromLocation} → {trip.endLocation}
-                                                </h3>
-                                                <p>
-                                                    Thời gian bắt đầu: {new Date(trip.timeStart).toLocaleString()}
-                                                </p>
-                                                <p>
-                                                    Thời gian kết thúc: {new Date(trip.timeEnd).toLocaleString()}
-                                                </p>
-                                                <p>
-                                                    Giá vé: {trip.price.toLocaleString()} VND
-                                                </p>
-                                                <p>
-                                                    Nhà xe: {trip.busName}
-                                                </p>
-                                                <button onClick={() => handleBookTicket(trip)} className='book-button'>
-                                                    Đặt vé
-                                                </button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>Khong tim thay chuyen xe phu hop</p>
-                                    )}
+                                    {/* Hiển thị direct trips */}
+                                    {searchResults.data?.directTrips?.map(trip => (
+                                        <div key={trip.tripId} className="trip-card">
+                                            <h3>{trip.fromLocation} → {trip.endLocation}</h3>
+                                            <p>Thời gian bắt đầu: {new Date(trip.timeStart).toLocaleString()}</p>
+                                            <p>Thời gian kết thúc: {new Date(trip.timeEnd).toLocaleString()}</p>
+                                            <p>Giá vé: {trip.price.toLocaleString()} VND</p>
+                                            <p>Nhà xe: {trip.busName}</p>
+                                            <button onClick={() => handleBookTicket(trip)} className='book-button'>
+                                                Đặt vé
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {/* Hiển thị transfer trips */}
+                                    {searchResults.data?.transferTrips?.map((trip, index) => (
+                                        <div key={`transfer-${index}`} className='trip-card'>
+                                            <h3>{trip.firstTrip.fromLocation} → {trip.secondTrip.endLocation}</h3>
+                                            <p>Thời gian bắt đầu: {new Date(trip.firstTrip.timeStart).toLocaleString()}</p>
+                                            <p>Thời gian kết thúc: {new Date(trip.secondTrip.timeEnd).toLocaleString()}</p>
+                                            <p>Giá vé: {(trip.firstTrip.price + trip.secondTrip.price).toLocaleString()} VND</p>
+                                            <p>Chuyến 1: {trip.firstTrip.busName} ({trip.firstTrip.fromLocation} → {trip.firstTrip.endLocation})</p>
+                                            <p>Chuyến 2: {trip.secondTrip.busName} ({trip.secondTrip.fromLocation} → {trip.secondTrip.endLocation})</p>
+                                            <button onClick={() => handleBookTicket([trip.firstTrip, trip.secondTrip])} className='book-button'>
+                                                Đặt vé
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {searchResults.data?.tripleTrips?.map((trip) => (
+                                        <div key={`${trip.firstTrip.tripId}-${trip.secondTrip.tripId}-${trip.thirdTrip.tripId}`} className="trip-card">
+                                            <h3>{trip.firstTrip.fromLocation} → {trip.thirdTrip.endLocation}</h3>
+                                            <p>Thời gian bắt đầu: {new Date(trip.firstTrip.timeStart).toLocaleString()}</p>
+                                            <p>Thời gian kết thúc: {new Date(trip.thirdTrip.timeEnd).toLocaleString()}</p>
+                                            <p>Giá vé: {(trip.firstTrip.price + trip.secondTrip.price + trip.thirdTrip.price).toLocaleString()} VND</p>
+                                            <p>Nhà xe: {[trip.firstTrip.busName, trip.secondTrip.busName, trip.thirdTrip.busName].join(' → ')}</p>
+                                            <button onClick={() => handleBookTicket([trip.firstTrip, trip.secondTrip, trip.thirdTrip])} className='book-button'>
+                                                Đặt vé
+                                            </button>
+                                        </div>
+                                    ))}
+
                                 </div>
                             )}
                         </section>

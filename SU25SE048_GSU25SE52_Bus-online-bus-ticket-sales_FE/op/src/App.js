@@ -11,6 +11,7 @@ import ForgotPassword from './services/forgotPassword/ForgotPass';
 import ManageUsers from './pages/manager/manageUser/ManageUser';
 import TicketBooking from './pages/customer/bookTicket/BookTicket';
 import SearchTicket from './pages/customer/searchTicket/SearchTicket';
+import SearchTrip from './pages/customer/searchTrip/SearchTrip';
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
           <Route path='/about' element={<About />} />
           <Route path='/contact' element={<Contact />} />
           <Route path='/services' element={<BusBooking />} />
-          <Route path='/' element={<SearchTicket />} />
+          <Route path='/' element={<SearchTrip />} />
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/manage-route' element={<ManageRoute />} />
           <Route path='/manager' element={<CreateTrip />} />

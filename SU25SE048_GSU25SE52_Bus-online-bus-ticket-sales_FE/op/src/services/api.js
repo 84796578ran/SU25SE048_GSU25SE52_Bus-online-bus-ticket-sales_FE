@@ -1,5 +1,6 @@
 import axios from 'axios';
-const API_BASE_URL = 'https://your-api-endpoint.com/api';
+import { environment } from '../environment/environment';
+const API_BASE_URL = `${environment.apiUrl}`;
 export const getPopularRoutes = async () => {
     try {
         const response = await axios.get(`${API_BASE_URL}/routes/popular`);
@@ -11,7 +12,7 @@ export const getPopularRoutes = async () => {
 };
 export const searchTrips = async (departure, destination, date) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/trips/search`, {
+        const response = await axios.get(`${API_BASE_URL}/Trip/search`, {
             params: { departure, destination, date }
         });
         return response.data;

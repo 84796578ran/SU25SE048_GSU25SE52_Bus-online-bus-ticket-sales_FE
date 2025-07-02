@@ -8,7 +8,7 @@ registerLocale('vi', vi);
 const SearchForm = ({ onSearch }) => {
     const [formData, setFormData] = useState({
         fromLocation: '',
-        toLocation: '',
+        endLocation: '',
         passengers: '',
         tripType: 'one-way'
     });
@@ -31,63 +31,24 @@ const SearchForm = ({ onSearch }) => {
         e.preventDefault();
         onSearch({ loading: true, data: null, error: null });
         try {
-            // Format date manually to avoid timezone issues
-            const formatDate = (date) => {
-                const d = new Date(date);
-                d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // Điều chỉnh timezone
-                return d.toISOString().split('T')[0];
-            };
-
-            const params = {
+            // Format dữ liệu để gửi đến API
+            const searchData = {
                 fromLocation: formData.fromLocation,
-                toLocation: formData.toLocation,
-                date: formatDate(startDate),
+                toLocation: formData.endLocation,
+                date: startDate.toISOString()
             };
-            console.log('Search params:', params);
-            const response = await axios.get(`${environment.apiUrl}/Trip/search`,
-                {
-                    params, headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+            console.log('Searching with data:', searchData);
+            const response = await axios.post(`${environment.apiUrl}/Trip/search`, searchData, {
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            );
-            console.log(response.data);
-            // Kiểm tra cấu trúc dữ liệu trả về
-            // Đơn giản hóa logic kiểm tra
-            if (response.data) {
-                onSearch({
-                    loading: false,
-                    data: response.data,
-                    error: null
-                });
-            } else {
-                onSearch({
-                    loading: false,
-                    data: null,
-                    error: 'Không tìm thấy chuyến xe phù hợp'
-                });
-            }
-
-            // Chuẩn hóa dữ liệu và kiểm tra xem có chuyến đi nào không
-            const hasTrips =
-                (response.data.directTrips && response.data.directTrips.length > 0) ||
-                (response.data.transferTrips && response.data.transferTrips.length > 0) ||
-                (response.data.tripleTrips && response.data.tripleTrips.length > 0);
-
-            if (hasTrips) {
-                onSearch({
-                    loading: false,
-                    data: response.data,
-                    error: null
-                });
-            } else {
-                onSearch({
-                    loading: false,
-                    data: null,
-                    error: 'Không tìm thấy chuyến xe phù hợp'
-                });
-            }
+            });
+            console.log('Search results:', response.data);
+            onSearch({
+                loading: false,
+                data: response.data,
+                error: null
+            });
         }
         catch (error) {
             console.error('Search error:', error);
@@ -115,7 +76,7 @@ const SearchForm = ({ onSearch }) => {
                     </button>
                 </div>
                 <div className="form-group">
-                    <label htmlFor="fromLocation">Điểm đi</label>
+                    <label htmlFor="FromLocation">Điểm đi</label>
                     <input
                         type="text"
                         id="departure"
@@ -127,12 +88,12 @@ const SearchForm = ({ onSearch }) => {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="toLocation">Điểm đến</label>
+                    <label htmlFor="EndLocation">Điểm đến</label>
                     <input
                         type="text"
                         id="destination"
-                        name="toLocation"
-                        value={formData.toLocation}
+                        name="endLocation"
+                        value={formData.endLocation}
                         onChange={handleChange}
                         placeholder="Nhập điểm đến"
                         required
@@ -150,7 +111,7 @@ const SearchForm = ({ onSearch }) => {
                         <label htmlFor="returnDate" className="date-picker-label">Ngày về</label>
                         <DatePicker selected={returnDate} onChange={(date) => setReturnDate(date)}
                             dateFormat='dd/MM/yyyy' locale='vi' minDate={startDate} wrapperClassName="date-picker-wrapper"
-                            className="date-picker-input" id="returnDate" required />
+                            className="date-picker-input" id="returnDate" />
                     </div>
                 )}
                 {/*
