@@ -1,9 +1,44 @@
-/* SearchForm.css */
 .search-form-container {
     max-width: 1000px;
     margin: 0 auto;
+    transform: translateY(0);
     padding: 0 20px;
-    transform: translateY(50px);
+}
+
+.search-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-left: 0px;
+}
+
+/* Thêm vào SearchForm.css */
+
+/* Style cho trạng thái invalid */
+.location-select:invalid,
+.react-datepicker__input-container input:invalid {
+    border-color: #ddd;
+    /* Màu viền mặc định khi chưa chọn */
+    box-shadow: none;
+    /* Bỏ shadow đỏ */
+}
+
+/* Style khi người dùng chưa tương tác */
+.location-select:invalid:not(:focus),
+.react-datepicker__input-container input:invalid:not(:focus) {
+    border-color: #ddd;
+}
+
+/* Hoặc nếu bạn muốn giữ hiệu ứng validation nhưng kiểm soát màu sắc */
+.location-select:invalid:focus,
+.react-datepicker__input-container input:invalid:focus {
+    border-color: #ff6b6b;
+    /* Màu đỏ nhẹ hơn */
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
 }
 
 .search-form {
@@ -15,6 +50,7 @@
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+
 }
 
 .form-group {
@@ -23,12 +59,66 @@
     margin-bottom: 15px;
 }
 
+.location-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+.location-select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+/* Có thể thêm các style khác tùy theo nhu cầu */
 .form-group label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
     color: #333;
     font-size: 0.95rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.location-select,
+.date-picker-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e0e3e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background: #f8fafc;
+}
+
+.search-button {
+    background: greenyellow;
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    grid-column: 1/-1;
+    margin-top: 0.5rem;
+}
+
+.search-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 107, 255, 0.4);
 }
 
 .form-group input {
@@ -78,7 +168,7 @@
     padding: 12px 24px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    background-color: #f8f8f8;
+    background-color: white;
     color: #555;
     cursor: pointer;
     font-size: 1rem;
@@ -95,6 +185,32 @@
     border-color: #4CAF50;
 }
 
+.trip-type-button.active {
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+/* Style chung cho cả select box và date picker */
+.location-select,
+.react-datepicker__input-container input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    box-sizing: border-box;
+    height: 46px;
+    /* Chiều cao đồng nhất */
+}
+
+.location-select:focus,
+.react-datepicker__input-container input:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
 .date-picker-input {
     width: 100%;
     padding: 12px 15px;
@@ -102,7 +218,8 @@
     border-radius: 6px;
     font-size: 1rem;
     transition: all 0.3s;
-    height: auto;
+    height: 80px;
+    margin-top: 6px;
 }
 
 .date-picker-input:focus {

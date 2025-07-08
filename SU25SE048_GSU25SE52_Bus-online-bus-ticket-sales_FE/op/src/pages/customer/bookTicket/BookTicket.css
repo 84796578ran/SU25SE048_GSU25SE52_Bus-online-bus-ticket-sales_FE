@@ -1,10 +1,46 @@
 /* BookTicket.css */
 .booking-page {
     padding: 20px;
-    height: 100vh;
+    height: auto;
+    /* Thay đổi từ 100vh */
+    min-height: 100vh;
+    /* Đảm bảo trang luôn đủ cao */
     background-color: #f5f7fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow-y: auto;
+}
+
+/* Add to BookTicket.css */
+.booking-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    transition: all 0.3s;
+}
+
+.tab-button.active {
+    color: #3498db;
+    border-bottom-color: #3498db;
+}
+
+.tab-button:hover:not(.active) {
+    color: #2980b9;
+}
+
+.trip-info-tab,
+.seat-selection-tab {
+    width: 50%;
 }
 
 .booking-container {
@@ -18,7 +54,7 @@
     min-height: fit-content;
     height: auto;
     /* Thêm dòng này */
-    overflow-y: auto;
+    overflow-y: visible;
     /* Thêm dòng này */
 }
 
@@ -47,6 +83,7 @@
     background: #f8f9fa;
     padding: 20px;
     border-left: 4px solid #3498db;
+    height: 325px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
@@ -80,8 +117,8 @@
     font-size: 1.2em;
     font-weight: bold;
     color: #e74c3c;
-    margin-top: 15px;
-    padding-top: 10px;
+    margin-top: -35px;
+    height: 90px;
     border-top: 1px solid #eee;
 }
 
@@ -156,15 +193,15 @@
 }
 
 .seat-box {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.85em;
     transition: all 0.2s;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
     margin: 5px;
@@ -241,8 +278,8 @@
 .seat-row {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 5px;
+    margin-bottom: 5px;
 }
 
 .lower-deck {
@@ -298,5 +335,15 @@
     .left-panel,
     .right-panel {
         width: 100%;
+    }
+
+    .seat-row {
+        flex-wrap: wrap;
+    }
+
+    .seat-box {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8em;
     }
 }

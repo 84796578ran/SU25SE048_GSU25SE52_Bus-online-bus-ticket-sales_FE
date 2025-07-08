@@ -12,7 +12,7 @@ const TicketBooking = () => {
             return acc;
         }, {})
     );
-
+    const [activeTab, setActiveTab] = useState('tripInfo');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [confirmedSeats, setConfirmedSeats] = useState([]);
@@ -124,6 +124,15 @@ const TicketBooking = () => {
             setIsSubmitting(false);
         }
     };
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: false
+        });
+    }
     const lowerDeckSeats = [
         ['01', '02', '03', '04'],
         ['05', '06', '07', '08'],
@@ -146,7 +155,7 @@ const TicketBooking = () => {
                                 <div key={`trip-${index}`} className="trip-detail">
                                     <h4>{index === 0 ? 'Chuyến chính' : `Chuyến trung chuyển ${index}`}</h4>
                                     <p><strong>Lộ trình:</strong> {trip.fromLocation} → {trip.endLocation}</p>
-                                    <p><strong>Thời gian:</strong> {trip.timeStart} - {trip.timeEnd}</p>
+                                    <p><strong>Thời gian:</strong> {formatTime(trip.timeStart)} - {formatTime(trip.timeEnd)}</p>
                                     <p><strong>Giá vé:</strong> {trip.price.toLocaleString()} VND</p>
                                 </div>
                             ))}
@@ -217,7 +226,8 @@ const TicketBooking = () => {
                         </div>
                     </form>
                 </div>
-                <div className="right-panel">
+
+                <div className="seat-selection-tab">
                     <div className="seat-selection">
                         <h2>Chọn ghế</h2>
                         <div className="seat-legend">
@@ -240,10 +250,10 @@ const TicketBooking = () => {
                                 </div>
                             )}
                         </div>
-                        {trips.map((currentTrip, tripIndex) => (
-                            <div className="trip-selection" key={`trip-${tripIndex}`}>
+                        {trips.map((tripIndex) => (
+                            <div className="trip-selection" key={`trip${tripIndex}`}>
                                 <h3>
-                                    {tripIndex === 0 ? 'Chuyến chính' : `Chuyến trung chuyển ${tripIndex}`}
+                                    {tripIndex === 0 ? 'Chuyến chính' : `Chuyến trung chuyển `}
                                 </h3>
                                 <div className="seat-grid lower-deck">
                                     <h3>Tầng dưới</h3>
@@ -281,14 +291,11 @@ const TicketBooking = () => {
                                             {upperDeckSeats.slice(rowIndex * 4, (rowIndex + 1) * 4).map((seat) => {
                                                 const isBooked = reservedSeats.includes(seat);
                                                 const isSelectedFirst = selectedSeats[`trip${tripIndex + 1}`] === seat;
-                                                const isSelectedSecond = selectedSeats.secondTrip === seat;
                                                 let seatClass = "seat-box";
                                                 if (isBooked) {
                                                     seatClass += " booked";
                                                 } else if (isSelectedFirst) {
                                                     seatClass += " selected";
-                                                } else if (isSelectedSecond) {
-                                                    seatClass += " selected-second";
                                                 } else {
                                                     seatClass += " available";
                                                 }
@@ -311,9 +318,6 @@ const TicketBooking = () => {
                         ))}
                     </div>
                 </div>
-
-
-
             </div>
         </div>
     )

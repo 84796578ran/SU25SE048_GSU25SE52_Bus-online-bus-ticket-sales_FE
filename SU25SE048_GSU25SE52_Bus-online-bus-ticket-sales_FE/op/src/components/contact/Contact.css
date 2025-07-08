@@ -1,11 +1,12 @@
 .contact-content {
     flex: 1;
-    margin-left: 220px;
+    margin-left: 0px;
     padding: 0 0 0 50px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     background-color: #f9f9f9;
+    margin-top: 90px;
 }
 
 .contact-layout {
@@ -19,6 +20,8 @@
     color: white;
     padding: 2rem 2rem;
     width: 100%;
+    margin-top: -9px;
+    margin-left: -50px;
     text-align: center;
 }
 

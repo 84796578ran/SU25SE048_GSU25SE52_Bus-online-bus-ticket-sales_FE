@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getPopularRoutes } from '../../../services/api';
-import '../searchTicket/PopularRoutes.css';
+import '../searchTrip/PopularRoutes.css';
 const PopularRoutes = () => {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);

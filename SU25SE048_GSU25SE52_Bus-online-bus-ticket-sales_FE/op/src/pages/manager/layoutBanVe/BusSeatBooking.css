@@ -2,6 +2,7 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    margin-top: 80px;
     font-family: 'Arial', sans-serif;
 }
 
@@ -15,6 +16,7 @@
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
+    margin-top: 60px;
 }
 
 .bus-info h2 {
@@ -56,7 +58,8 @@
 
 /* Thêm vào file CSS của bạn */
 .bus-footer {
-    margin-top: 156px;
+    margin-top: 0px;
+    height: 100vh;
     margin-left: 0px;
 }
 
@@ -64,7 +67,7 @@
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    margin-left: 200px;
+    margin-left: -35px;
 }
 
 .seat:hover {

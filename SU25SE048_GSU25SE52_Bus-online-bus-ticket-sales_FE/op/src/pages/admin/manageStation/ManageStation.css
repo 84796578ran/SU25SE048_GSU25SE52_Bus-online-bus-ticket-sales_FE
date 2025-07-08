@@ -1,30 +1,193 @@
+/* Main Container */
 .manage-station-container {
+    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    overflow-y: auto;
     font-family: Arial, sans-serif;
+    height: 80vh;
+    /* Thêm chiều cao cố định */
 }
 
+/* Error Message */
 .error-message {
     color: #d32f2f;
-    background-color: #fde7e7;
-    padding: 10px;
+    background-color: #fde8e8;
+    padding: 10px 15px;
     border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #ef9a9a;
+}
+
+/* Controls */
+.station-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 20px;
 }
 
-.station-form {
+.toggle-deleted {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+/* Buttons */
+button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-add {
+    background-color: #4caf50;
+    color: white;
+    padding: 8px 12px;
+    /* Giảm padding từ 8px 16px */
+    width: auto;
+    /* Hoặc có thể set width cụ thể như 150px */
+    white-space: nowrap;
+    /* Ngăn text bị xuống dòng */
+}
+
+.btn-add:hover {
+    background-color: #388e3c;
+}
+
+.btn-edit {
+    background-color: #2196f3;
+    color: white;
+    margin-right: 8px;
+}
+
+.btn-edit:hover {
+    background-color: #1976d2;
+}
+
+.btn-delete {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #d32f2f;
+}
+
+.btn-restore {
+    background-color: #ff9800;
+    color: white;
+}
+
+.btn-restore:hover {
+    background-color: #f57c00;
+}
+
+/* Table Styles */
+.station-table-container {
+    overflow-x: auto;
+}
+
+.station-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.station-table th,
+.station-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.station-table th {
     background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.station-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.station-table tr.deleted {
+    background-color: #fff8e1;
+}
+
+.station-table tr.deleted:hover {
+    background-color: #ffecb3;
+}
+
+.no-data {
+    text-align: center;
     padding: 20px;
+    color: #757575;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.status-badge.active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.inactive {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.status-badge.maintenance {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
     border-radius: 8px;
-    margin-bottom: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.station-form h3 {
-    margin-top: 0;
-    color: #333;
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
+.close:hover {
+    color: black;
+}
+
+/* Form Styles */
 .form-group {
     margin-bottom: 15px;
 }
@@ -46,95 +209,33 @@
 
 .form-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
 }
 
-.form-actions button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.form-actions button[type="submit"] {
+.btn-submit {
     background-color: #4caf50;
     color: white;
 }
 
-.form-actions button[type="submit"]:hover {
+.btn-submit:hover {
     background-color: #388e3c;
 }
 
-.form-actions button[type="button"] {
+.btn-cancel {
     background-color: #f44336;
     color: white;
 }
 
-.form-actions button[type="button"]:hover {
+.btn-cancel:hover {
     background-color: #d32f2f;
 }
 
-.form-actions button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-.stations-list {
-    overflow-x: auto;
-}
-
-.stations-list table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.stations-list th,
-.stations-list td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.stations-list th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-}
-
-.stations-list tr:hover {
-    background-color: #f5f5f5;
-}
-
-.status-active {
-    color: #2e7d32;
-    font-weight: bold;
-}
-
-.status-inactive {
-    color: #d32f2f;
-    font-weight: bold;
-}
-
-.status-maintenance {
-    color: #ed6c02;
-    font-weight: bold;
-}
-
-.stations-list button {
-    padding: 6px 12px;
-    margin-right: 5px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.stations-list button:hover {
-    opacity: 0.8;
-}
-
-.delete-btn {
-    background-color: #f44336;
-    color: white;
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #757575;
+    font-style: italic;
 }

@@ -1,17 +1,18 @@
 import DatePicker, { registerLocale } from 'react-datepicker';
-import '../searchTicket/SearchForm.css';
+import '../searchTrip/SearchForm.css';
 import { vi } from 'date-fns/locale/vi';
 import { useState } from 'react';
-import axios from 'axios';
-import { environment } from '../../../environment/environment';
 registerLocale('vi', vi);
-const SearchForm = ({ onSearch }) => {
+const SearchForm = ({ onSearch, locations, loadingLocations }) => {
     const [formData, setFormData] = useState({
         fromLocation: '',
-        endLocation: '',
+        toLocation: '',
         passengers: '',
-        tripType: 'one-way'
+        tripType: 'one-way',
+        pickUp: '',
+        dropOff: ''
     });
+
     const [startDate, setStartDate] = useState(new Date());
     const [returnDate, setReturnDate] = useState(null);
     const handleChange = (e) => {
@@ -34,21 +35,12 @@ const SearchForm = ({ onSearch }) => {
             // Format dữ liệu để gửi đến API
             const searchData = {
                 fromLocation: formData.fromLocation,
-                toLocation: formData.endLocation,
+                toLocation: formData.toLocation,
                 date: startDate.toISOString()
             };
             console.log('Searching with data:', searchData);
-            const response = await axios.post(`${environment.apiUrl}/Trip/search`, searchData, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            console.log('Search results:', response.data);
-            onSearch({
-                loading: false,
-                data: response.data,
-                error: null
-            });
+            console.log('Search data:', searchData);
+            await onSearch(searchData); // Gọi hàm handleSearch từ SearchTrip
         }
         catch (error) {
             console.error('Search error:', error);
@@ -59,62 +51,92 @@ const SearchForm = ({ onSearch }) => {
         }
     };
     return (
-        <div className="search-form-container">
-            <form onSubmit={handleSubmit} className="search-form">
-                <div className="trip-type-container">
-                    <button type="button"
-                        className={`trip-type-button ${formData.tripType === 'one-way' ? 'active' : ''}`}
-                        onClick={() => handleTripTypeChange('one-way')}>
-                        Một chiều
-                    </button>
-                    <button
-                        type="button"
-                        className={`trip-type-button ${formData.tripType === 'round-trip' ? 'active' : ''}`}
-                        onClick={() => handleTripTypeChange('round-trip')}
-                    >
-                        Khứ hồi
-                    </button>
+
+        <form onSubmit={handleSubmit} className="search-form">
+            <div className="trip-type-container">
+                <button type="button"
+                    className={`trip-type-button ${formData.tripType === 'one-way' ? 'active' : ''}`}
+                    onClick={() => handleTripTypeChange('one-way')}>
+                    Một chiều
+                </button>
+                <button
+                    type="button"
+                    className={`trip-type-button ${formData.tripType === 'round-trip' ? 'active' : ''}`}
+                    onClick={() => handleTripTypeChange('round-trip')}
+                >
+                    Khứ hồi
+                </button>
+            </div>
+            <div className="form-group">
+                <label htmlFor="FromLocation">Điểm đi</label>
+                <select id='FromLocation'
+                    name="fromLocation"
+                    value={formData.fromLocation}
+                    onChange={handleChange}
+                    required
+                    className="location-select"
+                >
+                    <option value="">Chọn điểm đi</option>
+                    {loadingLocations ? (
+                        <option disabled>Đang tải dữ liệu...</option>
+                    ) : (
+                        locations && locations.length > 0 ? (
+                            locations.map(location => (
+                                <option key={location.id} value={location.name}>
+                                    {location.name}
+                                </option>
+                            ))
+                        ) : (
+                            <option disabled>Không có dữ liệu địa điểm</option>
+                        )
+                    )}
+                </select>
+            </div>
+            <div className="form-group">
+                <label htmlFor="EndLocation">Điểm đến</label>
+                <select
+                    id="EndLocation"
+                    name="toLocation"
+                    value={formData.toLocation}
+                    onChange={handleChange}
+                    required
+                    className="location-select"
+                >
+                    <option value="">Chọn điểm đến</option>
+                    {loadingLocations ? (
+                        <option disabled>Đang tải dữ liệu...</option>
+                    ) : (
+                        locations && locations.length > 0 ? (
+                            locations.map(location => (
+                                <option key={location.id} value={location.name}>
+                                    {location.name}
+                                </option>
+                            ))
+                        ) : (
+                            <option disabled>Không có dữ liệu địa điểm</option>
+                        )
+                    )}
+                </select>
+            </div>
+            <div className="form-group date-picker-container">
+                <label htmlFor="date" className="date-picker-label">Ngày đi</label>
+                <DatePicker selected={startDate} onChange={(date) => setStartDate(date)}
+                    dateFormat='dd/MM/yyyy' locale='vi' minDate={new Date()} className="date-picker-input"
+                    id="date"
+                />
+            </div>
+            {/* Hiển thị Ngày về chỉ khi là chuyến khứ hồi */}
+            {formData.tripType === 'round-trip' && (
+                <div className="form-group date-picker-wrapper">
+                    <label htmlFor="returnDate" className="date-picker-label">Ngày về</label>
+                    <DatePicker selected={returnDate} onChange={(date) => setReturnDate(date)}
+                        dateFormat='dd/MM/yyyy' locale='vi' minDate={startDate} wrapperClassName="date-picker-wrapper"
+                        className="date-picker-input" id="returnDate"
+                        timeIntervals={15}
+                        timeCaption="Thời gian" />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="FromLocation">Điểm đi</label>
-                    <input
-                        type="text"
-                        id="departure"
-                        name="fromLocation"
-                        value={formData.fromLocation}
-                        onChange={handleChange}
-                        placeholder="Nhập điểm đi"
-                        required
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="EndLocation">Điểm đến</label>
-                    <input
-                        type="text"
-                        id="destination"
-                        name="endLocation"
-                        value={formData.endLocation}
-                        onChange={handleChange}
-                        placeholder="Nhập điểm đến"
-                        required
-                    />
-                </div>
-                <div className="form-group date-picker-container">
-                    <label htmlFor="date" className="date-picker-label">Ngày đi</label>
-                    <DatePicker selected={startDate} onChange={(date) => setStartDate(date)}
-                        dateFormat='dd/MM/yyyy' locale='vi' minDate={new Date()} className="date-picker-input"
-                        id="date" />
-                </div>
-                {/* Hiển thị Ngày về chỉ khi là chuyến khứ hồi */}
-                {formData.tripType === 'round-trip' && (
-                    <div className="form-group date-picker-wrapper">
-                        <label htmlFor="returnDate" className="date-picker-label">Ngày về</label>
-                        <DatePicker selected={returnDate} onChange={(date) => setReturnDate(date)}
-                            dateFormat='dd/MM/yyyy' locale='vi' minDate={startDate} wrapperClassName="date-picker-wrapper"
-                            className="date-picker-input" id="returnDate" />
-                    </div>
-                )}
-                {/*
+            )}
+            {/*
                 <div className={`form-group passengers-form-group ${formData.tripType === 'round-trip' ? 'round-trip-adjustment' : ''}`}>
                     <label htmlFor="passengers">Số lượng người</label>
                     <input
@@ -127,11 +149,11 @@ const SearchForm = ({ onSearch }) => {
                     />
                 </div>
                 */}
-                <div className="search-button-container">
-                    <button type="submit" className="search-button">Tìm chuyến xe</button>
-                </div>
-            </form>
-        </div>
+            <div className="search-button-container">
+                <button type="submit" className="search-button">Tìm chuyến xe</button>
+            </div>
+        </form>
+
     )
 };
 export default SearchForm;

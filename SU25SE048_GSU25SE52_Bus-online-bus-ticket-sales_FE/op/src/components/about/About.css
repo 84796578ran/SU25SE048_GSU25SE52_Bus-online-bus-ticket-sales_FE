@@ -11,13 +11,15 @@
     padding: 40px 0;
     background-color: #f9f9f9;
     overflow-y: auto;
-    height: calc(110vh - 170px);
+    height: auto;
     /* Điều chỉnh nếu cần */
+    margin-left: 90px;
 }
 
 /* Phần nội dung chính */
 .main-content {
-    margin-left: 220px;
+    width: -20px;
+    margin-left: 200px;
     /* Bằng chiều rộng của header */
     flex: 1;
     display: flex;
@@ -39,10 +41,13 @@
     display: flex;
     align-items: center;
     gap: 50px;
+    margin-top: 50px;
     padding: 0 20px;
 }
 
 .about-text {
+    width: 150%;
+    margin-left: 120px;
     flex: 1;
 }
 
@@ -112,6 +117,7 @@
     transition: all 0.3s ease;
     font-weight: 600;
     width: fit-content;
+    text-decoration: none;
     box-shadow: 0 4px 10px rgba(42, 82, 190, 0.3);
 }
 
@@ -128,7 +134,7 @@
 
 .about-footer {
     margin-top: 10px;
-    margin-left: -190px;
+    margin-left: 0px;
 }
 
 /* Responsive design */
@@ -150,6 +156,7 @@
 
     .main-content {
         margin-left: 0;
+        width: 180px;
     }
 
     .footer {

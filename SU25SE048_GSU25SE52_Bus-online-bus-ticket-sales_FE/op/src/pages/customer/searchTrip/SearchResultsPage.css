@@ -1,0 +1,20 @@
+.search-results-footer {
+    margin-top: 100px;
+    margin-left: 0px;
+}
+
+.trip-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.trips-list {
+    margin-top: 20px;
+}
+
+.error-message {
+    color: red;
+}

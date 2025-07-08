@@ -82,11 +82,11 @@ button:hover {
 }
 
 button[type="button"] {
-    background-color: #f44336;
+    background-color: white;
 }
 
 button[type="button"]:hover {
-    background-color: #d32f2f;
+    background-color: gray;
 }
 
 table {

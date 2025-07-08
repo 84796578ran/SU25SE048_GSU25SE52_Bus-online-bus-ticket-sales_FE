@@ -39,6 +39,7 @@ const ManageRoute = () => {
         const fetchRoutes = async () => {
             try {
                 const response = await axios.get(`${environment.apiUrl}/Route/GetAllRoute`);
+                console.log('API Response: ', response.data);
                 setRoutes(response.data);
                 setLoading(false);
             } catch (error) {
@@ -173,12 +174,10 @@ const ManageRoute = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     // Lấy chỉ mục của item cuối cùng và đầu tiên trên trang hiện tại
     const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
     // Lọc các route không bị xóa và lấy các item cho trang hiện tại
-    const currentRoutes = routes
-        .filter(route => !route.isDelete)
-        .slice(indexOfFirstItem, indexOfLastItem);
+    const currentRoutes = routes;
     const safeDateFormat = (dateString, formatStr = 'dd/MM/yyyy') => {
         try {
             if (!dateString) return 'N/A';
@@ -213,24 +212,25 @@ const ManageRoute = () => {
                             Tạo tuyến đường
                         </button>
                     </div>
-                    {loading ? (
-                        <div className='loading'>Loading routes...</div>
-                    ) : (
-                        <div className='routes-table-container'>
-                            <table className='routes-table'>
-                                <thead>
-                                    <tr>
-                                        <th>Số hiệu tuyến đường</th>
-                                        <th>Điểm xuất phát</th>
-                                        <th>Điểm kết thúc</th>
-                                        <th>Ngày cấp</th>
-                                    </tr>
 
-                                </thead>
-                                <tbody>
-                                    {
-                                        currentRoutes.filter(route => !route.isDelete).map(route => (
-                                            <tr key={route.id}
+                    <div className='routes-table-container'>
+                        <table className='routes-table'>
+                            <thead>
+                                <tr>
+                                    <th>Số hiệu tuyến đường</th>
+                                    <th>Điểm xuất phát</th>
+                                    <th>Điểm kết thúc</th>
+                                    <th>Ngày cấp</th>
+                                    <th>Thời gian (phút)</th>
+                                    <th>Khoảng cách (km)</th>
+                                </tr>
+
+                            </thead>
+                            <tbody>
+                                {
+                                    currentRoutes.length > 0 ? (
+                                        currentRoutes.map((route) => (
+                                            <tr key={`${route.routeId}`}
                                                 onClick={() => handleRowClick(route)}
                                                 style={{ cursor: 'pointer' }}
                                             >
@@ -246,16 +246,21 @@ const ManageRoute = () => {
                                                 <td>
                                                     {safeDateFormat(route.createAt)}
                                                 </td>
+                                                <td>{route.duration}</td>
+                                                <td>{route.distance}</td>
                                             </tr>
                                         ))
-                                    }
-                                </tbody>
-                            </table>
-                            <Pagination currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={(page) => setCurrentPage(page)} />
-                        </div>
-                    )}
+                                    ) : (
+                                        <tr></tr>
+                                    )
+                                }
+                            </tbody>
+                        </table>
+                        {/* <Pagination currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={(page) => setCurrentPage(page)} /> */}
+                    </div>
+
 
                     {/* Create Route Modal */}
                     {showCreateModal && (

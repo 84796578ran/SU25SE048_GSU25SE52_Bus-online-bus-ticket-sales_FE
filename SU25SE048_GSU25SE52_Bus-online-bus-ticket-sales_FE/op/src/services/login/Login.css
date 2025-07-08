@@ -122,9 +122,9 @@ body,
 }
 
 .google-login {
-    background-color: #ffffff;
+    background-color: white;
     /* Sửa thành màu trắng cho nút Google */
-    color: #4285F4;
+    color: black !important;
     /* Màu chữ xanh của Google */
     display: flex;
     justify-content: center;

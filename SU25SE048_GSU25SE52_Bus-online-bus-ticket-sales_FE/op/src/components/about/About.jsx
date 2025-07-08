@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import '../about/About.css';
 import Footer from '../footer/Footer';
 import Header from '../header/Header';
@@ -33,7 +34,7 @@ function About() {
                                 </div>
                             </div>
 
-                            <button className="cta-button">Đặt vé ngay</button>
+                            <Link to='/' className="cta-button">Đặt vé ngay</Link>
                         </div>
                     </div>
                 </div>

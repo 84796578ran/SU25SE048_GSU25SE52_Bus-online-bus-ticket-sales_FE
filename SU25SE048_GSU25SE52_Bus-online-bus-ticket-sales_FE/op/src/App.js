@@ -12,6 +12,9 @@ import ManageUsers from './pages/manager/manageUser/ManageUser';
 import TicketBooking from './pages/customer/bookTicket/BookTicket';
 import SearchTicket from './pages/customer/searchTicket/SearchTicket';
 import SearchTrip from './pages/customer/searchTrip/SearchTrip';
+import LocationManagement from './pages/admin/manageLocation/ManageLocation';
+import StationManagement from './pages/admin/manageStation/ManageStation';
+import SearchResultsPage from './pages/customer/searchTrip/SearchResultsPage';
 
 function App() {
   return (
@@ -28,7 +31,10 @@ function App() {
           <Route path='/manage-route' element={<ManageRoute />} />
           <Route path='/manager' element={<CreateTrip />} />
           <Route path='/manageUser' element={<ManageUsers />} />
+          <Route path='/manageLocation' element={<LocationManagement />} />
+          <Route path='/manageStation' element={<StationManagement />} />
           <Route path='/bookTicket' element={<TicketBooking />} />
+          <Route path='/search-results' element={<SearchResultsPage />} />
         </Routes>
       </BrowserRouter>
     </div>
