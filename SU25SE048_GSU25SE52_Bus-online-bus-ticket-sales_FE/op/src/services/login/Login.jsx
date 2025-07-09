@@ -128,15 +128,19 @@ const LoginForm = () => {
                 setLoginStatus(true);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.token);
-                navigate('/manage-route', { replace: true });
+                navigate('/manageLocation', { replace: true });
             } else {
                 throw new Error('Sai tên đăng nhập hoặc mật khẩu');
             }
         } catch (error) {
-            console.error('Login error:', error);
-            const backendError = error.response?.data?.message
-                || error.response?.data?.title
-                || error.message;
+            let backendError = error.message;
+            if (error.response) {
+                if (error.response.status === 401) {
+                    backendError = 'Sai tên đăng nhập hoặc mật khẩu';
+                } else {
+                    backendError = error.response.data?.message || error.response.data?.title || error.message;
+                }
+            }
             setErrorMessage(backendError || 'Đăng nhập thất bại');
             setLoginStatus(false);
         } finally {
@@ -197,6 +201,7 @@ const LoginForm = () => {
                                 </button>
 
                                 <Link to="/forgotPass">Quên mật khẩu?</Link>
+                                <Link to="/register" className="register-link">Chưa có tài khoản? Đăng ký</Link>
                             </form>
                         )}
                     </div>
