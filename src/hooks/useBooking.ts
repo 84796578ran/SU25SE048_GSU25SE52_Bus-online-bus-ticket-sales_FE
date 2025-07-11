@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { bookingService } from '../services';
 import type { BookingRequest, Booking } from '../services';
 
-// Custom hook for booking management
 export const useBooking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

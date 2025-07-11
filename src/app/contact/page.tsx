@@ -46,7 +46,7 @@ export default function ContactPage() {
 
   const menuItems = [
     { label: 'Trang chủ', href: '/' },
-    { label: 'Dịch vụ', href: '/services' },
+    { label: 'Dịch vụ', href: '/aid' },
     { label: 'Liên hệ', href: '/contact' },
     { label: 'Giới thiệu', href: '/about' },
   ];
@@ -126,7 +126,7 @@ export default function ContactPage() {
         position="static" 
         elevation={0}
         sx={{ 
-          background: 'linear-gradient(135deg, rgba(56, 142, 60, 0.95) 0%, rgba(27, 94, 32, 0.95) 50%, rgba(102, 187, 106, 0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.95) 0%, rgba(233, 30, 99, 0.95) 50%, rgba(244, 143, 177, 0.95) 100%)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -151,17 +151,25 @@ export default function ContactPage() {
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
               }
             }}>
-              <DirectionsBus sx={{ 
-                mr: 1.5, 
-                fontSize: '2rem',
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
-              }} />
+              <Box
+                component="img"
+                src="/images/pic4.png"
+                alt="XeTiic Logo"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  mr: 1.5,
+                  borderRadius: 1,
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
+                }}
+              />
               <Typography 
                 variant="h5" 
                 component="div" 
                 sx={{ 
                   fontWeight: 700,
-                  background: 'linear-gradient(45deg, #fff 30%, #c8e6c9 90%)',
+                  background: 'linear-gradient(45deg, #fff 30%, #fce4ec 90%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -171,7 +179,7 @@ export default function ContactPage() {
                   display: { xs: 'none', sm: 'block' }
                 }}
               >
-                BusTicket Online
+                XeTiic
               </Typography>
               <Typography 
                 variant="h6" 
@@ -208,7 +216,7 @@ export default function ContactPage() {
                     '&:hover': {
                       background: 'rgba(255, 255, 255, 0.15)',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 20px rgba(56, 142, 60, 0.25)',
+                      boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
                     },
                     '&::before': {
                       content: '""',
@@ -250,7 +258,7 @@ export default function ContactPage() {
                     borderColor: 'white',
                     background: 'rgba(255, 255, 255, 0.1)',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(56, 142, 60, 0.25)',
+                    boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
                   }
                 }}
               >
@@ -261,19 +269,20 @@ export default function ContactPage() {
               <Button 
                 variant="contained" 
                 sx={{ 
-                  bgcolor: 'white', 
-                  color: '#388e3c',
+                  bgcolor: '#ff4081', 
+                  color: 'white',
                   borderRadius: 3,
                   px: 3,
                   py: 1,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   textTransform: 'none',
                   boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     bgcolor: '#f5f5f5',
+                    color: '#ff4081',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(56, 142, 60, 0.3)',
+                    boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
                   }
                 }}
               >
@@ -317,7 +326,7 @@ export default function ContactPage() {
         sx={{ 
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
-            background: 'linear-gradient(135deg, rgba(56, 142, 60, 0.95) 0%, rgba(27, 94, 32, 0.95) 100%)',
+            background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.95) 0%, rgba(233, 30, 99, 0.95) 100%)',
             backdropFilter: 'blur(20px)',
             borderLeft: '1px solid rgba(255, 255, 255, 0.12)',
           }
@@ -332,12 +341,19 @@ export default function ContactPage() {
             pb: 2 
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <DirectionsBus sx={{ 
-                mr: 1.5, 
-                color: 'white',
-                fontSize: '1.8rem',
-                filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
-              }} />
+              <Box
+                component="img"
+                src="/images/pic4.png"
+                alt="XeTiic Logo"
+                sx={{
+                  width: 28,
+                  height: 28,
+                  mr: 1.5,
+                  borderRadius: 1,
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                }}
+              />
               <Typography 
                 variant="h6" 
                 sx={{ 
@@ -417,7 +433,7 @@ export default function ContactPage() {
                       borderColor: 'white',
                       background: 'rgba(255, 255, 255, 0.1)',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 20px rgba(56, 142, 60, 0.25)',
+                      boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
                     }
                   }}
                   onClick={handleMobileMenuClose}
@@ -430,18 +446,19 @@ export default function ContactPage() {
                   variant="contained" 
                   fullWidth
                   sx={{
-                    bgcolor: 'white',
-                    color: '#388e3c',
+                    bgcolor: '#ff4081',
+                    color: 'white',
                     borderRadius: 3,
                     py: 1.5,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     textTransform: 'none',
                     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
+                      color: '#ff4081',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 8px 25px rgba(56, 142, 60, 0.3)',
+                      boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
                     }
                   }}
                   onClick={handleMobileMenuClose}
@@ -469,7 +486,7 @@ export default function ContactPage() {
         {/* Header */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, rgba(56, 142, 60, 0.9) 0%, rgba(27, 94, 32, 0.9) 100%)',
+            background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.9) 0%, rgba(233, 30, 99, 0.9) 100%)',
             color: 'white',
             py: { xs: 8, md: 12 },
             textAlign: 'center',
@@ -573,26 +590,26 @@ export default function ContactPage() {
                     boxShadow: '0 4px 20px rgba(56, 142, 60, 0.1)',
                     '&:hover': {
                       transform: 'translateY(-4px)',
-                      boxShadow: '0 12px 40px rgba(56, 142, 60, 0.2)',
-                      borderColor: 'rgba(56, 142, 60, 0.3)',
+                      boxShadow: '0 12px 40px rgba(244, 143, 177, 0.2)',
+                      borderColor: 'rgba(244, 143, 177, 0.3)',
                     },
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                     <Box
                       sx={{
-                        bgcolor: '#388e3c',
+                        bgcolor: '#e91e63',
                         color: 'white',
                         borderRadius: '50%',
                         p: 1.5,
                         minWidth: 'auto',
-                        boxShadow: '0 4px 15px rgba(56, 142, 60, 0.3)',
+                        boxShadow: '0 4px 15px rgba(244, 143, 177, 0.3)',
                       }}
                     >
                       {info.icon}
                     </Box>
                     <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, color: '#388e3c' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 0.5, color: '#e91e63' }}>
                         {info.title}
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>

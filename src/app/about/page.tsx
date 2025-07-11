@@ -11,6 +11,8 @@ import {
   LinearProgress,
   Divider,
   Button,
+  AppBar,
+  Toolbar,
 } from '@mui/material';
 import {
   DirectionsBus,
@@ -25,6 +27,7 @@ import {
   Support,
   LocationOn,
 } from '@mui/icons-material';
+import Link from 'next/link';
 
 export default function AboutPage() {
   const stats = [
@@ -99,10 +102,155 @@ export default function AboutPage() {
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
+      {/* Header */}
+      <AppBar 
+        position="static" 
+        elevation={0}
+        sx={{ 
+          background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.95) 0%, rgba(233, 30, 99, 0.95) 50%, rgba(244, 143, 177, 0.95) 100%)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Toolbar sx={{ minHeight: { xs: 64, sm: 70 }, px: { xs: 2, md: 4 } }}>
+          {/* Logo */}
+          <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              p: 1,
+              borderRadius: 2,
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              mr: 3,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'rgba(255, 255, 255, 0.15)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              }
+            }}>
+              <Box
+                component="img"
+                src="/images/pic4.png"
+                alt="XeTiic Logo"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  mr: 1.5,
+                  borderRadius: 1,
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
+                }}
+              />
+              <Typography 
+                variant="h5" 
+                component="div" 
+                sx={{ 
+                  fontWeight: 700,
+                  background: 'linear-gradient(45deg, #fff 30%, #fce4ec 90%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  letterSpacing: '-0.5px',
+                  fontSize: { xs: '1.3rem', sm: '1.5rem' },
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                  display: { xs: 'none', sm: 'block' }
+                }}
+              >
+                XeTiic
+              </Typography>
+            </Box>
+          </Link>
+          
+          {/* Desktop Navigation Menu */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1, ml: 2 }}>
+            {[
+              { label: 'Trang chủ', href: '/' },
+              { label: 'Dịch vụ', href: '/aid' },
+              { label: 'Liên hệ', href: '/contact' },
+              { label: 'Giới thiệu', href: '/about' },
+            ].map((item, index) => (
+              <Link key={item.label} href={item.href} style={{ textDecoration: 'none' }}>
+                <Button 
+                  color="inherit" 
+                  sx={{ 
+                    textTransform: 'none', 
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 3,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                    },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              </Link>
+            ))}
+          </Box>
+
+          {/* Desktop Auth Buttons */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+            <Link href="/login-template" style={{ textDecoration: 'none' }}>
+              <Button 
+                variant="outlined"
+                sx={{
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                  borderRadius: 3,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: 'white',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
+              >
+                Đăng nhập
+              </Button>
+            </Link>
+            <Link href="/register-template" style={{ textDecoration: 'none' }}>
+              <Button 
+                variant="contained" 
+                sx={{ 
+                  bgcolor: '#ff4081', 
+                  color: 'white',
+                  borderRadius: 3,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    color: '#ff4081',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                  }
+                }}
+              >
+                Đăng ký
+              </Button>
+            </Link>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
       {/* Hero Section */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, rgba(56, 142, 60, 0.9) 0%, rgba(27, 94, 32, 0.9) 100%)',
+          background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.9) 0%, rgba(233, 30, 99, 0.9) 100%)',
           color: 'white',
           py: { xs: 8, md: 12 },
           textAlign: 'center',
@@ -201,7 +349,7 @@ export default function AboutPage() {
         <Box sx={{ mb: 8 }}>
           <Typography
             variant="h3"
-            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: '#388e3c' }}
+            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: '#f48fb1' }}
           >
             Thành tựu của chúng tôi
           </Typography>
@@ -231,7 +379,7 @@ export default function AboutPage() {
               >
                 <Box
                   sx={{
-                    bgcolor: 'primary.main',
+                    bgcolor: '#f48fb1',
                     color: 'white',
                     borderRadius: '50%',
                     p: 2,
@@ -243,7 +391,7 @@ export default function AboutPage() {
                 </Box>
                 <Typography
                   variant="h3"
-                  sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1 }}
+                  sx={{ fontWeight: 'bold', color: '#f48fb1', mb: 1 }}
                 >
                   {stat.number}
                 </Typography>
@@ -274,7 +422,7 @@ export default function AboutPage() {
             >
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 'bold', mb: 3, color: 'primary.main' }}
+                sx={{ fontWeight: 'bold', mb: 3, color: '#f48fb1' }}
               >
                 Sứ mệnh
               </Typography>
@@ -295,7 +443,7 @@ export default function AboutPage() {
             >
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 'bold', mb: 3, color: 'primary.main' }}
+                sx={{ fontWeight: 'bold', mb: 3, color: '#f48fb1' }}
               >
                 Tầm nhìn
               </Typography>
@@ -312,7 +460,7 @@ export default function AboutPage() {
         <Box sx={{ mb: 8 }}>
           <Typography
             variant="h3"
-            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: 'primary.main' }}
+            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: '#f48fb1' }}
           >
             Giá trị cốt lõi
           </Typography>
@@ -374,7 +522,7 @@ export default function AboutPage() {
         <Box sx={{ mb: 8 }}>
           <Typography
             variant="h3"
-            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: 'primary.main' }}
+            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: '#f48fb1' }}
           >
             Hành trình phát triển
           </Typography>
@@ -440,7 +588,7 @@ export default function AboutPage() {
         <Box sx={{ mb: 8 }}>
           <Typography
             variant="h3"
-            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: 'primary.main' }}
+            sx={{ fontWeight: 'bold', textAlign: 'center', mb: 6, color: '#f48fb1' }}
           >
             Đội ngũ lãnh đạo
           </Typography>
