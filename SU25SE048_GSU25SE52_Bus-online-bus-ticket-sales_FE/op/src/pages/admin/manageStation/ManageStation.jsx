@@ -1,161 +1,124 @@
-import React, { useState, useEffect } from 'react';
-import StationService from './StationService';
-
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { environment } from "../../../environment/environment";
 import '../manageStation/ManageStation.css';
-import StationForm from './StationForm';
-
-const ManageStation = () => {
+const StationManagement = () => {
     const [stations, setStations] = useState([]);
-    const [currentStation, setCurrentStation] = useState(null);
+    const [formData, setFormData] = useState({
+        id: '',
+        name: '',
+        locationId: '',
+        status: 1,
+        isDeleted: false,
+    });
     const [isEditing, setIsEditing] = useState(false);
-    const [showDeleted, setShowDeleted] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
+    const fetchStations = async () => {
+        try {
+            const res = await axios.get(`${environment.apiUrl}/Station`);
+            console.log("API response:", res.data); // 👈 xem log
+            if (Array.isArray(res.data)) {
+                setStations(res.data);
+            } else if (Array.isArray(res.data.data)) {
+                // Trong trường hợp response dạng { data: [...] }
+                setStations(res.data.data);
+            } else {
+                console.error("Invalid stations data format:", res.data);
+                setStations([]); // fallback để tránh crash
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    }
     useEffect(() => {
         fetchStations();
-    }, [showDeleted]);
-
-    const fetchStations = async () => {
-        setIsLoading(true);
+    }, []);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+    const handleCreate = async () => {
         try {
-            const data = await StationService.getAllStations();
-            // Filter based on showDeleted status
-            const filteredStations = showDeleted
-                ? data.filter(station => station.isDeleted)
-                : data.filter(station => !station.isDeleted);
-            setStations(filteredStations);
-            setError(null);
-        } catch (err) {
-            setError('Failed to fetch stations. Please try again.');
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleAddStation = () => {
-        setCurrentStation({
-            stationId: '',
-            name: '',
-            locationId: '',
-            status: 'active'
-        });
-        setIsEditing(false);
-        document.getElementById('station-form-modal').style.display = 'block';
-    };
-
-    const handleEditStation = (station) => {
-        setCurrentStation({
-            id: station.id,  // Đảm bảo có id
-            ...station
-        });
-        setIsEditing(true);
-        document.getElementById('station-form-modal').style.display = 'block';
-    };
-
-    const handleDeleteStation = async (id) => {
-        if (!id) {
-            console.error('No ID provided for deletion');
-            setError('No station ID provided for deletion');
-            return;
-        }
-        if (window.confirm('Are you sure you want to delete this station?')) {
-            try {
-                await StationService.softDeleteStation(id);
-                fetchStations();
-            } catch (err) {
-                setError('Failed to delete station. Please try again.');
-                console.error(err);
-            }
-        }
-    };
-    const handleSubmit = async (stationData) => {
-        try {
-            if (isEditing) {
-                await StationService.updateStation(currentStation.id, {
-                    ...stationData,
-                    id: currentStation.id
-                });
-            } else {
-                await StationService.createStation(stationData);
-            }
+            await axios.post(`${environment.apiUrl}/Station`, {
+                name: formData.name,
+                locationId: parseInt(formData.locationId),
+                status: parseInt(formData.status)
+            });
+            setFormData({
+                id: '',
+                name: '',
+                locationId: '',
+                status: 1,
+                isDeleted: false
+            });
             fetchStations();
-            document.getElementById('station-form-modal').style.display = 'none';
-        } catch (err) {
-            setError(`Failed to ${isEditing ? 'update' : 'create'} station. Please try again.`);
-            console.error(err);
+        } catch (error) {
+            console.error('Create error:', error);
+        }
+    }
+    const handleEdit = (station) => {
+        setFormData({ ...station });
+        setIsEditing(true);
+    };
+    const handleUpdate = async () => {
+        try {
+            await axios.put(`${environment.apiUrl}/Station/${formData.id}`, {
+                name: formData.name,
+                locationId: parseInt(formData.locationId),
+                status: parseInt(formData.status),
+            });
+            setFormData({ id: '', name: '', locationId: '', status: 1, isDeleted: false });
+            setIsEditing(false);
+            fetchStations();
+        } catch (error) {
+            console.error('Update error:', error);
         }
     };
-
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`${environment.apiUrl}/Station/${id}`);
+            fetchStations();
+        } catch (error) {
+            console.error('Delete error:', error);
+        }
+    }
     return (
-        <div className="manage-station-container">
-            <h1>Manage Stations</h1>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="station-controls">
-                <button onClick={handleAddStation} className="btn-add">
-                    Add New Station
-                </button>
-            </div>
-            {isLoading ? (
-                <div className="loading">Loading stations...</div>
-            ) : (
-                <div className="station-table-container">
-                    <table className="station-table">
-                        <thead>
-                            <tr>
-                                <th>Station ID</th>
-                                <th>Name</th>
-                                <th>Actions</th>
+        <div className="station-management">
+            <h2>Quản lý trạm</h2>
+            <div className="station-form">
+                <input name="name" placeholder="Name" value={formData.name} onChange={handleInputChange} />
+                <input name="locationId" placeholder="Location ID" value={formData.locationId} onChange={handleInputChange} />
+                <select name="status" value={formData.status} onChange={handleInputChange}>
+                    <option value={1}>Active</option>
+                    <option value={0}>Inactive</option>
+                </select>
+                {isEditing ? (
+                    <button onClick={handleUpdate}>Update</button>
+                ) : (
+                    <button onClick={handleCreate} className="create-button">Create</button>
+                )}
+                <table className="station-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {stations.map((station) => (
+                            <tr key={station.id}>
+                                <td>{station.name}</td>
+                                <td>{station.status === 1 ? 'Active' : 'Inactive'}</td>
+                                <td>
+                                    <button onClick={() => handleEdit(station)}>Edit</button>
+                                    <button onClick={() => handleDelete(station.id)}>Delete</button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {stations.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="no-data">
-                                        {showDeleted ? 'No deleted stations found' : 'No stations found'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                stations.map((station) => (
-                                    <tr key={station.id} className={station.isDeleted ? 'deleted' : ''}>
-                                        <td>{station.stationId}</td>
-                                        <td>{station.name}</td>
-                                        <td className="actions">
-
-                                            <>
-                                                <button
-                                                    onClick={() => handleEditStation(station)}
-                                                    className="btn-edit"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteStation(station.id)}
-                                                    className="btn-delete"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            <StationForm
-                station={currentStation}
-                isEditing={isEditing}
-                onSubmit={handleSubmit}
-                onClose={() => document.getElementById('station-form-modal').style.display = 'none'}
-            />
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    );
-};
-
-export default ManageStation;
+    )
+}
+export default StationManagement;

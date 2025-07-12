@@ -15,14 +15,14 @@ const SearchTrip = () => {
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                console.log('Fetching locations from:', `${environment.apiUrl}/Location/GetAllLocations`);
-                const response = await axios.get(`${environment.apiUrl}/Location/GetAllLocations`);
+                console.log('Fetching locations from:', `${environment.apiUrl}/Location`);
+                const response = await axios.get(`${environment.apiUrl}/Location`);
                 // Kiểm tra cấu trúc dữ liệu trả về
                 console.log('API Response:', response.data);
 
                 // Giả sử API trả về mảng các đối tượng có trường name
-                if (response.data && Array.isArray(response.data)) {
-                    setLocations(response.data);
+                if (response.data && Array.isArray(response.data.data)) {
+                    setLocations(response.data.data);
                 } else {
                     console.error('Unexpected data format from API');
                     setLocations([]); // Set mảng rỗng nếu dữ liệu không đúng định dạng

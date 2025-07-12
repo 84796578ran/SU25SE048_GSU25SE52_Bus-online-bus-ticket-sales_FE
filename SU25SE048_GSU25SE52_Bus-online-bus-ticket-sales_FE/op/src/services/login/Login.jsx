@@ -103,14 +103,12 @@ const LoginForm = () => {
     // Kiểm tra môi trường và URL từ biến môi trường
     console.log('Current Environment:', process.env.NODE_ENV);
     console.log('API Base URL:', environment.apiUrl);
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
     const [errorMessage, setErrorMessage] = useState('');
     const [loginStatus, setLoginStatus] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);

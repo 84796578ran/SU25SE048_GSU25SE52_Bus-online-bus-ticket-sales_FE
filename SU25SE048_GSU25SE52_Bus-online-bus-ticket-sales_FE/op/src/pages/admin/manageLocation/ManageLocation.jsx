@@ -14,7 +14,7 @@ const LocationManagement = () => {
 
     const fetchLocations = async () => {
         try {
-            const res = await axios.get(`${environment.apiUrl}/Location/GetAllLocations`);
+            const res = await axios.get(`${environment.apiUrl}/Location`);
             console.log("API response:", res.data);
             setLocations(Array.isArray(res.data) ? res.data : res.data.data || []);
         } catch (err) {
@@ -31,9 +31,9 @@ const LocationManagement = () => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put(`${environment.apiUrl}/Location/UpdateLocation?id=${formData.id}`, formData);
+                await axios.put(`${environment.apiUrl}/Location/${formData.id}`, formData);
             } else {
-                await axios.post(`${environment.apiUrl}/Location/CreateLocation`, formData);
+                await axios.post(`${environment.apiUrl}/Location`, formData);
             }
             fetchLocations();
             setFormData({ id: '', name: '', timeTransit: '', note: '' });
@@ -53,7 +53,7 @@ const LocationManagement = () => {
     };
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${environment.apiUrl}/Location/DeleteLocation?id=${id}`);
+            await axios.delete(`${environment.apiUrl}/Location/${id}`);
             fetchLocations();
         } catch (err) {
             console.error(err);

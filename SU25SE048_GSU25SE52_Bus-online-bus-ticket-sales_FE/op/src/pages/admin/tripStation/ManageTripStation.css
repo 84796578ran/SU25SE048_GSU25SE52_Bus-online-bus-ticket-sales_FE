@@ -1,0 +1,198 @@
+/* Tổng thể container */
+.trip-station-manager {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #333;
+}
+
+h1,
+h2 {
+    text-align: center;
+    color: #0056b3;
+}
+
+/* Container của Form */
+.form-container {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.trip-station-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 calc(33.333% - 20px);
+    /* 3 cột trên một hàng */
+    min-width: 200px;
+}
+
+.form-group.full-width {
+    flex: 1 1 100%;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    /* Quan trọng */
+    font-size: 1rem;
+    font-family: inherit;
+    /* Thêm thuộc tính này để trình duyệt (đặc biệt là trên iOS) không tự ý thay đổi giao diện */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    /* Thêm background để đồng nhất, đặc biệt cho select */
+    background-color: white;
+}
+
+/* Riêng cho select, chúng ta cần thêm mũi tên vì "appearance: none" đã xóa nó đi */
+.form-group select {
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+    /* Thêm khoảng trống để mũi tên không đè lên chữ */
+}
+
+.form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Nút bấm trên form */
+.form-buttons {
+    flex: 1 1 100%;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.form-buttons button {
+    /* ----- THÊM/SỬA CÁC THUỘC TÍNH NÀY ----- */
+    width: auto;
+    /* QUAN TRỌNG: Để button tự co giãn theo nội dung */
+    flex-grow: 0;
+    /* Đảm bảo button không "phình" ra trong flex container */
+    /* -------------------------------------- */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+}
+
+.btn-submit {
+    background-color: #007bff;
+}
+
+.btn-submit:hover {
+    background-color: #0056b3;
+}
+
+.btn-cancel {
+    background-color: #6c757d;
+}
+
+.btn-cancel:hover {
+    background-color: #5a6268;
+}
+
+/* Container của bảng */
+.table-container {
+    overflow-x: auto;
+    /* Cho phép cuộn ngang trên màn hình nhỏ */
+}
+
+.trip-station-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.trip-station-table th,
+.trip-station-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.trip-station-table th {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+}
+
+.trip-station-table tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.trip-station-table tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+/* Nút hành động trong bảng */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-buttons button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.btn-edit {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-edit:hover {
+    background-color: #e0a800;
+}
+
+.btn-delete {
+    background-color: #dc3545;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+}
+
+/* Thông báo lỗi */
+.error-message {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 15px;
+}

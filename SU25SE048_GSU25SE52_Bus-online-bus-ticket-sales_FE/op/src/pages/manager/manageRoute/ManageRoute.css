@@ -20,6 +20,8 @@
 .layout-container {
     display: flex;
     flex: 1;
+    margin-left: -25px;
+    margin-top: -20px;
 }
 
 .bus-management-tabs h1 {
@@ -101,6 +103,7 @@ h1 {
 .routes-table {
     width: 100%;
     border-collapse: collapse;
+    margin-left: 190px;
 }
 
 .routes-table th,
@@ -125,8 +128,9 @@ h1 {
 /* Thêm vào ManageRoute.css */
 .manage-route-footer {
     padding: 20px 0;
-    margin-top: 290px;
+    margin-top: 56px;
     width: 100%;
+    margin-left: 290px;
 }
 
 .description-cell {
@@ -448,6 +452,7 @@ small {
     height: calc(100vh - 40px);
     width: calc(100% - 220px);
     overflow-y: auto;
+    margin-left: 280px;
 }
 
 .form-control {

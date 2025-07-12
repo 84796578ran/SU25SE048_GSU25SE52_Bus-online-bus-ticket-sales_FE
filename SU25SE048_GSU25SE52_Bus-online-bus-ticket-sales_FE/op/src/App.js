@@ -15,6 +15,7 @@ import SearchTrip from './pages/customer/searchTrip/SearchTrip';
 import LocationManagement from './pages/admin/manageLocation/ManageLocation';
 import StationManagement from './pages/admin/manageStation/ManageStation';
 import SearchResultsPage from './pages/customer/searchTrip/SearchResultsPage';
+import ManageTripStation from './pages/admin/tripStation/ManageTripStation';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path='/' element={<SearchTrip />} />
           <Route path='/forgotPass' element={<ForgotPassword />} />
           <Route path='/manage-route' element={<ManageRoute />} />
+          <Route path='/manageTripStation' element={<ManageTripStation />} />
           <Route path='/manager' element={<CreateTrip />} />
           <Route path='/manageUser' element={<ManageUsers />} />
           <Route path='/manageLocation' element={<LocationManagement />} />

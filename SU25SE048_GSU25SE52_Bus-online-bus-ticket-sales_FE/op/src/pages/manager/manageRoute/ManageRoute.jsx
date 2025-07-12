@@ -5,7 +5,6 @@ import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import Menu from '../menu/Menu';
 import { format } from 'date-fns';
-import Pagination from '../../../components/pagination/Pagination';
 import Footer from '../../../components/footer/Footer';
 import { environment } from '../../../environment/environment';
 const ManageRoute = () => {
@@ -261,7 +260,9 @@ const ManageRoute = () => {
                             onPageChange={(page) => setCurrentPage(page)} /> */}
                     </div>
 
-
+                    <div className='manage-route-footer'>
+                        <Footer />
+                    </div>
                     {/* Create Route Modal */}
                     {showCreateModal && (
                         <div className="modal-overlay">
@@ -521,9 +522,7 @@ const ManageRoute = () => {
                             </div>
                         </div>
                     )}
-                    <div className='manage-route-footer'>
-                        <Footer />
-                    </div>
+
                 </div>
             </div>
         </div>

@@ -1,241 +1,65 @@
-/* Main Container */
-.manage-station-container {
+.station-management {
+    max-width: 1000px;
+    margin: auto;
     padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-    overflow-y: auto;
     font-family: Arial, sans-serif;
-    height: 80vh;
-    /* Thêm chiều cao cố định */
 }
 
-/* Error Message */
-.error-message {
-    color: #d32f2f;
-    background-color: #fde8e8;
-    padding: 10px 15px;
-    border-radius: 4px;
+h2 {
+    text-align: center;
     margin-bottom: 20px;
-    border: 1px solid #ef9a9a;
 }
 
-/* Controls */
-.station-controls {
+.station-form {
     display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
     justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
-.toggle-deleted {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
+.create-button {
+    flex-basis: 100%;
+    max-width: 150px;
+    /* Giới hạn chiều ngang */
+    margin: 10px auto 0;
+    /* Tạo khoảng cách phía trên + căn giữa ngang */
+    text-align: center;
 }
 
-/* Buttons */
-button {
+.station-form input,
+.station-form select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.station-form button {
     padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
     border: none;
     border-radius: 4px;
+    width: fit-content;
     cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
 }
 
-.btn-add {
-    background-color: #4caf50;
-    color: white;
-    padding: 8px 12px;
-    /* Giảm padding từ 8px 16px */
-    width: auto;
-    /* Hoặc có thể set width cụ thể như 150px */
-    white-space: nowrap;
-    /* Ngăn text bị xuống dòng */
-}
-
-.btn-add:hover {
-    background-color: #388e3c;
-}
-
-.btn-edit {
-    background-color: #2196f3;
-    color: white;
-    margin-right: 8px;
-}
-
-.btn-edit:hover {
-    background-color: #1976d2;
-}
-
-.btn-delete {
-    background-color: #f44336;
-    color: white;
-}
-
-.btn-delete:hover {
-    background-color: #d32f2f;
-}
-
-.btn-restore {
-    background-color: #ff9800;
-    color: white;
-}
-
-.btn-restore:hover {
-    background-color: #f57c00;
-}
-
-/* Table Styles */
-.station-table-container {
-    overflow-x: auto;
+.station-form button:hover {
+    background-color: #0056b3;
 }
 
 .station-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
 }
 
 .station-table th,
 .station-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
 }
 
 .station-table th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-}
-
-.station-table tr:hover {
-    background-color: #f9f9f9;
-}
-
-.station-table tr.deleted {
-    background-color: #fff8e1;
-}
-
-.station-table tr.deleted:hover {
-    background-color: #ffecb3;
-}
-
-.no-data {
-    text-align: center;
-    padding: 20px;
-    color: #757575;
-}
-
-/* Status Badges */
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: capitalize;
-}
-
-.status-badge.active {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-}
-
-.status-badge.inactive {
-    background-color: #fff3e0;
-    color: #e65100;
-}
-
-.status-badge.maintenance {
-    background-color: #e3f2fd;
-    color: #1565c0;
-}
-
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 50%;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close:hover {
-    color: black;
-}
-
-/* Form Styles */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.btn-submit {
-    background-color: #4caf50;
-    color: white;
-}
-
-.btn-submit:hover {
-    background-color: #388e3c;
-}
-
-.btn-cancel {
-    background-color: #f44336;
-    color: white;
-}
-
-.btn-cancel:hover {
-    background-color: #d32f2f;
-}
-
-/* Loading State */
-.loading {
-    text-align: center;
-    padding: 20px;
-    color: #757575;
-    font-style: italic;
+    background-color: #f2f2f2;
 }
