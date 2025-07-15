@@ -182,7 +182,26 @@ export default function BusTicketHomePage() {
 
   const handleSearch = () => {
     console.log('Search data:', { tripType, ...searchData });
-    // Implement search logic here
+    
+    // Validate required fields before proceeding
+    if (!searchData.from || !searchData.to || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
+      alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
+      return;
+    }
+
+    // Convert search data to query params
+    const params = new URLSearchParams();
+    params.append('from', searchData.from);
+    params.append('to', searchData.to);
+    params.append('departureDate', searchData.departureDate);
+    params.append('tripType', tripType);
+    
+    if (tripType === 'roundTrip') {
+      params.append('returnDate', searchData.returnDate);
+    }
+    
+    // Navigate to search results page with query params
+    window.location.href = `/booking?${params.toString()}`;
   };
   return (
     <Box>
@@ -1135,18 +1154,18 @@ export default function BusTicketHomePage() {
             >
               <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'grey.200' }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Tuyến đường phổ biến:
+                  Nhà xe đánh giá cao nhất:
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                   {[
-                    'Hà Nội → TP.HCM',
-                    'Hà Nội → Đà Nẵng', 
-                    'TP.HCM → Nha Trang',
-                    'Hà Nội → Hải Phòng',
-                    'TP.HCM → Đà Lạt'
-                  ].map((route, index) => (
+                    { name: 'Phương Trang', rating: 4.8 },
+                    { name: 'Kumho', rating: 4.9 },
+                    { name: 'Hà Sơn', rating: 4.7 },
+                    { name: 'Hoàng Long', rating: 4.6 },
+                    { name: 'Sao Việt', rating: 4.5 }
+                  ].map((company, index) => (
                     <motion.div
-                      key={route}
+                      key={company.name}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: 1.3 + index * 0.1 }}
@@ -1154,14 +1173,11 @@ export default function BusTicketHomePage() {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Chip
-                        label={route}
+                        icon={<DirectionsBus sx={{ fontSize: '0.9rem' }} />}
+                        label={`${company.name} (${company.rating}★)`}
                         variant="outlined"
                         clickable
                         size="small"
-                        onClick={() => {
-                          const [from, to] = route.split(' → ');
-                          setSearchData(prev => ({ ...prev, from, to }));
-                        }}
                         sx={{ 
                           '&:hover': { 
                             bgcolor: '#e91e63', 
