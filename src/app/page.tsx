@@ -820,6 +820,7 @@ export default function BusTicketHomePage() {
                           fontSize: '1rem',
                           minWidth: { xs: 140, md: 170 },
                           width: { xs: 140, md: 170 },
+                          whiteSpace: 'nowrap',
                           position: 'relative',
                           transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                           overflow: 'hidden',
