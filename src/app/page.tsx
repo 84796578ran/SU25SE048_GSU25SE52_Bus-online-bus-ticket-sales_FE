@@ -61,28 +61,28 @@ export default function BusTicketHomePage() {
   // Framer Motion Variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } 
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
 
   const fadeInLeft = {
     hidden: { opacity: 0, x: -60 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } 
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
 
   const fadeInRight = {
     hidden: { opacity: 0, x: 60 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } 
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
 
@@ -99,45 +99,45 @@ export default function BusTicketHomePage() {
 
   const scaleIn = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
-      transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } 
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
 
   const slideIn = {
     hidden: { opacity: 0, y: 100 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] } 
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
-  
+
   // Array of background images for slideshow
   const backgroundImages = [
     {
       backgroundImage: 'url("/images/pic1.jpg")',
-      overlay: 'rgba(0, 0, 0, 0.3)', 
+      overlay: 'rgba(0, 0, 0, 0.3)',
       title: 'Đặt vé xe bus trực tuyến dễ dàng và thuận tiện',
       subtitle: 'Hệ thống đặt vé hiện đại, an toàn và tiện lợi'
     },
     {
       backgroundImage: 'url("/images/pic2.jpg")',
-      overlay: 'rgba(0, 0, 0, 0.3)', 
+      overlay: 'rgba(0, 0, 0, 0.3)',
       title: 'Khám phá những hành trình mới lạ và hấp dẫn ',
       subtitle: 'Kết nối mọi miền đất nước với dịch vụ chất lượng cao'
     },
     {
       backgroundImage: 'url("/images/pic3.jpg")',
-      overlay: 'rgba(0, 0, 0, 0.3)', 
+      overlay: 'rgba(0, 0, 0, 0.3)',
       title: 'Ưu đãi đặc biệt và nhiều sự lựa chọn, linh hoạt',
       subtitle: 'Giá vé tốt nhất, dịch vụ tuyệt vời cho mọi chuyến đi'
     }
   ];
 
-  
+
   useEffect(() => {
     if (!isPaused) {
       const interval = setInterval(() => {
@@ -182,7 +182,7 @@ export default function BusTicketHomePage() {
 
   const handleSearch = () => {
     console.log('Search data:', { tripType, ...searchData });
-    
+
     // Validate required fields before proceeding
     if (!searchData.from || !searchData.to || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
@@ -195,11 +195,11 @@ export default function BusTicketHomePage() {
     params.append('to', searchData.to);
     params.append('departureDate', searchData.departureDate);
     params.append('tripType', tripType);
-    
+
     if (tripType === 'roundTrip') {
       params.append('returnDate', searchData.returnDate);
     }
-    
+
     // Navigate to search results page with query params
     window.location.href = `/booking?${params.toString()}`;
   };
@@ -211,10 +211,10 @@ export default function BusTicketHomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <AppBar 
-          position="static" 
+        <AppBar
+          position="static"
           elevation={0}
-          sx={{ 
+          sx={{
             background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.95) 0%, rgba(233, 30, 99, 0.95) 50%, rgba(244, 143, 177, 0.95) 100%)',
             backdropFilter: 'blur(10px)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
@@ -228,8 +228,8 @@ export default function BusTicketHomePage() {
               whileTap={{ scale: 0.95 }}
             >
               <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   alignItems: 'center',
                   p: 1,
                   borderRadius: 2,
@@ -262,10 +262,10 @@ export default function BusTicketHomePage() {
                       }}
                     />
                   </motion.div>
-                  <Typography 
-                    variant="h5" 
-                    component="div" 
-                    sx={{ 
+                  <Typography
+                    variant="h5"
+                    component="div"
+                    sx={{
                       fontWeight: 700,
                       background: 'linear-gradient(45deg, #fff 30%, #fce4ec 90%)',
                       backgroundClip: 'text',
@@ -279,10 +279,10 @@ export default function BusTicketHomePage() {
                   >
                     XeTiic
                   </Typography>
-                  <Typography 
-                    variant="h6" 
-                    component="div" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{
                       fontWeight: 700,
                       color: 'white',
                       fontSize: '1.1rem',
@@ -294,167 +294,167 @@ export default function BusTicketHomePage() {
                 </Box>
               </Link>
             </motion.div>
-          
-          {/* Desktop Navigation Menu */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            style={{ display: 'flex', gap: '8px', flexGrow: 1, marginLeft: '16px' }}
-          >
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1, ml: 2 }}>
-              {menuItems.map((item, index) => (
+
+            {/* Desktop Navigation Menu */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ display: 'flex', gap: '8px', flexGrow: 1, marginLeft: '16px' }}
+            >
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1, ml: 2 }}>
+                {menuItems.map((item, index) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 * index }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Link href={item.href} style={{ textDecoration: 'none' }}>
+                      <Button
+                        color="inherit"
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '1rem',
+                          fontWeight: 500,
+                          px: 3,
+                          py: 1.5,
+                          borderRadius: 3,
+                          position: 'relative',
+                          overflow: 'hidden',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                          },
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: '-100%',
+                            width: '100%',
+                            height: '100%',
+                            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+                            transition: 'left 0.5s ease',
+                          },
+                          '&:hover::before': {
+                            left: '100%',
+                          }
+                        }}
+                      >
+                        {item.label}
+                      </Button>
+                    </Link>
+                  </motion.div>
+                ))}
+              </Box>
+            </motion.div>
+
+            {/* Desktop Auth Buttons */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
                 <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * index }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href={item.href} style={{ textDecoration: 'none' }}>
-                    <Button 
-                      color="inherit" 
-                      sx={{ 
-                        textTransform: 'none', 
-                        fontSize: '1rem',
-                        fontWeight: 500,
-                        px: 3,
-                        py: 1.5,
+                  <Link href="/login-template" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        color: 'white',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
                         borderRadius: 3,
-                        position: 'relative',
-                        overflow: 'hidden',
+                        px: 3,
+                        py: 1,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        backdropFilter: 'blur(10px)',
                         transition: 'all 0.3s ease',
                         '&:hover': {
-                          background: 'rgba(255, 255, 255, 0.15)',
+                          borderColor: 'white',
+                          background: 'rgba(255, 255, 255, 0.1)',
                           transform: 'translateY(-2px)',
                           boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
-                        },
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: '-100%',
-                          width: '100%',
-                          height: '100%',
-                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
-                          transition: 'left 0.5s ease',
-                        },
-                        '&:hover::before': {
-                          left: '100%',
                         }
                       }}
                     >
-                      {item.label}
+                      Đăng nhập
                     </Button>
                   </Link>
                 </motion.div>
-              ))}
-            </Box>
-          </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/register-template" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#ff4081',
+                        color: 'white',
+                        borderRadius: 3,
+                        px: 3,
+                        py: 1,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#ff4081',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                        }
+                      }}
+                    >
+                      Đăng ký
+                    </Button>
+                  </Link>
+                </motion.div>
+              </Box>
+            </motion.div>
 
-          {/* Desktop Auth Buttons */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link href="/login-template" style={{ textDecoration: 'none' }}>
-                  <Button 
-                    variant="outlined"
-                    sx={{
-                      color: 'white',
-                      borderColor: 'rgba(255, 255, 255, 0.3)',
-                      borderRadius: 3,
-                      px: 3,
-                      py: 1,
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      backdropFilter: 'blur(10px)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        borderColor: 'white',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
-                      }
-                    }}
-                  >
-                    Đăng nhập
-                  </Button>
-                </Link>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link href="/register-template" style={{ textDecoration: 'none' }}>
-                  <Button 
-                    variant="contained" 
-                    sx={{ 
-                      bgcolor: '#ff4081', 
-                      color: 'white',
-                      borderRadius: 3,
-                      px: 3,
-                      py: 1,
-                      fontWeight: 700,
-                      textTransform: 'none',
-                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        color: '#ff4081',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
-                      }
-                    }}
-                  >
-                    Đăng ký
-                  </Button>
-                </Link>
-              </motion.div>
-            </Box>
-          </motion.div>
-
-          {/* Mobile Menu Button */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-              <IconButton
-                color="inherit"
-                aria-label="menu"
-                edge="end"
-                onClick={handleMobileMenuToggle}
-                sx={{
-                  ml: 1,
-                  p: 1.5,
-                  borderRadius: 2,
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    transform: 'scale(1.05)',
-                  }
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Box>
-          </motion.div>
-        </Toolbar>
-      </AppBar>
+            {/* Mobile Menu Button */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+                <IconButton
+                  color="inherit"
+                  aria-label="menu"
+                  edge="end"
+                  onClick={handleMobileMenuToggle}
+                  sx={{
+                    ml: 1,
+                    p: 1.5,
+                    borderRadius: 2,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Box>
+            </motion.div>
+          </Toolbar>
+        </AppBar>
       </motion.div>
 
       {/* Mobile Drawer Menu */}
@@ -462,7 +462,7 @@ export default function BusTicketHomePage() {
         anchor="right"
         open={mobileMenuOpen}
         onClose={handleMobileMenuClose}
-        sx={{ 
+        sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.95) 0%, rgba(233, 30, 99, 0.95) 100%)',
@@ -472,12 +472,12 @@ export default function BusTicketHomePage() {
         }}
       >
         <Box sx={{ width: 300, pt: 2, height: '100%' }}>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            px: 3, 
-            pb: 2 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            px: 3,
+            pb: 2
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Box
@@ -493,10 +493,10 @@ export default function BusTicketHomePage() {
                   filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
                 }}
               />
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 700, 
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
                   color: 'white',
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
                 }}
@@ -504,7 +504,7 @@ export default function BusTicketHomePage() {
                 BusTicket
               </Typography>
             </Box>
-            <IconButton 
+            <IconButton
               onClick={handleMobileMenuClose}
               sx={{
                 color: 'white',
@@ -519,13 +519,13 @@ export default function BusTicketHomePage() {
               <CloseIcon />
             </IconButton>
           </Box>
-          
+
           <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
-          
+
           <List sx={{ pt: 2 }}>
             {menuItems.map((item, index) => (
               <Link key={item.label} href={item.href} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <ListItem 
+                <ListItem
                   onClick={handleMobileMenuClose}
                   sx={{
                     mx: 2,
@@ -538,9 +538,9 @@ export default function BusTicketHomePage() {
                     }
                   }}
                 >
-                  <ListItemText 
-                    primary={item.label} 
-                    primaryTypographyProps={{ 
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
                       fontWeight: 600,
                       color: 'white',
                       fontSize: '1.1rem',
@@ -550,14 +550,14 @@ export default function BusTicketHomePage() {
               </Link>
             ))}
           </List>
-          
+
           <Divider sx={{ my: 3, borderColor: 'rgba(255, 255, 255, 0.12)' }} />
-          
+
           <Box sx={{ px: 3, pb: 3 }}>
             <Stack spacing={2}>
               <Link href="/login-template" style={{ textDecoration: 'none' }}>
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   fullWidth
                   sx={{
                     color: 'white',
@@ -581,25 +581,25 @@ export default function BusTicketHomePage() {
                 </Button>
               </Link>
               <Link href="/register-template" style={{ textDecoration: 'none' }}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   fullWidth
                   sx={{
-                      bgcolor: '#ff4081',
-                      color: 'white',
-                      borderRadius: 3,
-                      py: 1.5,
-                      fontWeight: 700,
-                      textTransform: 'none',
-                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        color: '#ff4081',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
-                      }
-                    }}
+                    bgcolor: '#ff4081',
+                    color: 'white',
+                    borderRadius: 3,
+                    py: 1.5,
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                      color: '#ff4081',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                    }
+                  }}
                   onClick={handleMobileMenuClose}
                 >
                   Đăng ký
@@ -607,7 +607,7 @@ export default function BusTicketHomePage() {
               </Link>
             </Stack>
           </Box>
-          
+
           {/* Background decoration */}
           <Box sx={{
             position: 'absolute',
@@ -684,10 +684,10 @@ export default function BusTicketHomePage() {
                   exit={{ opacity: 0, y: -50 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <Typography 
-                    variant="h1" 
-                    component="h1" 
-                    gutterBottom 
+                  <Typography
+                    variant="h1"
+                    component="h1"
+                    gutterBottom
                     sx={{
                       fontSize: { xs: '2.5rem', sm: '3rem', md: '4rem', lg: '4.5rem' },
                       fontWeight: 800,
@@ -705,10 +705,10 @@ export default function BusTicketHomePage() {
                   >
                     {backgroundImages[currentSlide].title}
                   </Typography>
-                  <Typography 
-                    variant="h5" 
-                    component="h2" 
-                    sx={{ 
+                  <Typography
+                    variant="h5"
+                    component="h2"
+                    sx={{
                       fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.6rem' },
                       fontWeight: 400,
                       opacity: 0.95,
@@ -734,12 +734,12 @@ export default function BusTicketHomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <Paper 
-                elevation={24} 
-                sx={{ 
-                  p: { xs: 3, sm: 4, md: 5 }, 
-                  borderRadius: 4, 
-                  maxWidth: 1000, 
+              <Paper
+                elevation={24}
+                sx={{
+                  p: { xs: 3, sm: 4, md: 5 },
+                  borderRadius: 4,
+                  maxWidth: 1000,
                   mx: 'auto',
                   background: 'rgba(255, 255, 255, 0.98)',
                   backdropFilter: 'blur(20px)',
@@ -775,11 +775,11 @@ export default function BusTicketHomePage() {
                   transition={{ duration: 0.6, delay: 0.5 }}
                 >
                   <Box sx={{ mb: 5, textAlign: 'center' }}>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        mb: 3, 
-                        fontWeight: 600, 
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mb: 3,
+                        fontWeight: 600,
                         color: 'text.primary',
                         position: 'relative',
                         '&::after': {
@@ -795,10 +795,10 @@ export default function BusTicketHomePage() {
                         }
                       }}
                     >
-                      Loại chuyến đi
+                      Chọn chuyến đi
                     </Typography>
-                    <Box sx={{ 
-                      display: 'inline-flex', 
+                    <Box sx={{
+                      display: 'inline-flex',
                       bgcolor: 'grey.50',
                       borderRadius: 3,
                       p: 0.8,
@@ -811,8 +811,8 @@ export default function BusTicketHomePage() {
                       <Button
                         variant={tripType === 'oneWay' ? 'contained' : 'text'}
                         onClick={() => setTripType('oneWay')}
-                        sx={{ 
-                          px: { xs: 4, md: 6 }, 
+                        sx={{
+                          px: { xs: 4, md: 6 },
                           py: 1.2,
                           borderRadius: 2.5,
                           textTransform: 'none',
@@ -862,8 +862,8 @@ export default function BusTicketHomePage() {
                       <Button
                         variant={tripType === 'roundTrip' ? 'contained' : 'text'}
                         onClick={() => setTripType('roundTrip')}
-                        sx={{ 
-                          px: { xs: 4, md: 6 }, 
+                        sx={{
+                          px: { xs: 4, md: 6 },
                           py: 1.2,
                           borderRadius: 2.5,
                           textTransform: 'none',
@@ -955,24 +955,24 @@ export default function BusTicketHomePage() {
                         />
                       </Box>
 
-                      <Box sx={{ 
-                        flex: '0 0 auto', 
-                        display: 'flex', 
-                        justifyContent: 'center', 
+                      <Box sx={{
+                        flex: '0 0 auto',
+                        display: 'flex',
+                        justifyContent: 'center',
                         width: { xs: '100%', sm: 'auto' },
                         order: { xs: 3, sm: 2 }
                       }}>
-                        <IconButton 
-                          color="primary" 
+                        <IconButton
+                          color="primary"
                           onClick={handleSwapLocations}
-                          sx={{ 
-                            bgcolor: '#f48fb1', 
+                          sx={{
+                            bgcolor: '#f48fb1',
                             color: 'white',
                             width: 56,
                             height: 56,
                             boxShadow: '0 4px 12px rgba(244, 143, 177, 0.3)',
                             transition: 'all 0.3s ease',
-                            '&:hover': { 
+                            '&:hover': {
                               bgcolor: '#e91e63',
                               transform: 'rotate(180deg) scale(1.1)',
                               boxShadow: '0 6px 20px rgba(244, 143, 177, 0.4)',
@@ -1018,237 +1018,237 @@ export default function BusTicketHomePage() {
                       </Box>
                     </Box>
 
-              {/* Second Row: Dates and Search - Improved spacing */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3, md: 4 }, alignItems: 'center', justifyContent: 'space-between' }}>
-                {/* Departure Date - Improved layout */}
-                <Box sx={{ 
-                  flex: { 
-                    xs: '1 1 100%', 
-                    sm: tripType === 'roundTrip' ? '1 1 45%' : '1 1 40%', // Increased to balance with search button
-                    md: tripType === 'roundTrip' ? '1 1 22%' : '1 1 38%'  // Increased for better balance
-                  }
-                }}>
-                  <TextField
-                    fullWidth
-                    label="Ngày đi"
-                    type="date"
-                    value={searchData.departureDate}
-                    onChange={(e) => handleInputChange('departureDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{
-                      startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1', fontSize: '1.2rem' }} />,
-                    }}
-                    inputProps={{
-                      min: new Date().toISOString().split('T')[0]
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 3,
-                        backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#f48fb1',
-                          }
-                        },
-                        '&.Mui-focused': {
-                          backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                          boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                    {/* Second Row: Dates and Search - Improved spacing */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3, md: 4 }, alignItems: 'center', justifyContent: 'space-between' }}>
+                      {/* Departure Date - Improved layout */}
+                      <Box sx={{
+                        flex: {
+                          xs: '1 1 100%',
+                          sm: tripType === 'roundTrip' ? '1 1 45%' : '1 1 40%', // Increased to balance with search button
+                          md: tripType === 'roundTrip' ? '1 1 22%' : '1 1 38%'  // Increased for better balance
                         }
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontWeight: 600,
-                      }
-                    }}
-                  />
-                </Box>
-
-                {/* Return Date - Only show when roundTrip */}
-                {tripType === 'roundTrip' && (
-                  <Box sx={{ 
-                    flex: { 
-                      xs: '1 1 100%', 
-                      sm: '1 1 45%',
-                      md: '1 1 30%'  // Increased for better balance in roundTrip mode
-                    }
-                  }}>
-                    <TextField
-                      fullWidth
-                      label="Ngày về"
-                      type="date"
-                      value={searchData.returnDate}
-                      onChange={(e) => handleInputChange('returnDate', e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                      InputProps={{
-                        startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1' }} />,
-                      }}
-                      inputProps={{
-                        min: searchData.departureDate || new Date().toISOString().split('T')[0]
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 3,
-                          backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#f48fb1',
+                      }}>
+                        <TextField
+                          fullWidth
+                          label="Ngày đi"
+                          type="date"
+                          value={searchData.departureDate}
+                          onChange={(e) => handleInputChange('departureDate', e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          InputProps={{
+                            startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1', fontSize: '1.2rem' }} />,
+                          }}
+                          inputProps={{
+                            min: new Date().toISOString().split('T')[0]
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#f48fb1',
+                                }
+                              },
+                              '&.Mui-focused': {
+                                backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                              }
+                            },
+                            '& .MuiInputLabel-root': {
+                              fontWeight: 600,
                             }
-                          },
-                          '&.Mui-focused': {
-                            backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                            boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                          }}
+                        />
+                      </Box>
+
+                      {/* Return Date - Only show when roundTrip */}
+                      {tripType === 'roundTrip' && (
+                        <Box sx={{
+                          flex: {
+                            xs: '1 1 100%',
+                            sm: '1 1 45%',
+                            md: '1 1 30%'  // Increased for better balance in roundTrip mode
                           }
-                        },
-                        '& .MuiInputLabel-root': {
-                          fontWeight: 600,
+                        }}>
+                          <TextField
+                            fullWidth
+                            label="Ngày về"
+                            type="date"
+                            value={searchData.returnDate}
+                            onChange={(e) => handleInputChange('returnDate', e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            InputProps={{
+                              startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1' }} />,
+                            }}
+                            inputProps={{
+                              min: searchData.departureDate || new Date().toISOString().split('T')[0]
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 3,
+                                backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                  '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: '#f48fb1',
+                                  }
+                                },
+                                '&.Mui-focused': {
+                                  backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                  boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                }
+                              },
+                              '& .MuiInputLabel-root': {
+                                fontWeight: 600,
+                              }
+                            }}
+                          />
+                        </Box>
+                      )}
+
+
+
+                      {/* Search Button - Optimized size */}
+                      <Box sx={{
+                        flex: {
+                          xs: '1 1 48%',
+                          sm: tripType === 'roundTrip' ? '1 1 20%' : '1 1 25%', // Reduced width for better proportion
+                          md: tripType === 'roundTrip' ? '1 1 15%' : '1 1 22%'  // Reduced width for better proportion
                         }
-                      }}
-                    />
+                      }}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="medium" // Changed from large to medium
+                          startIcon={<Search fontSize="small" />} // Reduced icon size
+                          onClick={handleSearch}
+                          sx={{
+                            height: 56,
+                            borderRadius: 2,
+                            fontSize: '0.95rem', // Slightly smaller font
+                            fontWeight: 'bold',
+                            background: 'linear-gradient(45deg, #f48fb1, #e91e63)',
+                            px: 2, // Reduced horizontal padding
+                            '&:hover': {
+                              background: 'linear-gradient(45deg, #e91e63, #f48fb1)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 20px rgba(244, 143, 177, 0.3)',
+                            },
+                          }}
+                        >
+                          Tìm kiếm
+                        </Button>
+                      </Box>
+                    </Box>
                   </Box>
-                )}
 
-
-
-                {/* Search Button - Optimized size */}
-                <Box sx={{ 
-                  flex: { 
-                    xs: '1 1 48%', 
-                    sm: tripType === 'roundTrip' ? '1 1 20%' : '1 1 25%', // Reduced width for better proportion
-                    md: tripType === 'roundTrip' ? '1 1 15%' : '1 1 22%'  // Reduced width for better proportion
-                  }
-                }}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="medium" // Changed from large to medium
-                    startIcon={<Search fontSize="small" />} // Reduced icon size
-                    onClick={handleSearch}
-                    sx={{ 
-                      height: 56, 
-                      borderRadius: 2,
-                      fontSize: '0.95rem', // Slightly smaller font
-                      fontWeight: 'bold',
-                      background: 'linear-gradient(45deg, #f48fb1, #e91e63)',
-                      px: 2, // Reduced horizontal padding
-                      '&:hover': {
-                        background: 'linear-gradient(45deg, #e91e63, #f48fb1)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(244, 143, 177, 0.3)',
-                      },
-                    }}
+                  {/* Quick Actions */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1.2 }}
                   >
-                    Tìm kiếm
-                  </Button>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.2 }}
-            >
-              <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'grey.200' }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Nhà xe đánh giá cao nhất:
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {[
-                    { name: 'Phương Trang', rating: 4.8 },
-                    { name: 'Kumho', rating: 4.9 },
-                    { name: 'Hà Sơn', rating: 4.7 },
-                    { name: 'Hoàng Long', rating: 4.6 },
-                    { name: 'Sao Việt', rating: 4.5 }
-                  ].map((company, index) => (
-                    <motion.div
-                      key={company.name}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 1.3 + index * 0.1 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Chip
-                        icon={<DirectionsBus sx={{ fontSize: '0.9rem' }} />}
-                        label={`${company.name} (${company.rating}★)`}
-                        variant="outlined"
-                        clickable
-                        size="small"
-                        sx={{ 
-                          '&:hover': { 
-                            bgcolor: '#e91e63', 
-                            color: 'white',
-                            borderColor: '#f48fb1'
-                          } 
-                        }}
-                      />
-                    </motion.div>
-                  ))}
-                </Stack>
-              </Box>
-            </motion.div>
+                    <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'grey.200' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Nhà xe đánh giá cao nhất:
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        {[
+                          { name: 'Phương Trang', rating: 4.8 },
+                          { name: 'Kumho', rating: 4.9 },
+                          { name: 'Hà Sơn', rating: 4.7 },
+                          { name: 'Hoàng Long', rating: 4.6 },
+                          { name: 'Sao Việt', rating: 4.5 }
+                        ].map((company, index) => (
+                          <motion.div
+                            key={company.name}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 1.3 + index * 0.1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Chip
+                              icon={<DirectionsBus sx={{ fontSize: '0.9rem' }} />}
+                              label={`${company.name} (${company.rating}★)`}
+                              variant="outlined"
+                              clickable
+                              size="small"
+                              sx={{
+                                '&:hover': {
+                                  bgcolor: '#e91e63',
+                                  color: 'white',
+                                  borderColor: '#f48fb1'
+                                }
+                              }}
+                            />
+                          </motion.div>
+                        ))}
+                      </Stack>
+                    </Box>
+                  </motion.div>
                 </motion.div>
               </Paper>
             </motion.div>
-          
-          {/* Slide Indicators */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.5 }}
-          >
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: 2, 
-                mt: 4,
-                position: 'relative',
-                zIndex: 3
-              }}
+
+            {/* Slide Indicators */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.5 }}
             >
-              {backgroundImages.map((_, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: 1.6 + index * 0.1 }}
-                  whileHover={{ scale: currentSlide === index ? 1.4 : 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <Box
-                    onClick={() => setCurrentSlide(index)}
-                    sx={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: '50%',
-                      bgcolor: currentSlide === index 
-                        ? 'rgba(255, 255, 255, 1)' 
-                        : 'rgba(255, 255, 255, 0.5)',
-                      cursor: 'pointer',
-                      transition: 'all 0.4s ease',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      boxShadow: currentSlide === index 
-                        ? '0 4px 15px rgba(255, 255, 255, 0.4), 0 0 20px rgba(255, 255, 255, 0.2)' 
-                        : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                      transform: currentSlide === index ? 'scale(1.3)' : 'scale(1)',
-                      '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.8)',
-                        transform: currentSlide === index ? 'scale(1.4)' : 'scale(1.2)',
-                        boxShadow: '0 4px 15px rgba(255, 255, 255, 0.3), 0 0 15px rgba(255, 255, 255, 0.1)',
-                      }
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </Box>
-          </motion.div>
-        </Container>
-      </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 2,
+                  mt: 4,
+                  position: 'relative',
+                  zIndex: 3
+                }}
+              >
+                {backgroundImages.map((_, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 1.6 + index * 0.1 }}
+                    whileHover={{ scale: currentSlide === index ? 1.4 : 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Box
+                      onClick={() => setCurrentSlide(index)}
+                      sx={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        bgcolor: currentSlide === index
+                          ? 'rgba(255, 255, 255, 1)'
+                          : 'rgba(255, 255, 255, 0.5)',
+                        cursor: 'pointer',
+                        transition: 'all 0.4s ease',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        boxShadow: currentSlide === index
+                          ? '0 4px 15px rgba(255, 255, 255, 0.4), 0 0 20px rgba(255, 255, 255, 0.2)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                        transform: currentSlide === index ? 'scale(1.3)' : 'scale(1)',
+                        '&:hover': {
+                          bgcolor: 'rgba(255, 255, 255, 0.8)',
+                          transform: currentSlide === index ? 'scale(1.4)' : 'scale(1.2)',
+                          boxShadow: '0 4px 15px rgba(255, 255, 255, 0.3), 0 0 15px rgba(255, 255, 255, 0.1)',
+                        }
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </Box>
+            </motion.div>
+          </Container>
+        </Box>
       </motion.div>
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -1263,7 +1263,7 @@ export default function BusTicketHomePage() {
             Tại sao chọn chúng tôi?
           </Typography>
         </motion.div>
-        
+
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -1306,10 +1306,10 @@ export default function BusTicketHomePage() {
                 style={{ flex: '1 1 100%', maxWidth: '350px', minWidth: '280px' }}
               >
                 <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 30%' }, minWidth: 280 }}>
-                  <Card sx={{ 
-                    p: 3, 
-                    textAlign: 'center', 
-                    height: '100%', 
+                  <Card sx={{
+                    p: 3,
+                    textAlign: 'center',
+                    height: '100%',
                     boxShadow: 3,
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -1349,7 +1349,7 @@ export default function BusTicketHomePage() {
             Nhà xe đánh giá cao nhất
           </Typography>
         </motion.div>
-        
+
         <Box
           sx={{
             display: 'grid',
@@ -1376,15 +1376,15 @@ export default function BusTicketHomePage() {
               viewport={{ once: true }}
               whileHover={{ scale: 1.05, y: -10 }}
             >
-              <Card sx={{ 
-                p: 3, 
-                cursor: 'pointer', 
+              <Card sx={{
+                p: 3,
+                cursor: 'pointer',
                 height: '100%',
                 transition: 'all 0.3s ease',
-                '&:hover': { 
+                '&:hover': {
                   boxShadow: 6,
                   transform: 'translateY(-5px)',
-                } 
+                }
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <DirectionsBus color="primary" sx={{ mr: 1, fontSize: 28 }} />
@@ -1460,7 +1460,7 @@ export default function BusTicketHomePage() {
             Khách hàng nói gì về chúng tôi
           </Typography>
         </motion.div>
-        
+
         <Box
           sx={{
             display: 'grid',
@@ -1484,8 +1484,8 @@ export default function BusTicketHomePage() {
               viewport={{ once: true }}
               whileHover={{ scale: 1.05, y: -10 }}
             >
-              <Card sx={{ 
-                p: 3, 
+              <Card sx={{
+                p: 3,
                 height: '100%',
                 transition: 'all 0.3s ease',
                 '&:hover': {
