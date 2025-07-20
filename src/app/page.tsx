@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -24,6 +25,8 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -42,7 +45,10 @@ import {
   TrendingUp,
   Menu as MenuIcon,
   Close as CloseIcon,
+  AccountCircle,
+  Logout,
 } from '@mui/icons-material';
+import { authService } from '@/services/authService';
 
 export default function BusTicketHomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,6 +58,19 @@ export default function BusTicketHomePage() {
     to: '',
     departureDate: '',
     returnDate: ''
+  });
+
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Notification state
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+    type: 'success' as 'success' | 'error' | 'info'
   });
 
   // State for slideshow
@@ -138,6 +157,64 @@ export default function BusTicketHomePage() {
   ];
 
 
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuthStatus();
+    
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = () => {
+      checkAuthStatus();
+    };
+    
+    // Listen for window focus to refresh auth status
+    const handleWindowFocus = () => {
+      checkAuthStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleWindowFocus);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
+
+  // Check for success messages from URL params
+  useEffect(() => {
+    const loginSuccess = searchParams.get('loginSuccess');
+    const registerSuccess = searchParams.get('registerSuccess');
+    const message = searchParams.get('message');
+
+    if (loginSuccess === 'true') {
+      setNotification({
+        open: true,
+        message: message || 'Đăng nhập thành công! Chào mừng bạn đến với XeTiic.',
+        type: 'success'
+      });
+      
+      // Clean URL without refreshing page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('loginSuccess');
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    if (registerSuccess === 'true') {
+      setNotification({
+        open: true,
+        message: message || 'Đăng ký tài khoản thành công! Chào mừng bạn đến với XeTiic.',
+        type: 'success'
+      });
+      
+      // Clean URL without refreshing page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('registerSuccess');
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (!isPaused) {
       const interval = setInterval(() => {
@@ -147,6 +224,73 @@ export default function BusTicketHomePage() {
       return () => clearInterval(interval);
     }
   }, [backgroundImages.length, isPaused]);
+
+  const checkAuthStatus = () => {
+    const authenticated = authService.isAuthenticated();
+    const userData = authService.getCurrentUser();
+    
+    setIsAuthenticated(authenticated);
+    setUserInfo(userData);
+
+    // Check for recent login to show welcome message
+    if (authenticated && userData) {
+      const lastLoginCheck = localStorage.getItem('last_login_notification_shown');
+      const currentToken = authService.getToken();
+      
+      if (!lastLoginCheck || lastLoginCheck !== currentToken) {
+        // New login detected, but don't show notification if URL params already handled it
+        const hasUrlParams = window.location.search.includes('loginSuccess') || window.location.search.includes('registerSuccess');
+        
+        if (!hasUrlParams) {
+          setTimeout(() => {
+            showNotification(`Xin chào ${userData.fullName || 'bạn'}! Chào mừng quay trở lại XeTiic.`);
+            localStorage.setItem('last_login_notification_shown', currentToken || '');
+          }, 1000);
+        } else {
+          // Mark as shown to prevent duplicate notifications
+          localStorage.setItem('last_login_notification_shown', currentToken || '');
+        }
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call authService logout which handles both API call and local storage cleanup
+      await authService.logout();
+      setIsAuthenticated(false);
+      setUserInfo(null);
+      
+      // Clear notification-related localStorage
+      localStorage.removeItem('last_login_notification_shown');
+      
+      // Show logout notification
+      showNotification('Đăng xuất thành công. Hẹn gặp lại!', 'info');
+      
+      console.log('Logout completed successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, still update the UI state
+      setIsAuthenticated(false);
+      setUserInfo(null);
+      localStorage.removeItem('last_login_notification_shown');
+    }
+  };
+
+  const handleCloseNotification = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({
+      open: true,
+      message,
+      type
+    });
+  };
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -359,65 +503,131 @@ export default function BusTicketHomePage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link href="/login-template" style={{ textDecoration: 'none' }}>
-                    <Button
-                      variant="outlined"
-                      sx={{
-                        color: 'white',
-                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1,
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        backdropFilter: 'blur(10px)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          borderColor: 'white',
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
-                        }
-                      }}
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>
+                {isAuthenticated ? (
+                  // Show profile and logout when authenticated
+                  <>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Đăng nhập
-                    </Button>
-                  </Link>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link href="/register-template" style={{ textDecoration: 'none' }}>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        bgcolor: '#ff4081',
-                        color: 'white',
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1,
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          color: '#ff4081',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
-                        }
-                      }}
+                      <Link href="/profile" style={{ textDecoration: 'none' }}>
+                        <Button
+                          startIcon={<AccountCircle />}
+                          sx={{
+                            color: 'white',
+                            borderRadius: 3,
+                            px: 3,
+                            py: 1,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            backdropFilter: 'blur(10px)',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                            }
+                          }}
+                        >
+                          {userInfo?.fullName || 'Profile'}
+                        </Button>
+                      </Link>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Đăng ký
-                    </Button>
-                  </Link>
-                </motion.div>
+                      <Button
+                        startIcon={<Logout />}
+                        onClick={handleLogout}
+                        sx={{
+                          color: 'white',
+                          borderColor: 'rgba(255, 255, 255, 0.3)',
+                          borderRadius: 3,
+                          px: 3,
+                          py: 1,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          backdropFilter: 'blur(10px)',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: 'white',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                          }
+                        }}
+                      >
+                        Đăng xuất
+                      </Button>
+                    </motion.div>
+                  </>
+                ) : (
+                  // Show login and register when not authenticated
+                  <>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link href="/login-template" style={{ textDecoration: 'none' }}>
+                        <Button
+                          variant="outlined"
+                          sx={{
+                            color: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderRadius: 3,
+                            px: 3,
+                            py: 1,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              borderColor: 'white',
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                            }
+                          }}
+                        >
+                          Đăng nhập
+                        </Button>
+                      </Link>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link href="/register-template" style={{ textDecoration: 'none' }}>
+                        <Button
+                          variant="contained"
+                          sx={{
+                            bgcolor: '#ff4081',
+                            color: 'white',
+                            borderRadius: 3,
+                            px: 3,
+                            py: 1,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              bgcolor: '#f5f5f5',
+                              color: '#ff4081',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                            }
+                          }}
+                        >
+                          Đăng ký
+                        </Button>
+                      </Link>
+                    </motion.div>
+                  </>
+                )}
               </Box>
             </motion.div>
 
@@ -555,56 +765,117 @@ export default function BusTicketHomePage() {
 
           <Box sx={{ px: 3, pb: 3 }}>
             <Stack spacing={2}>
-              <Link href="/login-template" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  sx={{
-                    color: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    borderRadius: 3,
-                    py: 1.5,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      borderColor: 'white',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 20px rgba(56, 142, 60, 0.25)',
-                    }
-                  }}
-                  onClick={handleMobileMenuClose}
-                >
-                  Đăng nhập
-                </Button>
-              </Link>
-              <Link href="/register-template" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  sx={{
-                    bgcolor: '#ff4081',
-                    color: 'white',
-                    borderRadius: 3,
-                    py: 1.5,
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                      color: '#ff4081',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
-                    }
-                  }}
-                  onClick={handleMobileMenuClose}
-                >
-                  Đăng ký
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                // Show profile and logout when authenticated
+                <>
+                  <Link href="/profile" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<AccountCircle />}
+                      sx={{
+                        color: 'white',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                        borderRadius: 3,
+                        py: 1.5,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        backdropFilter: 'blur(10px)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: 'white',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(244, 143, 177, 0.25)',
+                        }
+                      }}
+                      onClick={handleMobileMenuClose}
+                    >
+                      {userInfo?.fullName || 'Profile'}
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<Logout />}
+                    onClick={() => {
+                      handleLogout();
+                      handleMobileMenuClose();
+                    }}
+                    sx={{
+                      bgcolor: '#ff4081',
+                      color: 'white',
+                      borderRadius: 3,
+                      py: 1.5,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        bgcolor: '#e91e63',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                      }
+                    }}
+                  >
+                    Đăng xuất
+                  </Button>
+                </>
+              ) : (
+                // Show login and register when not authenticated
+                <>
+                  <Link href="/login-template" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      sx={{
+                        color: 'white',
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                        borderRadius: 3,
+                        py: 1.5,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        backdropFilter: 'blur(10px)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: 'white',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(56, 142, 60, 0.25)',
+                        }
+                      }}
+                      onClick={handleMobileMenuClose}
+                    >
+                      Đăng nhập
+                    </Button>
+                  </Link>
+                  <Link href="/register-template" style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{
+                        bgcolor: '#ff4081',
+                        color: 'white',
+                        borderRadius: 3,
+                        py: 1.5,
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          color: '#ff4081',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 25px rgba(244, 143, 177, 0.3)',
+                        }
+                      }}
+                      onClick={handleMobileMenuClose}
+                    >
+                      Đăng ký
+                    </Button>
+                  </Link>
+                </>
+              )}
             </Stack>
           </Box>
 
@@ -1595,6 +1866,95 @@ export default function BusTicketHomePage() {
           </Container>
         </Box>
       </motion.div>
+
+      {/* Success/Error Notifications */}
+      <AnimatePresence>
+        {notification.open && (
+          <Snackbar
+            open={notification.open}
+            autoHideDuration={6000}
+            onClose={handleCloseNotification}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            sx={{ 
+              mt: 8,
+              zIndex: 9999,
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -100, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -100, scale: 0.9 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+                duration: 0.4
+              }}
+            >
+              <Alert
+                onClose={handleCloseNotification}
+                severity={notification.type}
+                sx={{
+                  width: '100%',
+                  minWidth: '320px',
+                  borderRadius: 4,
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  py: 2,
+                  px: 3,
+                  boxShadow: '0 16px 48px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  '&.MuiAlert-standardSuccess': {
+                    background: 'linear-gradient(135deg, #4caf50 0%, #66bb6a 90%, #81c784 100%)',
+                    color: 'white',
+                    '& .MuiAlert-icon': {
+                      color: 'white',
+                      fontSize: '1.5rem',
+                    },
+                    '& .MuiIconButton-root': {
+                      color: 'white',
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.1)',
+                      },
+                    },
+                  },
+                  '&.MuiAlert-standardError': {
+                    background: 'linear-gradient(135deg, #f44336 0%, #e57373 90%, #ff8a80 100%)',
+                    color: 'white',
+                    '& .MuiAlert-icon': {
+                      color: 'white',
+                      fontSize: '1.5rem',
+                    },
+                    '& .MuiIconButton-root': {
+                      color: 'white',
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.1)',
+                      },
+                    },
+                  },
+                  '&.MuiAlert-standardInfo': {
+                    background: 'linear-gradient(135deg, #2196f3 0%, #64b5f6 90%, #90caf9 100%)',
+                    color: 'white',
+                    '& .MuiAlert-icon': {
+                      color: 'white',
+                      fontSize: '1.5rem',
+                    },
+                    '& .MuiIconButton-root': {
+                      color: 'white',
+                      '&:hover': {
+                        background: 'rgba(255, 255, 255, 0.1)',
+                      },
+                    },
+                  },
+                }}
+              >
+                {notification.message}
+              </Alert>
+            </motion.div>
+          </Snackbar>
+        )}
+      </AnimatePresence>
     </Box>
   );
 }

@@ -35,13 +35,14 @@ import {
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { authService, RegisterRequest } from '@/services/authService';
 
 export default function RegisterTemplatePage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerData, setRegisterData] = useState({
     fullName: '',
-    email: '',
+    gmail: '',
     phone: '',
     gender: '',
     birthDate: '',
@@ -76,10 +77,10 @@ export default function RegisterTemplatePage() {
       newErrors.fullName = 'Vui lòng nhập họ tên';
     }
 
-    if (!registerData.email.trim()) {
-      newErrors.email = 'Vui lòng nhập email';
-    } else if (!/\S+@\S+\.\S+/.test(registerData.email)) {
-      newErrors.email = 'Email không hợp lệ';
+    if (!registerData.gmail.trim()) {
+      newErrors.gmail = 'Vui lòng nhập email';
+    } else if (!/\S+@\S+\.\S+/.test(registerData.gmail)) {
+      newErrors.gmail = 'Email không hợp lệ';
     }
 
     if (!registerData.phone.trim()) {
@@ -119,21 +120,35 @@ export default function RegisterTemplatePage() {
     setErrors({});
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare API request data
+      const registrationData: RegisterRequest = {
+        gmail: registerData.gmail,
+        phone: registerData.phone,
+        fullName: registerData.fullName,
+        password: registerData.password,
+      };
 
-      // Here you would make actual API call
-      console.log('Register data:', registerData);
+      console.log('Sending registration data:', registrationData);
 
-      setSuccess('Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+      // Call the registration API
+      const response = await authService.register(registrationData);
 
-      // Reset form after success
+      console.log('Registration response:', response);
+
+      setSuccess(response.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.');
+
+      // Redirect to home page with success message
+      const userName = registrationData.fullName || 'bạn';
+      const successMessage = `Chào mừng ${userName}! Đăng ký tài khoản thành công.`;
+      
       setTimeout(() => {
-        window.location.href = '/login-template';
+        window.location.href = `/?registerSuccess=true&message=${encodeURIComponent(successMessage)}`;
       }, 2000);
 
-    } catch (err) {
-      setErrors({ general: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      const errorMessage = err?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -419,13 +434,13 @@ export default function RegisterTemplatePage() {
                       <TextField
                         fullWidth
                         label="Email"
-                        name="email"
+                        name="gmail"
                         type="email"
-                        value={registerData.email}
+                        value={registerData.gmail}
                         onChange={handleInputChange}
                         required
-                        error={!!errors.email}
-                        helperText={errors.email}
+                        error={!!errors.gmail}
+                        helperText={errors.gmail}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">

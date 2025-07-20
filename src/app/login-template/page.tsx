@@ -28,22 +28,191 @@ import {
   Lock,
   ArrowBack,
 } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { authService, LoginRequest } from '@/services/authService';
 
 export default function LoginTemplatePage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
-    email: '',
+    gmail: '',
     password: '',
     rememberMe: false,
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
+  const [isClearingGoogleSession, setIsClearingGoogleSession] = useState(false);
+  
+  // Debug option: Set to true to disable redirect and see API response
+  const DEBUG_MODE = false; // Disabled for production
+  
+  // Google OAuth options
+  const FORCE_ACCOUNT_SELECTION = true; // Set to false to use cached Google account
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get current URL for redirect
+  const getCurrentRedirectURL = () => {
+    if (typeof window !== 'undefined') {
+      const redirectURL = `${window.location.origin}/login-template`;
+      return redirectURL;
+    }
+    return 'localhost:3000/login-template';
+  };
+
+
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const handleGoogleCallback = async () => {
+      console.log('🔍 Checking for Google OAuth callback...');
+      console.log('📍 Current URL:', window.location.href);
+      console.log('📋 URL Search Params:', Object.fromEntries(searchParams.entries()));
+      
+      const code = searchParams.get('code');
+      const error = searchParams.get('error');
+      const state = searchParams.get('state');
+      
+      console.log('🔐 OAuth Parameters:');
+      console.log('  - Code:', code ? `${code.substring(0, 20)}...` : 'null');
+      console.log('  - Error:', error);
+      console.log('  - State:', state);
+      
+      if (error) {
+        console.error('❌ Google OAuth error received:', error);
+        setError(`Google đăng nhập thất bại: ${error}`);
+        return;
+      }
+      
+      if (code && !isProcessingOAuth) {
+        console.log('✅ Google code received, starting login process...');
+        
+        // Prevent duplicate processing
+        setIsProcessingOAuth(true);
+        setIsGoogleLoading(true);
+        setError('');
+        
+        // Clear URL parameters immediately to prevent code reuse
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Check OAuth flow timing
+        const oauthStartTime = localStorage.getItem('google_oauth_start_time');
+        const currentTime = Date.now();
+        let oauthDuration = 0;
+        
+        if (oauthStartTime) {
+          oauthDuration = currentTime - parseInt(oauthStartTime);
+          console.log('⏰ OAuth Flow Timing:');
+          console.log('  - Started at:', new Date(parseInt(oauthStartTime)).toISOString());
+          console.log('  - Callback at:', new Date(currentTime).toISOString());
+          console.log('  - Total duration:', oauthDuration, 'ms (', Math.round(oauthDuration / 1000), 'seconds )');
+          
+          if (oauthDuration > 600000) { // 10 minutes
+            console.warn('⚠️ OAuth flow took more than 10 minutes - code likely expired!');
+            setError('⚠️ Cảnh báo: Bạn đã mất hơn 10 phút để hoàn thành đăng nhập Google. Authorization code có thể đã hết hạn.');
+          } else if (oauthDuration > 300000) { // 5 minutes  
+            console.warn('⚠️ OAuth flow took more than 5 minutes - code might be expired!');
+            setError('⚠️ Cảnh báo: Bạn đã mất hơn 5 phút để hoàn thành đăng nhập Google. Nếu gặp lỗi, thử lại ngay.');
+          }
+        } else {
+          console.warn('⚠️ No OAuth start time found - unable to calculate duration');
+        }
+
+        // Check if code looks expired (too short/long)
+        console.log('🔍 OAuth Code Analysis:');
+        console.log('  - Code length:', code.length);
+        console.log('  - Code preview:', code.substring(0, 50) + '...');
+        console.log('  - Current time:', new Date().toISOString());
+        
+        // Check if we've already processed this code recently
+        const lastProcessedCode = localStorage.getItem('last_google_code');
+        const lastProcessedTime = localStorage.getItem('last_google_code_time');
+        
+        if (lastProcessedCode === code) {
+          const timeDiff = Date.now() - parseInt(lastProcessedTime || '0');
+          console.warn('⚠️ Code was already processed', timeDiff, 'ms ago');
+          if (timeDiff < 30000) { // 30 seconds
+            setError('❌ Code đã được sử dụng. Vui lòng thử đăng nhập Google lại.');
+            setIsGoogleLoading(false);
+            setIsProcessingOAuth(false);
+            return;
+          }
+        }
+        
+        // Store current code to prevent reuse
+        localStorage.setItem('last_google_code', code);
+        localStorage.setItem('last_google_code_time', Date.now().toString());
+        
+        try {
+          const redirectURL = getCurrentRedirectURL();
+          console.log('🔄 Using redirect URL for Google callback:', redirectURL);
+          const response = await authService.loginWithGoogle(code, redirectURL);
+          
+          console.log('🎉 Google login completed, response received:', response);
+          
+
+          
+          if (DEBUG_MODE) {
+            console.log('🚫 DEBUG MODE: Redirect disabled. Check API response below.');
+            setError('✅ GOOGLE LOGIN SUCCESS! API Response hiển thị bên dưới. Redirect bị tắt để xem response.');
+          } else {
+            // On success, redirect to home page with success message
+            console.log('🎉 Google login successful! Redirecting to home page...');
+            const userName = response.fullName || 'bạn';
+            const successMessage = `Xin chào ${userName}! Đăng nhập Google thành công.`;
+            
+            setTimeout(() => {
+              window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+            }, 500);
+          }
+          
+        } catch (err: any) {
+          let errorMessage = 'Google đăng nhập thất bại. Vui lòng thử lại.';
+          
+
+          
+          if (err?.status === 401) {
+            errorMessage = 'Tài khoản Google không được ủy quyền.';
+          } else if (err?.status === 400) {
+            // Handle specific 400 error cases
+            if (err?.message?.includes('invalid_grant')) {
+              errorMessage = '❌ Google authorization code đã hết hạn hoặc không hợp lệ. Vui lòng thử đăng nhập Google lại.';
+              console.error('🚨 INVALID_GRANT Error - Possible causes:');
+              console.error('  1. Authorization code expired (Google codes expire in ~10 minutes)');
+              console.error('  2. Code already used (each code can only be used once)'); 
+              console.error('  3. Redirect URI mismatch');
+              console.error('  4. Clock skew between client and server');
+              console.error('  5. Invalid client credentials on server side');
+            } else {
+              errorMessage = 'Thông tin xác thực Google không hợp lệ.';
+            }
+          } else if (err?.message) {
+            errorMessage = err.message;
+          }
+          
+          
+          
+          setError(errorMessage);
+          console.error('❌ Google login error:', err);
+        } finally {
+          setIsGoogleLoading(false);
+          setIsProcessingOAuth(false);
+          // Clean up OAuth timing data
+          localStorage.removeItem('google_oauth_start_time');
+          // URL parameters already cleared at start to prevent reuse
+        }
+      }
+    };
+
+    handleGoogleCallback();
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -59,25 +228,125 @@ export default function LoginTemplatePage() {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validate input
+      if (!loginData.gmail || !loginData.password) {
+        throw new Error('Vui lòng điền đầy đủ thông tin đăng nhập');
+      }
+
+      if (!loginData.gmail.includes('@')) {
+        throw new Error('Email không hợp lệ');
+      }
+
+      // Prepare login request data
+      const loginRequest: LoginRequest = {
+        gmail: loginData.gmail.trim(),
+        password: loginData.password,
+      };
+
+      // Call the login API
+      const response = await authService.login(loginRequest);
       
-      // Here you would make actual API call
-      console.log('Login data:', loginData);
+      console.log('🎉 Login completed, response received:', response);
       
-      // On success, redirect to home page
-      window.location.href = '/';
+
       
-    } catch (err) {
-      setError('Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
+      if (DEBUG_MODE) {
+        console.log('🚫 DEBUG MODE: Redirect disabled. Check API response below.');
+        setError('✅ LOGIN SUCCESS! API Response hiển thị bên dưới. Redirect bị tắt để xem response.');
+      } else {
+        // On success, redirect to home page with success message
+        console.log('🎉 Login successful! Redirecting to home page...');
+        const userName = response.fullName || 'bạn';
+        const successMessage = `Xin chào ${userName}! Đăng nhập thành công.`;
+        
+        setTimeout(() => {
+          window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+        }, 500);
+      }
+      
+    } catch (err: any) {
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại.';
+      
+
+      
+      if (err?.status === 401) {
+        errorMessage = 'Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.';
+      } else if (err?.status === 400) {
+        errorMessage = 'Thông tin đăng nhập không hợp lệ.';
+      } else if (err?.status === 500) {
+        errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login with ${provider}`);
-    // Implement social login logic here
+  const handleSocialLogin = async (provider: string) => {
+    if (provider === 'Google') {
+      setIsGoogleLoading(true);
+      setError('');
+      
+      // Store the start time of OAuth flow to track timing
+      const oauthStartTime = Date.now();
+      localStorage.setItem('google_oauth_start_time', oauthStartTime.toString());
+      console.log('⏰ Starting Google OAuth flow at:', new Date(oauthStartTime).toISOString());
+      
+              try {
+        const redirectURL = getCurrentRedirectURL();
+        console.log('🔄 Using redirect URL for Google auth:', redirectURL);
+        console.log('⚙️ Force account selection:', FORCE_ACCOUNT_SELECTION);
+        
+        // Use configurable account selection setting
+        const response = await authService.getGoogleAuthLink(redirectURL, FORCE_ACCOUNT_SELECTION);
+        
+        console.log('✅ Got Google auth URL:', response.url);
+        console.log('⚡ Time to get auth URL:', Date.now() - oauthStartTime, 'ms');
+        
+        // Redirect to Google authentication
+        window.location.href = response.url;
+      } catch (err: any) {
+        let errorMessage = 'Không thể kết nối với Google. Vui lòng thử lại.';
+        
+        if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
+        setIsGoogleLoading(false);
+        localStorage.removeItem('google_oauth_start_time'); // Clean up on error
+        console.error('❌ Failed to get Google auth link:', err);
+      }
+    } else {
+      console.log(`Login with ${provider} - Not implemented yet`);
+      setError(`${provider} đăng nhập chưa được triển khai.`);
+    }
+  };
+
+  const handleClearGoogleSession = async () => {
+    setIsClearingGoogleSession(true);
+    setError('');
+    
+    try {
+      await authService.clearGoogleSession();
+      setError('✅ Đã xóa phiên đăng nhập Google. Bây giờ bạn có thể chọn tài khoản khác khi đăng nhập.');
+      
+      // Clear any stored Google-related data
+      localStorage.removeItem('last_google_code');
+      localStorage.removeItem('last_google_code_time');
+      
+      console.log('🧹 Cleared all Google session data');
+    } catch (err: any) {
+      console.error('Failed to clear Google session:', err);
+      setError('⚠️ Không thể xóa hoàn toàn phiên Google, nhưng vẫn có thể thử đăng nhập.');
+    } finally {
+      setIsClearingGoogleSession(false);
+    }
   };
 
   return (
@@ -248,6 +517,21 @@ export default function LoginTemplatePage() {
                 </Box>
               </motion.div>
 
+
+
+              {/* Loading Alert for Google */}
+              {isGoogleLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
+                    Đang xử lý đăng nhập Google...
+                  </Alert>
+                </motion.div>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <motion.div
@@ -277,9 +561,9 @@ export default function LoginTemplatePage() {
                       <TextField
                         fullWidth
                         label="Email"
-                        name="email"
+                        name="gmail"
                         type="email"
-                        value={loginData.email}
+                        value={loginData.gmail}
                         onChange={handleInputChange}
                         required
                         InputProps={{
@@ -512,6 +796,7 @@ export default function LoginTemplatePage() {
                           fullWidth
                           startIcon={<Google />}
                           onClick={() => handleSocialLogin('Google')}
+                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
                           sx={{
                             py: 2,
                             borderRadius: 3,
@@ -527,9 +812,14 @@ export default function LoginTemplatePage() {
                               transform: 'translateY(-2px)',
                               boxShadow: '0 6px 20px rgba(219, 68, 55, 0.2)',
                             },
+                            '&:disabled': {
+                              borderColor: 'rgba(219, 68, 55, 0.2)',
+                              color: 'rgba(219, 68, 55, 0.5)',
+                              background: 'rgba(219, 68, 55, 0.01)',
+                            }
                           }}
                         >
-                          Google
+                          {isGoogleLoading ? 'Đang kết nối Google...' : 'Google'}
                         </Button>
                       </motion.div>
                     </motion.div>
@@ -549,6 +839,7 @@ export default function LoginTemplatePage() {
                           fullWidth
                           startIcon={<Facebook />}
                           onClick={() => handleSocialLogin('Facebook')}
+                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
                           sx={{
                             py: 2,
                             borderRadius: 3,
@@ -571,6 +862,48 @@ export default function LoginTemplatePage() {
                       </motion.div>
                     </motion.div>
                   </Stack>
+
+                  {/* Clear Google Session Button */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 1.4 }}
+                  >
+                    <Box sx={{ mt: 3, textAlign: 'center' }}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={handleClearGoogleSession}
+                          disabled={isClearingGoogleSession || isGoogleLoading || isLoading}
+                          sx={{
+                            color: '#666',
+                            fontSize: '0.875rem',
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            px: 2,
+                            py: 1,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              color: '#db4437',
+                              background: 'rgba(219, 68, 55, 0.05)',
+                            },
+                            '&:disabled': {
+                              color: '#999',
+                            }
+                          }}
+                        >
+                          {isClearingGoogleSession ? '🔄 Đang xóa phiên Google...' : '🧹 Xóa phiên đăng nhập Google'}
+                        </Button>
+                      </motion.div>
+                                             <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                         Dùng khi muốn đăng nhập với tài khoản Google khác
+                       </Typography>
+                    </Box>
+                  </motion.div>
                 </Box>
               </motion.div>
 
@@ -611,6 +944,8 @@ export default function LoginTemplatePage() {
                   </Typography>
                 </Box>
               </motion.div>
+
+              
             </Box>
           </motion.div>
         </Box>
