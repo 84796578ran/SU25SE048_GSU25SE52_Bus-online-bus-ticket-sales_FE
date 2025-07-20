@@ -193,7 +193,7 @@ export default function BusTicketHomePage() {
         type: 'success'
       });
       
-      // Clean URL without refreshing page
+      // Clean URL without refreshing page 
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('loginSuccess');
       newUrl.searchParams.delete('message');
@@ -207,7 +207,7 @@ export default function BusTicketHomePage() {
         type: 'success'
       });
       
-      // Clean URL without refreshing page
+      // Clean URL without refreshing page djaskdsjadklsjdaklsdjalskd
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('registerSuccess');
       newUrl.searchParams.delete('message');
