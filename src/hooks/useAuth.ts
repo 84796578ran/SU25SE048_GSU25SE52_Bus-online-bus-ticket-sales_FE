@@ -104,7 +104,6 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      // authService.logout() now handles both API call and local cleanup
       await authService.logout();
       setUser(null);
       setIsAuthenticated(false);

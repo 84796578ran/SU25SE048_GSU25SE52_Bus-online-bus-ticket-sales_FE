@@ -27,6 +27,7 @@ import {
   useMediaQuery,
   Snackbar,
   Alert,
+  Autocomplete,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -50,15 +51,54 @@ import {
 } from '@mui/icons-material';
 import { authService } from '@/services/authService';
 
+// Types
+interface Location {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  timeTransit: number;
+  note: string;
+  isDeleted: boolean;
+}
+
+interface Station {
+  id: number;
+  stationId: string;
+  name: string;
+  locationName: string;
+  status: number;
+  isDeleted: boolean;
+}
+
 export default function BusTicketHomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tripType, setTripType] = useState('oneWay'); // 'oneWay' or 'roundTrip'
-  const [searchData, setSearchData] = useState({
-    from: '',
-    to: '',
+  const [searchData, setSearchData] = useState<{
+    from: Location | null;
+    to: Location | null;
+    fromStation: Station | null;
+    toStation: Station | null;
+    departureDate: string;
+    returnDate: string;
+  }>({
+    from: null,
+    to: null,
+    fromStation: null,
+    toStation: null,
     departureDate: '',
     returnDate: ''
   });
+
+  // Locations data from API
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  // Stations data from API
+  const [fromStations, setFromStations] = useState<Station[]>([]);
+  const [toStations, setToStations] = useState<Station[]>([]);
+  const [loadingFromStations, setLoadingFromStations] = useState(false);
+  const [loadingToStations, setLoadingToStations] = useState(false);
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -157,9 +197,73 @@ export default function BusTicketHomePage() {
   ];
 
 
+  // Fetch locations from API
+  const fetchLocations = async () => {
+    setLoadingLocations(true);
+    try {
+      const response = await fetch('https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Location');
+      const result = await response.json();
+      if (result.data) {
+        setLocations(result.data.filter((location: Location) => !location.isDeleted));
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      showNotification('Không thể tải danh sách địa điểm', 'error');
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  // Fetch stations from API based on location
+  const fetchStations = async (locationName: string, isFromStation: boolean = true) => {
+    if (isFromStation) {
+      setLoadingFromStations(true);
+    } else {
+      setLoadingToStations(true);
+    }
+
+    try {
+      const response = await fetch('https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Station');
+      const result = await response.json();
+      if (result.data) {
+        const filteredStations = result.data.filter((station: Station) => 
+          !station.isDeleted && 
+          station.status === 1 && 
+          station.locationName.toLowerCase() === locationName.toLowerCase()
+        );
+        
+        if (isFromStation) {
+          setFromStations(filteredStations);
+          // Reset selected fromStation when location changes
+          setSearchData(prev => ({
+            ...prev,
+            fromStation: null
+          }));
+        } else {
+          setToStations(filteredStations);
+          // Reset selected toStation when location changes
+          setSearchData(prev => ({
+            ...prev,
+            toStation: null
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stations:', error);
+      showNotification('Không thể tải danh sách trạm', 'error');
+    } finally {
+      if (isFromStation) {
+        setLoadingFromStations(false);
+      } else {
+        setLoadingToStations(false);
+      }
+    }
+  };
+
   // Check authentication status on mount
   useEffect(() => {
     checkAuthStatus();
+    fetchLocations();
     
     // Listen for storage changes (when user logs in/out in another tab)
     const handleStorageChange = () => {
@@ -320,24 +424,42 @@ export default function BusTicketHomePage() {
     setSearchData(prev => ({
       ...prev,
       from: prev.to,
-      to: prev.from
+      to: prev.from,
+      fromStation: prev.toStation,
+      toStation: prev.fromStation
     }));
+    // Swap stations arrays as well
+    setFromStations(toStations);
+    setToStations(fromStations);
   };
 
   const handleSearch = () => {
     console.log('Search data:', { tripType, ...searchData });
 
     // Validate required fields before proceeding
-    if (!searchData.from || !searchData.to || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
+    if (!searchData.from || !searchData.to || !searchData.fromStation || !searchData.toStation || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
       return;
     }
 
     // Convert search data to query params
     const params = new URLSearchParams();
-    params.append('from', searchData.from);
-    params.append('to', searchData.to);
-    params.append('departureDate', searchData.departureDate);
+    params.append('from', searchData.from?.name || '');
+    params.append('fromId', searchData.from?.id?.toString() || '');
+    params.append('to', searchData.to?.name || '');
+    params.append('toId', searchData.to?.id?.toString() || '');
+    params.append('fromStation', searchData.fromStation?.name || '');
+    params.append('fromStationId', searchData.fromStation?.id?.toString() || '');
+    params.append('toStation', searchData.toStation?.name || '');
+    params.append('toStationId', searchData.toStation?.id?.toString() || '');
+    
+    // Convert date to ISO format for API (YYYY-MM-DD format)
+    if (searchData.departureDate) {
+      const departureDate = new Date(searchData.departureDate);
+      const isoDate = departureDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      params.append('departureDate', isoDate);
+    }
+    
     params.append('tripType', tripType);
 
     if (tripType === 'roundTrip') {
@@ -1191,48 +1313,133 @@ export default function BusTicketHomePage() {
                   transition={{ duration: 0.6, delay: 0.7 }}
                 >
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {/* First Row: From, Swap, To - Improved layout */}
+                    {/* First Row: Departure and Arrival with Stations */}
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3, md: 3 }, alignItems: 'center', justifyContent: 'space-between' }}>
+                      {/* Departure Section */}
                       <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 42%', md: '1 1 38%' } }}>
-                        <TextField
-                          fullWidth
-                          label="Điểm đi"
-                          variant="outlined"
-                          value={searchData.from}
-                          onChange={(e) => handleInputChange('from', e.target.value)}
-                          InputProps={{
-                            startAdornment: <LocationOn sx={{ mr: 1, color: '#f48fb1' }} />,
-                          }}
-                          placeholder="VD: Hà Nội"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 3,
-                              backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#f48fb1',
-                                }
-                              },
-                              '&.Mui-focused': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                                boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Autocomplete
+                            fullWidth
+                            options={locations}
+                            getOptionLabel={(option) => option.name}
+                            value={searchData.from}
+                            onChange={(event, newValue) => {
+                              setSearchData(prev => ({
+                                ...prev,
+                                from: newValue
+                              }));
+                              // Fetch stations when location is selected
+                              if (newValue) {
+                                fetchStations(newValue.name, true);
+                              } else {
+                                setFromStations([]);
+                                setSearchData(prev => ({
+                                  ...prev,
+                                  fromStation: null
+                                }));
                               }
-                            },
-                            '& .MuiInputLabel-root': {
-                              fontWeight: 600,
-                            }
-                          }}
-                        />
+                            }}
+                            loading={loadingLocations}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Điểm đi"
+                                placeholder="VD: Hà Nội"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <LocationOn sx={{ mr: 1, color: '#f48fb1' }} />
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#f48fb1',
+                                      }
+                                    },
+                                    '&.Mui-focused': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                      boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root': {
+                                    fontWeight: 600,
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                          <Autocomplete
+                            fullWidth
+                            options={fromStations}
+                            getOptionLabel={(option) => option.name}
+                            value={searchData.fromStation}
+                            onChange={(event, newValue) => {
+                              setSearchData(prev => ({
+                                ...prev,
+                                fromStation: newValue
+                              }));
+                            }}
+                            loading={loadingFromStations}
+                            disabled={!searchData.from}
+                            noOptionsText={!searchData.from ? "Vui lòng chọn điểm đi trước" : "Không có trạm nào"}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Trạm đi"
+                                placeholder="VD: Bến xe Mỹ Đình"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <DirectionsBus sx={{ mr: 1, color: '#f48fb1' }} />
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#f48fb1',
+                                      }
+                                    },
+                                    '&.Mui-focused': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                      boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root': {
+                                    fontWeight: 600,
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                        </Box>
                       </Box>
 
+                      {/* Swap Button */}
                       <Box sx={{
                         flex: '0 0 auto',
                         display: 'flex',
                         justifyContent: 'center',
+                        alignItems: 'center',
                         width: { xs: '100%', sm: 'auto' },
-                        order: { xs: 3, sm: 2 }
+                        order: { xs: 3, sm: 2 },
+                        height: { xs: 'auto', sm: '120px' }
                       }}>
                         <IconButton
                           color="primary"
@@ -1255,38 +1462,120 @@ export default function BusTicketHomePage() {
                         </IconButton>
                       </Box>
 
+                      {/* Arrival Section */}
                       <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 42%', md: '1 1 38%' }, order: { xs: 2, sm: 3 } }}>
-                        <TextField
-                          fullWidth
-                          label="Điểm đến"
-                          variant="outlined"
-                          value={searchData.to}
-                          onChange={(e) => handleInputChange('to', e.target.value)}
-                          InputProps={{
-                            startAdornment: <LocationOn sx={{ mr: 1, color: '#f48fb1' }} />,
-                          }}
-                          placeholder="VD: Hồ Chí Minh"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 3,
-                              backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#f48fb1',
-                                }
-                              },
-                              '&.Mui-focused': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                                boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Autocomplete
+                            fullWidth
+                            options={locations}
+                            getOptionLabel={(option) => option.name}
+                            value={searchData.to}
+                            onChange={(event, newValue) => {
+                              setSearchData(prev => ({
+                                ...prev,
+                                to: newValue
+                              }));
+                              // Fetch stations when location is selected
+                              if (newValue) {
+                                fetchStations(newValue.name, false);
+                              } else {
+                                setToStations([]);
+                                setSearchData(prev => ({
+                                  ...prev,
+                                  toStation: null
+                                }));
                               }
-                            },
-                            '& .MuiInputLabel-root': {
-                              fontWeight: 600,
-                            }
-                          }}
-                        />
+                            }}
+                            loading={loadingLocations}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Điểm đến"
+                                placeholder="VD: Hồ Chí Minh"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <LocationOn sx={{ mr: 1, color: '#f48fb1' }} />
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#f48fb1',
+                                      }
+                                    },
+                                    '&.Mui-focused': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                      boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root': {
+                                    fontWeight: 600,
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                          <Autocomplete
+                            fullWidth
+                            options={toStations}
+                            getOptionLabel={(option) => option.name}
+                            value={searchData.toStation}
+                            onChange={(event, newValue) => {
+                              setSearchData(prev => ({
+                                ...prev,
+                                toStation: newValue
+                              }));
+                            }}
+                            loading={loadingToStations}
+                            disabled={!searchData.to}
+                            noOptionsText={!searchData.to ? "Vui lòng chọn điểm đến trước" : "Không có trạm nào"}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Trạm đến"
+                                placeholder="VD: Bến xe Miền Đông"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <DirectionsBus sx={{ mr: 1, color: '#f48fb1' }} />
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ),
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#f48fb1',
+                                      }
+                                    },
+                                    '&.Mui-focused': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                      boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root': {
+                                    fontWeight: 600,
+                                  }
+                                }}
+                              />
+                            )}
+                          />
+                        </Box>
                       </Box>
                     </Box>
 
