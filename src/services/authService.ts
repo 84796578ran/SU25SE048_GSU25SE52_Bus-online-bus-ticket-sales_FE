@@ -244,7 +244,6 @@ export const authService = {
         headers: 'Check Network tab for full headers'
       });
       
-      // More specific error handling for 400 Bad Request
       if (error?.status === 400) {
         console.error('🚨 BAD REQUEST (400) Details:');
         console.error('- Possible causes:');
