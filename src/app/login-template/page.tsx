@@ -42,6 +42,7 @@ export default function LoginTemplatePage() {
     rememberMe: false,
   });
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState<'default' | 'redirect_url'>('default');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
@@ -60,11 +61,25 @@ export default function LoginTemplatePage() {
 
   // Get current URL for redirect
   const getCurrentRedirectURL = () => {
-    if (typeof window !== 'undefined') {
-      const redirectURL = `${window.location.origin}/login-template`;
-      return redirectURL;
+    if (typeof window === 'undefined') {
+      return 'http://localhost:3000/login-template';
     }
-    return 'localhost:3000/login-template';
+
+    // Check if we're in production (Azure)
+    const currentHost = window.location.host;
+    if (currentHost.includes('azurewebsites.net')) {
+      return 'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template';
+    }
+
+    // For development, use allowed localhost URLs
+    const currentPort = window.location.port;
+    if (currentPort === '3000' || currentPort === '3001') {
+      return `http://localhost:${currentPort}/login-template`;
+    }
+
+    // Fallback to default port if current port is not allowed
+    console.warn(`⚠️ Current port ${currentPort} not configured in Google Console. Using default localhost:3000`);
+    return 'http://localhost:3000/login-template';
   };
 
 
@@ -98,6 +113,7 @@ export default function LoginTemplatePage() {
         setIsProcessingOAuth(true);
         setIsGoogleLoading(true);
         setError('');
+        setErrorType('default');
         
         // Clear URL parameters immediately to prevent code reuse
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -152,7 +168,27 @@ export default function LoginTemplatePage() {
         
         try {
           const redirectURL = getCurrentRedirectURL();
-          console.log('🔄 Using redirect URL for Google callback:', redirectURL);
+          console.log('🔄 Google Callback Debug Info:');
+          console.log('  - Current host:', window.location.host);
+          console.log('  - Current origin:', window.location.origin);  
+          console.log('  - Current port:', window.location.port);
+          console.log('  - Selected redirect URL:', redirectURL);
+          
+          // Validate redirect URL against allowed URLs
+          const allowedUrls = [
+            'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
+            'http://localhost:3000/login-template',
+            'http://localhost:3001/login-template'
+          ];
+          
+          if (!allowedUrls.includes(redirectURL)) {
+            console.error('❌ Callback redirect URL is not in allowed list!');
+            console.error('  - Selected:', redirectURL);
+            console.error('  - Allowed URLs:', allowedUrls);
+                         setErrorType('redirect_url');
+             throw new Error(`Lỗi Google OAuth: Địa chỉ callback không được hỗ trợ!`);
+          }
+          
           const response = await authService.loginWithGoogle(code, redirectURL);
           
           console.log('🎉 Google login completed, response received:', response);
@@ -226,6 +262,7 @@ export default function LoginTemplatePage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorType('default');
 
     try {
       // Validate input
@@ -291,6 +328,7 @@ export default function LoginTemplatePage() {
     if (provider === 'Google') {
       setIsGoogleLoading(true);
       setError('');
+      setErrorType('default');
       
       // Store the start time of OAuth flow to track timing
       const oauthStartTime = Date.now();
@@ -299,8 +337,27 @@ export default function LoginTemplatePage() {
       
               try {
         const redirectURL = getCurrentRedirectURL();
-        console.log('🔄 Using redirect URL for Google auth:', redirectURL);
-        console.log('⚙️ Force account selection:', FORCE_ACCOUNT_SELECTION);
+        console.log('🔄 Google Auth Debug Info:');
+        console.log('  - Current host:', window.location.host);
+        console.log('  - Current origin:', window.location.origin);
+        console.log('  - Current port:', window.location.port);
+        console.log('  - Selected redirect URL:', redirectURL);
+        console.log('  - Force account selection:', FORCE_ACCOUNT_SELECTION);
+        
+        // Validate redirect URL against allowed URLs
+        const allowedUrls = [
+          'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
+          'http://localhost:3000/login-template',
+          'http://localhost:3001/login-template'
+        ];
+        
+        if (!allowedUrls.includes(redirectURL)) {
+          console.error('❌ Selected redirect URL is not in allowed list!');
+          console.error('  - Selected:', redirectURL);
+          console.error('  - Allowed URLs:', allowedUrls);
+                     setErrorType('redirect_url');
+           throw new Error(`Địa chỉ truy cập không được hỗ trợ cho Google OAuth!`);
+        }
         
         // Use configurable account selection setting
         const response = await authService.getGoogleAuthLink(redirectURL, FORCE_ACCOUNT_SELECTION);
@@ -331,6 +388,7 @@ export default function LoginTemplatePage() {
   const handleClearGoogleSession = async () => {
     setIsClearingGoogleSession(true);
     setError('');
+    setErrorType('default');
     
     try {
       await authService.clearGoogleSession();
@@ -539,8 +597,42 @@ export default function LoginTemplatePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
-                    {error}
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      mb: 3, 
+                      borderRadius: 3,
+                      '& .MuiAlert-message': {
+                        width: '100%'
+                      }
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: errorType === 'redirect_url' ? 1 : 0 }}>
+                        {error}
+                      </Typography>
+                      {errorType === 'redirect_url' && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                            📍 Vui lòng truy cập qua một trong các địa chỉ sau:
+                          </Typography>
+                          <Box component="ul" sx={{ m: 0, pl: 2, '& li': { mb: 0.5 } }}>
+                            <Typography component="li" variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              http://localhost:3000
+                            </Typography>
+                            <Typography component="li" variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              http://localhost:3001
+                            </Typography>
+                            <Typography component="li" variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                              https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'text.secondary' }}>
+                            🔍 Địa chỉ hiện tại: {typeof window !== 'undefined' ? window.location.origin : 'N/A'}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
                   </Alert>
                 </motion.div>
               )}

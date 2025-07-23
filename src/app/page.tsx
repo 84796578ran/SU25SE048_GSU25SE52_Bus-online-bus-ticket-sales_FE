@@ -30,6 +30,7 @@ import {
   Autocomplete,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiClient } from '@/services/api';
 import {
   DirectionsBus,
   Search,
@@ -462,8 +463,10 @@ export default function BusTicketHomePage() {
     
     params.append('tripType', tripType);
 
-    if (tripType === 'roundTrip') {
-      params.append('returnDate', searchData.returnDate);
+    if (tripType === 'roundTrip' && searchData.returnDate) {
+      const returnDate = new Date(searchData.returnDate);
+      const isoReturnDate = returnDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      params.append('returnDate', isoReturnDate);
     }
 
     // Navigate to search results page with query params

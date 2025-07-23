@@ -91,8 +91,6 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(customError);
   }
 );
-
-// API client class with axios
 class ApiClient {
   private instance: AxiosInstance;
 
@@ -166,6 +164,124 @@ class ApiClient {
       
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // Seat availability API
+  async getSeatAvailability(tripId: string | number, fromStationId: string | number, toStationId: string | number): Promise<any> {
+    try {
+      // Validate required parameters
+      if (!tripId) {
+        throw new Error('tripId is required');
+      }
+      if (!fromStationId) {
+        throw new Error('fromStationId is required');
+      }
+      if (!toStationId) {
+        throw new Error('toStationId is required');
+      }
+
+      const params = new URLSearchParams({
+        fromStationId: fromStationId.toString(),
+        toStationId: toStationId.toString()
+      });
+      
+      const fullUrl = `/api/Trip/${tripId}/seat-availability?${params.toString()}`;
+      
+      console.log('🌐 Making seat availability API call:', {
+        fullUrl,
+        baseURL: this.instance.defaults.baseURL,
+        completeURL: `${this.instance.defaults.baseURL}${fullUrl}`,
+        tripId: tripId,
+        'tripId type': typeof tripId,
+        fromStationId: fromStationId,
+        'fromStationId type': typeof fromStationId,
+        toStationId: toStationId,
+        'toStationId type': typeof toStationId,
+        params: params.toString()
+      });
+      
+      const response = await this.instance.get(fullUrl);
+      
+      console.log('🌐 Seat availability API response:', {
+        status: response.status,
+        data: response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error fetching seat availability for trip ${tripId}:`, error);
+      throw error;
+    }
+  }
+
+  // Round-trip search API
+  async searchRoundTrips(searchParams: {
+    fromLocationId: string | number,
+    fromStationId: string | number,
+    toLocationId: string | number,
+    toStationId: string | number,
+    date: string,
+    returnDate: string,
+    directTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    },
+    transferTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    },
+    tripleTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    }
+  }): Promise<any> {
+    try {
+      const params = new URLSearchParams();
+      
+      // Required parameters
+      params.append('FromLocationId', searchParams.fromLocationId.toString());
+      params.append('FromStationId', searchParams.fromStationId.toString());
+      params.append('ToLocationId', searchParams.toLocationId.toString());
+      params.append('ToStationId', searchParams.toStationId.toString());
+      params.append('Date', searchParams.date);
+      params.append('ReturnDate', searchParams.returnDate);
+      
+      // Default pagination parameters
+      const directPagination = searchParams.directTripsPagination || {};
+      params.append('DirectTripsPagination.Page', (directPagination.page || 0).toString());
+      params.append('DirectTripsPagination.Amount', (directPagination.amount || 50).toString());
+      params.append('DirectTripsPagination.All', (directPagination.all !== undefined ? directPagination.all : true).toString());
+      
+      const transferPagination = searchParams.transferTripsPagination || {};
+      params.append('TransferTripsPagination.Page', (transferPagination.page || 0).toString());
+      params.append('TransferTripsPagination.Amount', (transferPagination.amount || 50).toString());
+      params.append('TransferTripsPagination.All', (transferPagination.all !== undefined ? transferPagination.all : true).toString());
+      
+      const triplePagination = searchParams.tripleTripsPagination || {};
+      params.append('TripleTripsPagination.Page', (triplePagination.page || 0).toString());
+      params.append('TripleTripsPagination.Amount', (triplePagination.amount || 50).toString());
+      params.append('TripleTripsPagination.All', (triplePagination.all !== undefined ? triplePagination.all : true).toString());
+
+      console.log('🌐 Making round-trip search API call:', {
+        url: `/api/Trip/search-return?${params.toString()}`,
+        searchParams
+      });
+      
+      const response = await this.instance.get(`/api/Trip/search-return?${params.toString()}`);
+      
+      console.log('🌐 Round-trip search response:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error searching round trips:', error);
       throw error;
     }
   }
