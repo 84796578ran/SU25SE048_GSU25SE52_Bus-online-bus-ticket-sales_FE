@@ -198,7 +198,6 @@ export default function BusTicketHomePage() {
   ];
 
 
-  // Fetch locations from API
   const fetchLocations = async () => {
     setLoadingLocations(true);
     try {

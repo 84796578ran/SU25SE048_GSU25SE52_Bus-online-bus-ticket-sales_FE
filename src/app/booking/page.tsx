@@ -240,6 +240,11 @@ export default function BookingPage() {
   const [seatDialogOpen, setSeatDialogOpen] = useState<boolean>(false);
   const [seatDialogTrip, setSeatDialogTrip] = useState<TripType | null>(null);
   
+  // Dialog specific seat data - separate from main seats state to avoid conflicts
+  const [dialogSeats, setDialogSeats] = useState<SeatType[]>([]);
+  const [dialogSeatLoading, setDialogSeatLoading] = useState<boolean>(false);
+  const [dialogSeatError, setDialogSeatError] = useState<string>('');
+  
   // Seat availability by trip id for displaying in trip cards
   const [seatAvailabilityByTrip, setSeatAvailabilityByTrip] = useState<Record<string, {available: number, total: number}>>({});
   const [loadingSeatsByTrip, setLoadingSeatsByTrip] = useState<Record<string, boolean>>({});
@@ -477,9 +482,12 @@ export default function BookingPage() {
       }
     }
     
+    // Add loading state for step transitions
+    setSeatLoading(true);
+    
     if (activeStep < steps.length - 1) {
       setActiveStep((prevStep) => prevStep + 1);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       
       // If moving to seat selection, fetch real seat data
       if (activeStep === 0 && selectedTrip) {
@@ -503,17 +511,25 @@ export default function BookingPage() {
           const mockSeats = generateMockSeats();
           setSeats(mockSeats);
           console.log('🎯 Using mock seats due to API error:', mockSeats.length);
+        } finally {
+          setSeatLoading(false);
         }
+      } else {
+        // Small delay for smooth transition
+        setTimeout(() => {
+          setSeatLoading(false);
+        }, 300);
       }
     } else {
       // Complete booking
       setCompleted(true);
+      setSeatLoading(false);
     }
   };
 
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handle trip selection
@@ -613,6 +629,19 @@ export default function BookingPage() {
             seatType: 'regular', // Default seat type
             isSelected: false
           };
+          
+          // Debug logging for transformation
+          if (index < 10) {
+            console.log(`🔍 Seat ${index + 1} transform:`, {
+              'API id': apiSeat.id,
+              'API seatId': apiSeat.seatId,
+              'API isAvailable': apiSeat.isAvailable,
+              'Transformed isBooked': transformedSeat.isBooked,
+              'Expected color': transformedSeat.isBooked ? 'GRAY (đã đặt)' : 'WHITE (trống)',
+              'seatNumber': displaySeatNumber,
+              'Logic check': `!${apiSeat.isAvailable} = ${!apiSeat.isAvailable}`
+            });
+          }
           
           return transformedSeat;
         });
@@ -763,6 +792,8 @@ export default function BookingPage() {
   const handleOpenSeatDialog = async (trip: TripType) => {
     setSeatDialogTrip(trip);
     setSeatDialogOpen(true);
+    setDialogSeatLoading(true);
+    setDialogSeatError('');
     
     console.log('🎫 Opening seat dialog for trip:', {
       'trip.id (numeric, will use)': trip.id,
@@ -771,40 +802,113 @@ export default function BookingPage() {
     });
     
     try {
-      // Fetch seat data when dialog opens and update seats state
-      console.log('🎯 Fetching seats for dialog preview...');
-      const seatData = await fetchSeatAvailability(trip);
-      console.log('🎯 Dialog - Got seat data:', {
-        count: seatData.length,
-        sample: seatData.slice(0, 3)
-      });
-      setSeats(seatData); // Set seats state so dialog can display them
-      console.log('🎯 Dialog - Seats state updated for preview');
+      // Determine correct tripId to use
+      let tripIdToUse = trip.id;
+      if (trip.tripId && typeof trip.tripId === 'string') {
+        const numericMatch = trip.tripId.match(/\d+/);
+        if (numericMatch) {
+          tripIdToUse = parseInt(numericMatch[0]);
+        }
+      }
+
+      console.log('🎯 Fetching fresh seat data for dialog...');
       
-      // Update seat availability info for trip card display
-      const availableSeats = seatData.filter(seat => !seat.isBooked).length;
-      const totalSeats = seatData.length;
-      setSeatAvailabilityByTrip(prev => ({
-        ...prev,
-        [trip.id.toString()]: {
+      // Fetch fresh seat data specifically for dialog
+      const seatData = await apiClient.getSeatAvailability(
+        tripIdToUse,
+        searchData.fromStationId,
+        searchData.toStationId
+      );
+      
+      console.log('🔍 Raw API response for dialog:', {
+        dataType: typeof seatData,
+        isArray: Array.isArray(seatData),
+        length: Array.isArray(seatData) ? seatData.length : 'N/A',
+        sample: Array.isArray(seatData) ? seatData.slice(0, 5) : 'N/A'
+      });
+
+      // Transform API response with detailed logging
+      if (Array.isArray(seatData) && seatData.length > 0) {
+        const transformedSeats: SeatType[] = seatData.map((apiSeat: ApiSeatResponse, index: number) => {
+          const seatsPerRow = 4;
+          const rowIndex = Math.floor(index / seatsPerRow);
+          const columnIndex = (index % seatsPerRow) + 1;
+          const rowLetter = String.fromCharCode(65 + rowIndex);
+          const displaySeatNumber = `${rowLetter}${columnIndex}`;
+          
+          const transformedSeat = {
+            id: apiSeat.id.toString(),
+            row: rowLetter,
+            column: columnIndex,
+            isBooked: !apiSeat.isAvailable, // KEY LOGIC: isAvailable: true -> isBooked: false (ghế trống)
+            price: trip.price,
+            seatNumber: displaySeatNumber,
+            seatType: 'regular',
+            isSelected: false
+          };
+
+          // Debug logging for transformation
+          if (index < 10) {
+            console.log(`🔍 Seat ${index + 1} transform:`, {
+              'API id': apiSeat.id,
+              'API seatId': apiSeat.seatId,
+              'API isAvailable': apiSeat.isAvailable,
+              'Transformed isBooked': transformedSeat.isBooked,
+              'Expected color': transformedSeat.isBooked ? 'GRAY (đã đặt)' : 'WHITE (trống)',
+              'seatNumber': displaySeatNumber,
+              'Logic check': `!${apiSeat.isAvailable} = ${!apiSeat.isAvailable}`
+            });
+          }
+          
+          return transformedSeat;
+        });
+        
+        console.log('🎯 Dialog seat data summary:', {
+          total: transformedSeats.length,
+          booked: transformedSeats.filter(s => s.isBooked).length,
+          available: transformedSeats.filter(s => !s.isBooked).length,
+          sample: transformedSeats.slice(0, 3).map(s => ({
+            id: s.id,
+            isBooked: s.isBooked,
+            seatNumber: s.seatNumber
+          }))
+        });
+        
+        setDialogSeats(transformedSeats);
+        
+        // Update seat availability info for trip card display
+        const availableSeats = transformedSeats.filter(seat => !seat.isBooked).length;
+        const totalSeats = transformedSeats.length;
+        setSeatAvailabilityByTrip(prev => ({
+          ...prev,
+          [trip.id.toString()]: {
+            available: availableSeats,
+            total: totalSeats
+          }
+        }));
+        
+        console.log('🎫 Updated seat availability for trip', trip.id, ':', {
           available: availableSeats,
           total: totalSeats
-        }
-      }));
-      
-      console.log('🎫 Seat availability updated for trip', trip.id, ':', {
-        available: availableSeats,
-        total: totalSeats
-      });
+        });
+      } else {
+        console.warn('🎫 No seat data or invalid format:', seatData);
+        setDialogSeats([]);
+      }
     } catch (error) {
       console.error('❌ Error loading seats for dialog:', error);
-      setSeatError('Không thể tải sơ đồ ghế');
+      setDialogSeatError('Không thể tải sơ đồ ghế');
+      setDialogSeats([]);
+    } finally {
+      setDialogSeatLoading(false);
     }
   };
 
   const handleCloseSeatDialog = () => {
     setSeatDialogOpen(false);
     setSeatDialogTrip(null);
+    setDialogSeats([]);
+    setDialogSeatError('');
   };
 
   // Format price as VND
@@ -1004,7 +1108,7 @@ export default function BookingPage() {
         {loading ? (
           renderLoading()
         ) : trips.length > 0 ? (
-          <Box>
+          <Box sx={{ minHeight: '400px' }}> {/* Prevent layout shift */}
             {trips.map((trip, index) => (
               <motion.div
                 key={trip.id}
@@ -1348,10 +1452,7 @@ export default function BookingPage() {
                           <EventSeat sx={{ color: '#f48fb1', fontSize: 20 }} />
                           {loadingSeatsByTrip[trip.id.toString()] ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <CircularProgress size={16} sx={{ color: '#f48fb1' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                Đang tải...
-                              </Typography>
+                              <Skeleton variant="text" width={80} height={16} />
                             </Box>
                           ) : (
                             <Typography variant="body2" color="text.secondary">
@@ -1578,9 +1679,43 @@ export default function BookingPage() {
             ))}
           </Box>
         ) : (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            <AlertTitle>Không tìm thấy chuyến xe</AlertTitle>
-            Không có chuyến xe nào phù hợp với tiêu chí tìm kiếm của bạn.
+          <Alert 
+            severity="info" 
+            sx={{ 
+              mt: 2,
+              borderRadius: 3,
+              p: 3,
+              textAlign: 'center',
+              '& .MuiAlert-message': {
+                width: '100%'
+              }
+            }}
+            action={
+              <Button
+                component={Link}
+                href="/"
+                variant="outlined"
+                size="small"
+                sx={{
+                  color: '#0288d1',
+                  borderColor: '#0288d1',
+                  '&:hover': {
+                    bgcolor: 'rgba(2, 136, 209, 0.04)',
+                    borderColor: '#0277bd'
+                  }
+                }}
+              >
+                Tìm kiếm lại
+              </Button>
+            }
+          >
+            <AlertTitle sx={{ mb: 2, fontWeight: 'bold' }}>Không tìm thấy chuyến xe</AlertTitle>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Không có chuyến xe nào phù hợp với tiêu chí tìm kiếm của bạn.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Hãy thử thay đổi ngày khởi hành hoặc điểm đi/đến khác.
+            </Typography>
           </Alert>
         )}
       </Box>
@@ -1610,7 +1745,8 @@ export default function BookingPage() {
               sx={{ 
                 p: 3, 
                 position: 'relative',
-                overflow: 'auto'
+                overflow: 'auto',
+                minHeight: '400px' // Prevent layout shift
               }}
             >
               {/* Enhanced seat diagram with API integration */}
@@ -1619,7 +1755,7 @@ export default function BookingPage() {
           </Box>
           
           <Box sx={{ flex: { xs: '1', md: '1' } }}>
-            <Paper elevation={3} sx={{ p: 3 }}>
+            <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20 }}>
               <Typography variant="h6" gutterBottom sx={{ color: '#f48fb1' }}>
                 Chi tiết đặt chỗ
               </Typography>
@@ -1628,7 +1764,7 @@ export default function BookingPage() {
                 <Typography variant="subtitle1" gutterBottom>
                   {selectedTrip.busName} - {selectedTrip.tripId}
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2">Khởi hành:</Typography>
                   <Typography variant="body2">
                     {new Date(selectedTrip.timeStart).toLocaleTimeString('vi-VN', {
@@ -1637,7 +1773,7 @@ export default function BookingPage() {
                     })} - {searchData.departureDate}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2">Điểm đi:</Typography>
                   <Typography variant="body2">{searchData.fromStation}</Typography>
                 </Box>
@@ -1653,23 +1789,25 @@ export default function BookingPage() {
                 Ghế đã chọn:
               </Typography>
               
-              {selectedSeats.length > 0 ? (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {selectedSeats.map((seat) => (
-                    <Chip 
-                      key={seat.id}
-                      label={seat.id} 
-                      color="primary"
-                      onDelete={() => handleSelectSeat(seat)}
-                      sx={{ bgcolor: '#f48fb1' }}
-                    />
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Chưa chọn ghế nào
-                </Typography>
-              )}
+              <Box sx={{ minHeight: '60px' }}> {/* Fixed height to prevent layout shifts */}
+                {selectedSeats.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    {selectedSeats.map((seat) => (
+                      <Chip 
+                        key={seat.id}
+                        label={seat.id} 
+                        color="primary"
+                        onDelete={() => handleSelectSeat(seat)}
+                        sx={{ bgcolor: '#f48fb1' }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+              </Box>
               
               <Divider sx={{ my: 2 }} />
               
@@ -1677,6 +1815,20 @@ export default function BookingPage() {
                 <Typography variant="subtitle1">Tổng tiền:</Typography>
                 <Typography variant="subtitle1" sx={{ color: '#f48fb1' }}>
                   {formatPrice(selectedSeats.length * selectedTrip.price)}
+                </Typography>
+              </Box>
+              
+              {/* Progress indicator */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: '#fce4ec', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#f48fb1', mb: 1 }}>
+                  💡 Lưu ý:
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                  • Vui lòng chọn ít nhất 1 ghế để tiếp tục
+                  <br />
+                  • Ghế đã đặt sẽ được giữ trong 15 phút
+                  <br />
+                  • Giá vé có thể thay đổi tùy theo ghế được chọn
                 </Typography>
               </Box>
             </Paper>
@@ -1849,7 +2001,7 @@ export default function BookingPage() {
                 <Typography variant="subtitle1" gutterBottom>
                   {selectedTrip.busName} - {selectedTrip.tripId}
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2">Khởi hành:</Typography>
                   <Typography variant="body2">
                     {new Date(selectedTrip.timeStart).toLocaleTimeString('vi-VN', {
@@ -2279,28 +2431,85 @@ export default function BookingPage() {
     if (seatLoading) {
       console.log('🎯 Showing loading state');
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
-          <CircularProgress sx={{ color: '#f48fb1' }} />
-          <Typography variant="body2" sx={{ ml: 2 }}>
-            Đang tải sơ đồ ghế...
-          </Typography>
+        <Box sx={{ position: 'relative', overflow: 'auto' }}>
+          {/* Bus Front Skeleton */}
+          <Box sx={{ 
+            mb: 2,
+            p: 2,
+            border: '2px solid #f0f0f0',
+            borderRadius: '40px 40px 8px 8px',
+            bgcolor: '#fafafa',
+            width: 'fit-content',
+            mx: 'auto',
+            minWidth: 300
+          }}>
+            <Skeleton variant="text" width={120} height={24} sx={{ mx: 'auto' }} />
+          </Box>
+          
+          {/* Seat Layout Skeleton */}
+          <Box sx={{ 
+            maxWidth: 400, 
+            mx: 'auto', 
+            mt: 4,
+            border: '2px solid #e0e0e0',
+            borderRadius: 2,
+            p: 2,
+            bgcolor: '#fafafa'
+          }}>
+            {/* Generate skeleton rows */}
+            {[1, 2, 3, 4, 5].map((rowIndex) => (
+              <Box key={rowIndex} sx={{ 
+                display: 'flex', 
+                justifyContent: 'center',
+                alignItems: 'center',
+                mb: 1.5,
+                gap: 1
+              }}>
+                {/* Row Label Skeleton */}
+                <Skeleton variant="text" width={20} height={20} />
+                
+                {/* Seats Skeleton */}
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  {[1, 2, 3, 4].map((seatIndex) => (
+                    <Skeleton 
+                      key={seatIndex}
+                      variant="rectangular" 
+                      width={45} 
+                      height={45} 
+                      sx={{ borderRadius: 2 }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+          
+          {/* Legend Skeleton */}
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
+            {[1, 2, 3].map((index) => (
+              <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Skeleton variant="rectangular" width={20} height={20} sx={{ mr: 1, borderRadius: 1 }} />
+                <Skeleton variant="text" width={60} height={16} />
+              </Box>
+            ))}
+          </Box>
+          
+          {/* Loading Status */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3 }}>
+            <CircularProgress size={20} sx={{ color: '#f48fb1', mr: 1.5 }} thickness={4} />
+            <Typography variant="body2" sx={{ color: '#f48fb1', fontWeight: 500 }}>
+              Đang tải sơ đồ ghế...
+            </Typography>
+          </Box>
         </Box>
       );
     }
 
     if (seatError) {
       console.log('🎯 Showing error state:', seatError);
-      return (
-        <Alert severity="error" sx={{ my: 2 }}>
-          {seatError}
-          <Button 
-            size="small" 
-            onClick={() => selectedTrip && fetchSeatAvailability(selectedTrip)}
-            sx={{ ml: 2 }}
-          >
-            Thử lại
-          </Button>
-        </Alert>
+      return renderErrorState(
+        seatError, 
+        () => selectedTrip && fetchSeatAvailability(selectedTrip)
       );
     }
 
@@ -2391,12 +2600,26 @@ export default function BookingPage() {
                     const isSelected = selectedSeats.find(s => s.id === seat.id);
                     const isBooked = seat.isBooked;
                     
+                    // Debug logging for first few seats to check data
+                    if (index < 3) {
+                      console.log(`🔍 Seat rendering debug - Row ${rowKey}, Seat ${index + 1}:`, {
+                        seatId: seat.id,
+                        seatNumber: seat.seatNumber,
+                        isBooked: seat.isBooked,
+                        isSelected: !!isSelected,
+                        isInteractive: isInteractive,
+                        disabled: isBooked || !isInteractive,
+                        expectedColor: isSelected ? 'PINK' : isBooked ? 'GRAY' : 'WHITE',
+                        seat: seat
+                      });
+                    }
+                    
                     return (
                       <Box key={seat.id} sx={{ position: 'relative' }}>
                         <Button
                           variant="contained"
-                          disabled={isBooked || !isInteractive}
-                          onClick={() => onSeatClick && onSeatClick(seat)}
+                          disabled={isBooked} // Chỉ disable ghế đã đặt, không disable vì isInteractive
+                          onClick={() => isInteractive && onSeatClick && onSeatClick(seat)}
                           title={
                             isBooked 
                               ? `Ghế ${seat.seatNumber} - Đã đặt` 
@@ -2415,47 +2638,60 @@ export default function BookingPage() {
                               : isInteractive 
                                 ? 'pointer' 
                                 : 'default',
+                            // Fixed color logic:
+                            // - Ghế đã chọn: màu hồng
+                            // - Ghế đã đặt: màu xám  
+                            // - Ghế trống: màu trắng
                             bgcolor: isSelected 
-                              ? '#f48fb1' 
+                              ? '#f48fb1'  // Màu hồng cho ghế đã chọn
                               : isBooked 
-                                ? '#bdbdbd' 
-                                : 'white',
+                                ? '#9e9e9e'  // Màu xám cho ghế đã đặt
+                                : 'white',   // Màu trắng cho ghế trống
                             color: isSelected 
-                              ? 'white' 
+                              ? 'white'      // Chữ trắng cho ghế đã chọn
                               : isBooked 
-                                ? 'white' 
-                                : '#757575',
-                            border: isSelected ? '2px solid #e91e63' : '1px solid #e0e0e0',
+                                ? 'white'    // Chữ trắng cho ghế đã đặt
+                                : '#424242', // Chữ xám đậm cho ghế trống
+                            border: isSelected 
+                              ? '2px solid #e91e63' 
+                              : isBooked
+                                ? '1px solid #757575'
+                                : '1px solid #e0e0e0',
                             borderRadius: 2,
                             position: 'relative',
                             transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
+                            boxShadow: isSelected 
+                              ? '0 2px 8px rgba(244, 143, 177, 0.3)'
+                              : isBooked
+                                ? 'none'
+                                : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                            '&:hover': isInteractive ? {
                               bgcolor: isBooked 
-                                ? '#a0a0a0' // Darker gray for disabled seats
+                                ? '#757575'   // Xám đậm hơn cho ghế đã đặt khi hover
                                 : isSelected
-                                  ? '#e91e63'
-                                  : '#f48fb1', // Pink for available seats
-                              color: isBooked 
-                                ? 'white'
-                                : 'white',
-                              transform: !isBooked && isInteractive ? 'scale(1.05)' : 'none',
-                              boxShadow: !isBooked && isInteractive 
-                                ? '0 4px 12px rgba(244, 143, 177, 0.3)' 
+                                  ? '#e91e63' // Hồng đậm cho ghế đã chọn khi hover
+                                  : '#f48fb1', // Hồng cho ghế trống khi hover
+                              color: 'white',
+                              transform: !isBooked ? 'scale(1.05)' : 'none',
+                              boxShadow: !isBooked 
+                                ? '0 4px 12px rgba(244, 143, 177, 0.4)' 
                                 : 'none',
-                              '&::after': isBooked ? {
-                                content: '"🚫"',
+                            } : {},
+                            '&:disabled': {
+                              bgcolor: '#9e9e9e', // Màu xám cho ghế disabled (chỉ ghế đã đặt)
+                              color: 'white',
+                              cursor: 'not-allowed',
+                              '&::after': {
+                                content: '"✖"',
                                 position: 'absolute',
                                 top: '50%',
                                 left: '50%',
                                 transform: 'translate(-50%, -50%)',
-                                fontSize: '1.2rem',
-                                zIndex: 1
-                              } : {}
-                            },
-                            '&:disabled': {
-                              bgcolor: '#bdbdbd',
-                              color: 'white',
-                              cursor: 'not-allowed'
+                                fontSize: '1rem',
+                                zIndex: 1,
+                                color: 'white',
+                                fontWeight: 'bold'
+                              }
                             }
                           }}
                         >
@@ -2503,16 +2739,50 @@ export default function BookingPage() {
         {/* Legend */}
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: 20, height: 20, bgcolor: 'white', border: '1px solid #e0e0e0', mr: 1, borderRadius: 1 }} />
-            <Typography variant="body2">Ghế trống</Typography>
+            <Box sx={{ 
+              width: 20, 
+              height: 20, 
+              bgcolor: 'white', 
+              border: '1px solid #e0e0e0', 
+              mr: 1, 
+              borderRadius: 1,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+            }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>Ghế trống</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: 20, height: 20, bgcolor: '#f48fb1', mr: 1, borderRadius: 1 }} />
-            <Typography variant="body2">Đã chọn</Typography>
+            <Box sx={{ 
+              width: 20, 
+              height: 20, 
+              bgcolor: '#f48fb1', 
+              mr: 1, 
+              borderRadius: 1,
+              border: '1px solid #e91e63',
+              boxShadow: '0 2px 4px rgba(244, 143, 177, 0.3)'
+            }} />
+            <Typography variant="body2" sx={{ fontWeight: 500, color: '#f48fb1' }}>Đã chọn</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: 20, height: 20, bgcolor: '#bdbdbd', mr: 1, borderRadius: 1 }} />
-            <Typography variant="body2">Đã đặt</Typography>
+            <Box sx={{ 
+              width: 20, 
+              height: 20, 
+              bgcolor: '#9e9e9e', 
+              mr: 1, 
+              borderRadius: 1,
+              border: '1px solid #757575',
+              position: 'relative',
+              '&::after': {
+                content: '"✖"',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: '0.7rem',
+                color: 'white',
+                fontWeight: 'bold'
+              }
+            }} />
+            <Typography variant="body2" sx={{ fontWeight: 500, color: '#757575' }}>Đã đặt</Typography>
           </Box>
         </Box>
       </Box>
@@ -2581,8 +2851,15 @@ export default function BookingPage() {
               </Box>
             </Box>
             
-            {/* Non-interactive seat diagram for preview */}
-            {renderSeatDiagram(seats, false)}
+            {/* Use dialog-specific seat data and loading states */}
+            {dialogSeatLoading ? (
+              renderSimpleLoading('Đang tải sơ đồ ghế...')
+            ) : dialogSeatError ? (
+              renderErrorState(dialogSeatError, () => seatDialogTrip && handleOpenSeatDialog(seatDialogTrip))
+            ) : (
+              /* Non-interactive seat diagram for preview using dialog seats */
+              renderSeatDiagram(dialogSeats, false)
+            )}
           </Box>
         )}
       </DialogContent>
@@ -2612,52 +2889,213 @@ export default function BookingPage() {
 
   // Custom loading component
   const renderLoading = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', my: 4 }}>
-      <Box sx={{ position: 'relative', width: 100, height: 100 }}>
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [1, 0.8, 1],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            backgroundColor: '#f48fb1',
-            opacity: 0.7,
-          }}
-        />
-        <motion.div
-          animate={{
-            rotate: 360
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <DirectionsBus sx={{ color: 'white', fontSize: 40 }} />
-        </motion.div>
+    <Box sx={{ my: 4 }}>
+      {/* Trip Search Results Skeleton */}
+      <Box sx={{ mb: 3 }}>
+        {[1, 2, 3].map((index) => (
+          <Card key={index} sx={{ mb: 3, borderRadius: 4 }}>
+            <CardContent sx={{ p: 0 }}>
+              {/* Header Skeleton */}
+              <Box sx={{ p: 3, pb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: { xs: 'stretch', md: 'center' },
+                  gap: { xs: 3, md: 2 },
+                  pr: { xs: 0, md: 12 }
+                }}>
+                  {/* Departure Skeleton */}
+                  <Box sx={{ 
+                    flex: '0 0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: { xs: 'flex-start', md: 'center' },
+                    minWidth: 120
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Skeleton variant="circular" width={16} height={16} sx={{ mr: 1.5 }} />
+                      <Skeleton variant="text" width={80} height={40} />
+                    </Box>
+                    <Skeleton variant="text" width={100} height={20} />
+                    <Skeleton variant="text" width={80} height={16} />
+                  </Box>
+
+                  {/* Journey Skeleton */}
+                  <Box sx={{ 
+                    flex: 1,
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: { xs: 2, md: 1 }
+                  }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      width: '100%',
+                      minWidth: { xs: 200, md: 300 },
+                      position: 'relative'
+                    }}>
+                      <Skeleton variant="rectangular" width="100%" height={3} sx={{ borderRadius: 2 }} />
+                      <Box sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'white',
+                        borderRadius: '50%',
+                        p: 1,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      }}>
+                        <Skeleton variant="circular" width={20} height={20} />
+                      </Box>
+                    </Box>
+                    <Skeleton variant="text" width={120} height={20} sx={{ mt: 1.5 }} />
+                  </Box>
+
+                  {/* Arrival Skeleton */}
+                  <Box sx={{ 
+                    flex: '0 0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: { xs: 'flex-end', md: 'center' },
+                    minWidth: 120,
+                    textAlign: { xs: 'right', md: 'center' }
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Skeleton variant="text" width={80} height={40} sx={{ mr: 1.5 }} />
+                      <Skeleton variant="circular" width={16} height={16} />
+                    </Box>
+                    <Skeleton variant="text" width={100} height={20} />
+                    <Skeleton variant="text" width={80} height={16} />
+                  </Box>
+                </Box>
+
+                {/* Type badges skeleton */}
+                <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+                  <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 2, mb: 0.5 }} />
+                  <Skeleton variant="rectangular" width={60} height={20} sx={{ borderRadius: 1.5 }} />
+                </Box>
+              </Box>
+
+              {/* Price Section Skeleton */}
+              <Box sx={{ 
+                px: 3,
+                py: 2,
+                bgcolor: 'rgba(0, 0, 0, 0.02)',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 2
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Skeleton variant="circular" width={20} height={20} />
+                    <Skeleton variant="text" width={100} height={16} />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Skeleton variant="circular" width={20} height={20} />
+                    <Skeleton variant="text" width={80} height={16} />
+                  </Box>
+                </Box>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Skeleton variant="text" width={40} height={16} />
+                    <Skeleton variant="text" width={100} height={24} />
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Action Buttons Skeleton */}
+              <Box sx={{ 
+                px: 3,
+                py: 2.5,
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 2
+              }}>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <Skeleton variant="rectangular" width={100} height={32} sx={{ borderRadius: 2 }} />
+                  <Skeleton variant="rectangular" width={90} height={32} sx={{ borderRadius: 2 }} />
+                </Box>
+                <Skeleton variant="rectangular" width={140} height={40} sx={{ borderRadius: 3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
       </Box>
-      <Typography variant="h6" sx={{ mt: 3, color: '#f48fb1', fontWeight: 'bold' }}>
-        Đang tải dữ liệu...
+
+      {/* Loading Status */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 3 }}>
+        <CircularProgress 
+          size={24} 
+          sx={{ color: '#f48fb1', mr: 2 }} 
+          thickness={4}
+        />
+        <Typography variant="body1" sx={{ color: '#f48fb1', fontWeight: 500 }}>
+          Đang tìm chuyến xe phù hợp...
+        </Typography>
+      </Box>
+    </Box>
+  );
+
+  // Simple loading indicator for small components
+  const renderSimpleLoading = (message: string = 'Đang tải...') => (
+    <Box sx={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      py: 2,
+      gap: 1.5
+    }}>
+      <CircularProgress 
+        size={20} 
+        sx={{ color: '#f48fb1' }} 
+        thickness={4}
+      />
+      <Typography variant="body2" sx={{ color: '#f48fb1', fontWeight: 500 }}>
+        {message}
       </Typography>
     </Box>
+  );
+
+  // Error state component
+  const renderErrorState = (message: string, onRetry?: () => void) => (
+    <Alert 
+      severity="error" 
+      sx={{ 
+        my: 2,
+        borderRadius: 3,
+        '& .MuiAlert-message': {
+          width: '100%'
+        }
+      }}
+      action={
+        onRetry && (
+          <Button 
+            size="small" 
+            onClick={onRetry}
+            sx={{ 
+              color: '#d32f2f',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'rgba(211, 47, 47, 0.04)'
+              }
+            }}
+          >
+            Thử lại
+          </Button>
+        )
+      }
+    >
+      {message}
+    </Alert>
   );
 
   return (

@@ -12,13 +12,14 @@ export interface LoginResponse {
   customerId: string;
   gmail: string;
   fullName: string;
-  gender: string | null;
+  gender: string;
   token: string;
 }
 
 export interface RegisterRequest {
   gmail: string;
   phone: string;
+  gender: string;
   fullName: string;
   password: string;
 }
@@ -41,7 +42,7 @@ export interface CustomerProfile {
   fullName: string;
   gmail: string;
   phone: string;
-  gender: string | null;
+  gender: string ;
 }
 
 export interface User {
@@ -49,6 +50,7 @@ export interface User {
   fullName: string;
   email: string;
   phone: string;
+  gender: string;
   dateOfBirth?: string;
   createdAt: string;
   isVerified: boolean;

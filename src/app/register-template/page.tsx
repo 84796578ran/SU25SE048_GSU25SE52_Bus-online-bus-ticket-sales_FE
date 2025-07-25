@@ -124,6 +124,7 @@ export default function RegisterTemplatePage() {
       const registrationData: RegisterRequest = {
         gmail: registerData.gmail,
         phone: registerData.phone,
+        gender: registerData.gender,
         fullName: registerData.fullName,
         password: registerData.password,
       };
