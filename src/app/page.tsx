@@ -568,9 +568,8 @@ export default function BusTicketHomePage() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              style={{ display: 'flex', gap: '8px', flexGrow: 1, marginLeft: '16px' }}
             >
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexGrow: 1, ml: 2 }}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, ml: 2 }}>
                 {menuItems.map((item, index) => (
                   <motion.div
                     key={item.label}
@@ -620,6 +619,9 @@ export default function BusTicketHomePage() {
                 ))}
               </Box>
             </motion.div>
+
+            {/* Spacer to push auth buttons to the right */}
+            <Box sx={{ flexGrow: 1 }} />
 
             {/* Desktop Auth Buttons */}
             <motion.div
@@ -1866,9 +1868,8 @@ export default function BusTicketHomePage() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
                 whileHover={{ scale: 1.05, y: -10 }}
-                style={{ flex: '1 1 100%', maxWidth: '350px', minWidth: '280px' }}
               >
-                <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 30%' }, minWidth: 280 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 30%' }, minWidth: 280, maxWidth: '350px' }}>
                   <Card sx={{
                     p: 3,
                     textAlign: 'center',
@@ -2100,9 +2101,8 @@ export default function BusTicketHomePage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
-                style={{ flex: '1 1 100%', maxWidth: '33%' }}
               >
-                <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 33%' } }}>
+                <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 33%' }, maxWidth: '33%' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <DirectionsBus sx={{ mr: 1 }} />
                     <Typography variant="h6" fontWeight="bold">BusTicket Online</Typography>
@@ -2117,7 +2117,7 @@ export default function BusTicketHomePage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 viewport={{ once: true }}
-                style={{ flex: '2 1 67%' }}
+                // Removed invalid 'flex' property from style to fix lint error
               >
                 <Box sx={{ flex: { xs: '1 1 100%', md: '2 1 67%' } }}>
                   <Box
