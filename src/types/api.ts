@@ -2,10 +2,22 @@
 
 // Basic types
 export interface Location {
-  id: string;
+  id: number;
   name: string;
-  code: string;
-  province: string;
+  createdAt: string;
+  updatedAt: string;
+  timeTransit: number;
+  note: string;
+  isDeleted: boolean;
+}
+
+export interface Station {
+  id: number;
+  stationId: string;
+  name: string;
+  locationName: string;
+  status: number;
+  isDeleted: boolean;
 }
 
 export interface BusCompany {

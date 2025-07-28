@@ -219,6 +219,71 @@ class ApiClient {
     }
   }
 
+  // One-way trip search API
+  async searchTrips(searchParams: {
+    fromLocationId: string | number,
+    fromStationId: string | number,
+    toLocationId: string | number,
+    toStationId: string | number,
+    date: string,
+    directTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    },
+    transferTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    },
+    tripleTripsPagination?: {
+      page?: number,
+      amount?: number,
+      all?: boolean
+    }
+  }): Promise<any> {
+    try {
+      const params = new URLSearchParams();
+      
+      // Required parameters
+      params.append('FromLocationId', searchParams.fromLocationId.toString());
+      params.append('FromStationId', searchParams.fromStationId.toString());
+      params.append('ToLocationId', searchParams.toLocationId.toString());
+      params.append('ToStationId', searchParams.toStationId.toString());
+      params.append('Date', searchParams.date);
+      
+      // Default pagination parameters
+      const directPagination = searchParams.directTripsPagination || {};
+      params.append('DirectTripsPagination.Page', (directPagination.page || 0).toString());
+      params.append('DirectTripsPagination.Amount', (directPagination.amount || 50).toString());
+      params.append('DirectTripsPagination.All', (directPagination.all !== undefined ? directPagination.all : true).toString());
+      
+      const transferPagination = searchParams.transferTripsPagination || {};
+      params.append('TransferTripsPagination.Page', (transferPagination.page || 0).toString());
+      params.append('TransferTripsPagination.Amount', (transferPagination.amount || 50).toString());
+      params.append('TransferTripsPagination.All', (transferPagination.all !== undefined ? transferPagination.all : true).toString());
+      
+      const triplePagination = searchParams.tripleTripsPagination || {};
+      params.append('TripleTripsPagination.Page', (triplePagination.page || 0).toString());
+      params.append('TripleTripsPagination.Amount', (triplePagination.amount || 50).toString());
+      params.append('TripleTripsPagination.All', (triplePagination.all !== undefined ? triplePagination.all : true).toString());
+
+      console.log('🌐 Making one-way trip search API call:', {
+        url: `/api/Trip/search?${params.toString()}`,
+        searchParams
+      });
+      
+      const response = await this.instance.get(`/api/Trip/search?${params.toString()}`);
+      
+      console.log('🌐 One-way trip search response:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error searching one-way trips:', error);
+      throw error;
+    }
+  }
+
   // Round-trip search API
   async searchRoundTrips(searchParams: {
     fromLocationId: string | number,

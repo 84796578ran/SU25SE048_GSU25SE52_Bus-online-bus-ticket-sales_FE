@@ -201,7 +201,7 @@ export default function BusTicketHomePage() {
   const fetchLocations = async () => {
     setLoadingLocations(true);
     try {
-      const response = await fetch('https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Location');
+      const response = await fetch('https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Location?All=true');
       const result = await response.json();
       if (result.data) {
         setLocations(result.data.filter((location: Location) => !location.isDeleted));
@@ -215,7 +215,7 @@ export default function BusTicketHomePage() {
   };
 
   // Fetch stations from API based on location
-  const fetchStations = async (locationName: string, isFromStation: boolean = true) => {
+  const fetchStations = async (locationId: number, isFromStation: boolean = true) => {
     if (isFromStation) {
       setLoadingFromStations(true);
     } else {
@@ -223,13 +223,20 @@ export default function BusTicketHomePage() {
     }
 
     try {
-      const response = await fetch('https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Station');
+      const response = await fetch(`https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/api/Station/location/${locationId}/stations`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
-      if (result.data) {
-        const filteredStations = result.data.filter((station: Station) => 
-          !station.isDeleted && 
-          station.status === 1 && 
-          station.locationName.toLowerCase() === locationName.toLowerCase()
+      
+      // The API returns an array directly, not wrapped in a data property
+      if (Array.isArray(result)) {
+        const filteredStations = result.filter((station: Station) => 
+          !station.isDeleted
+          // Note: Removed status filter as we need to check what status values mean in your API
+          // You can add back: && station.status === 1 if status 1 means active
         );
         
         if (isFromStation) {
@@ -247,6 +254,9 @@ export default function BusTicketHomePage() {
             toStation: null
           }));
         }
+      } else {
+        console.warn('Invalid response format:', result);
+        showNotification('Dữ liệu trạm không hợp lệ', 'error');
       }
     } catch (error) {
       console.error('Error fetching stations:', error);
@@ -1334,7 +1344,7 @@ export default function BusTicketHomePage() {
                               }));
                               // Fetch stations when location is selected
                               if (newValue) {
-                                fetchStations(newValue.name, true);
+                                fetchStations(newValue.id, true);
                               } else {
                                 setFromStations([]);
                                 setSearchData(prev => ({
@@ -1481,7 +1491,7 @@ export default function BusTicketHomePage() {
                               }));
                               // Fetch stations when location is selected
                               if (newValue) {
-                                fetchStations(newValue.name, false);
+                                fetchStations(newValue.id, false);
                               } else {
                                 setToStations([]);
                                 setSearchData(prev => ({
