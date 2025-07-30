@@ -358,11 +358,18 @@ export default function BookingPage() {
               result.departure.directTrips &&
               result.departure.directTrips.length > 0
             ) {
-              const processedDepartureTrips = result.departure.directTrips.map((trip: TripType) => ({
-                ...trip,
-                tripType: "direct",
-                direction: "departure",
-              }));
+              console.log("🔍 Processing round-trip departure direct trips:", result.departure.directTrips);
+              const processedDepartureTrips = result.departure.directTrips.map((trip: TripType, index: number) => {
+                console.log(`🔍 Processing departure direct trip ${index}:`, trip);
+                if (!trip.id && trip.id !== 0) {
+                  console.warn(`⚠️ Departure direct trip ${index} missing id:`, trip);
+                }
+                return {
+                  ...trip,
+                  tripType: "direct",
+                  direction: "departure",
+                };
+              });
               departureTrips = [...departureTrips, ...processedDepartureTrips];
               allTrips = [...allTrips, ...processedDepartureTrips];
             }
@@ -440,28 +447,49 @@ export default function BookingPage() {
           console.log("Processing one-way response:", result);
 
           if (result.directTrips && result.directTrips.length > 0) {
-            const processedTrips = result.directTrips.map((trip: TripType) => ({
-              ...trip,
-              tripType: "direct",
-            }));
+            console.log("🔍 Processing direct trips:", result.directTrips);
+            const processedTrips = result.directTrips.map((trip: TripType, index: number) => {
+              console.log(`🔍 Processing direct trip ${index}:`, trip);
+              if (!trip.id && trip.id !== 0) {
+                console.warn(`⚠️ Direct trip ${index} missing id:`, trip);
+              }
+              return {
+                ...trip,
+                tripType: "direct",
+              };
+            });
             departureTrips = [...departureTrips, ...processedTrips];
             allTrips = [...allTrips, ...processedTrips];
           }
 
           if (result.transferTrips && result.transferTrips.length > 0) {
-            const processedTrips = result.transferTrips.map((trip: TripType) => ({
-              ...trip,
-              tripType: "transfer",
-            }));
+            console.log("🔍 Processing transfer trips:", result.transferTrips);
+            const processedTrips = result.transferTrips.map((trip: TripType, index: number) => {
+              console.log(`🔍 Processing transfer trip ${index}:`, trip);
+              if (!trip.id && trip.id !== 0) {
+                console.warn(`⚠️ Transfer trip ${index} missing id:`, trip);
+              }
+              return {
+                ...trip,
+                tripType: "transfer",
+              };
+            });
             departureTrips = [...departureTrips, ...processedTrips];
             allTrips = [...allTrips, ...processedTrips];
           }
 
           if (result.tripleTrips && result.tripleTrips.length > 0) {
-            const processedTrips = result.tripleTrips.map((trip: TripType) => ({
-              ...trip,
-              tripType: "triple",
-            }));
+            console.log("🔍 Processing triple trips:", result.tripleTrips);
+            const processedTrips = result.tripleTrips.map((trip: TripType, index: number) => {
+              console.log(`🔍 Processing triple trip ${index}:`, trip);
+              if (!trip.id && trip.id !== 0) {
+                console.warn(`⚠️ Triple trip ${index} missing id:`, trip);
+              }
+              return {
+                ...trip,
+                tripType: "triple",
+              };
+            });
             departureTrips = [...departureTrips, ...processedTrips];
             allTrips = [...allTrips, ...processedTrips];
           }
@@ -475,7 +503,54 @@ export default function BookingPage() {
         isRoundTrip: searchData.tripType === "roundTrip"
       });
 
-      return { departureTrips, returnTrips, allTrips };
+      // Additional validation before returning
+      const validatedAllTrips = allTrips.filter((trip) => {
+        if (!trip) {
+          console.warn("⚠️ Found undefined trip in allTrips, filtering out");
+          return false;
+        }
+        if (!trip.id && trip.id !== 0) {
+          console.warn("⚠️ Found trip with missing id in allTrips, filtering out:", trip);
+          return false;
+        }
+        return true;
+      });
+
+      const validatedDepartureTrips = departureTrips.filter((trip) => {
+        if (!trip) {
+          console.warn("⚠️ Found undefined trip in departureTrips, filtering out");
+          return false;
+        }
+        if (!trip.id && trip.id !== 0) {
+          console.warn("⚠️ Found trip with missing id in departureTrips, filtering out:", trip);
+          return false;
+        }
+        return true;
+      });
+
+      const validatedReturnTrips = returnTrips.filter((trip) => {
+        if (!trip) {
+          console.warn("⚠️ Found undefined trip in returnTrips, filtering out");
+          return false;
+        }
+        if (!trip.id && trip.id !== 0) {
+          console.warn("⚠️ Found trip with missing id in returnTrips, filtering out:", trip);
+          return false;
+        }
+        return true;
+      });
+
+      console.log("🎯 Final validated trip data:", {
+        allTrips: { original: allTrips.length, validated: validatedAllTrips.length },
+        departureTrips: { original: departureTrips.length, validated: validatedDepartureTrips.length },
+        returnTrips: { original: returnTrips.length, validated: validatedReturnTrips.length }
+      });
+
+      return { 
+        departureTrips: validatedDepartureTrips, 
+        returnTrips: validatedReturnTrips, 
+        allTrips: validatedAllTrips 
+      };
     } catch (error) {
       console.error("Error fetching trips:", error);
       return { departureTrips: [], returnTrips: [], allTrips: [] };
@@ -647,33 +722,83 @@ export default function BookingPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       // If moving to seat selection, fetch real seat data
-      if (activeStep === 0 && selectedTrip) {
-        console.log("🎯 Moving to step 2 - Loading seats for selected trip:", {
-          tripId: selectedTrip.id,
-          tripIdString: selectedTrip.tripId,
-          busName: selectedTrip.busName,
-        });
-
-        try {
-          const seatData = await fetchSeatAvailability(selectedTrip);
-          console.log("🎯 Seat data fetched for step 2:", {
-            count: seatData.length,
-            sample: seatData.slice(0, 3),
+      if (activeStep === 0) {
+        const isRoundTripMovingToSeats = searchData.tripType === "roundTrip" && selectedDepartureTrip && selectedReturnTrip;
+        const isOneWayMovingToSeats = searchData.tripType !== "roundTrip" && selectedTrip;
+        
+        if (isRoundTripMovingToSeats) {
+          console.log("🎯 Moving to step 2 - Loading seats for ROUND TRIP:", {
+            departureTrip: {
+              id: selectedDepartureTrip.id,
+              tripId: selectedDepartureTrip.tripId,
+              busName: selectedDepartureTrip.busName,
+            },
+            returnTrip: {
+              id: selectedReturnTrip.id,
+              tripId: selectedReturnTrip.tripId,
+              busName: selectedReturnTrip.busName,
+            }
           });
-          setSeats(seatData);
-          console.log("🎯 Seats state updated for step 2");
-        } catch (error) {
-          console.error("Error loading seats:", error);
-          // Fallback to mock data if API fails
-          const mockSeats = generateMockSeats();
-          setSeats(mockSeats);
-          console.log(
-            "🎯 Using mock seats due to API error:",
-            mockSeats.length
-          );
-        } finally {
-          setSeatLoading(false);
+
+          try {
+            // Load seats for both trips in parallel
+            const [departureSeatData, returnSeatData] = await Promise.all([
+              fetchSeatAvailability(selectedDepartureTrip),
+              fetchSeatAvailability(selectedReturnTrip)
+            ]);
+            
+            console.log("🎯 Seat data fetched for round trip:", {
+              departure: {
+                count: departureSeatData.length,
+                sample: departureSeatData.slice(0, 3),
+              },
+              return: {
+                count: returnSeatData.length,
+                sample: returnSeatData.slice(0, 3),
+              }
+            });
+            
+            setDepartureSeats(departureSeatData);
+            setReturnSeats(returnSeatData);
+            setSeats(departureSeatData); // Keep for backward compatibility
+            
+            console.log("🎯 Seats state updated for round trip");
+          } catch (error) {
+            console.error("Error loading seats for round trip:", error);
+            // Fallback to mock data if API fails
+            const mockSeats = generateMockSeats();
+            setDepartureSeats(mockSeats);
+            setReturnSeats(mockSeats);
+            setSeats(mockSeats);
+            console.log("🎯 Using mock seats for round trip due to API error:", mockSeats.length);
+          }
+        } else if (isOneWayMovingToSeats) {
+          console.log("🎯 Moving to step 2 - Loading seats for ONE WAY trip:", {
+            tripId: selectedTrip.id,
+            tripIdString: selectedTrip.tripId,
+            busName: selectedTrip.busName,
+          });
+
+          try {
+            const seatData = await fetchSeatAvailability(selectedTrip);
+            console.log("🎯 Seat data fetched for step 2:", {
+              count: seatData.length,
+              sample: seatData.slice(0, 3),
+            });
+            setSeats(seatData);
+            console.log("🎯 Seats state updated for step 2");
+          } catch (error) {
+            console.error("Error loading seats:", error);
+            // Fallback to mock data if API fails
+            const mockSeats = generateMockSeats();
+            setSeats(mockSeats);
+            console.log(
+              "🎯 Using mock seats due to API error:",
+              mockSeats.length
+            );
+          }
         }
+        
       } else {
         // Small delay for smooth transition
         setTimeout(() => {
@@ -735,22 +860,40 @@ export default function BookingPage() {
                   console.log(`  + ${key}:`, response[key]);
                 });
 
-                // Nếu có paymentUrl thì chuyển hướng luôn
-                if (response.paymentUrl) {
+                // Kiểm tra các khả năng có thể của paymentUrl
+                const paymentUrl = response.paymentUrl || 
+                                  response.payment_url || 
+                                  response.vnpayUrl || 
+                                  response.redirectUrl || 
+                                  response.url;
+
+                if (paymentUrl) {
                   console.log(
                     "🌐 Chuyển hướng đến URL thanh toán:",
-                    response.paymentUrl
+                    paymentUrl
                   );
-                  window.location.href = response.paymentUrl;
+                  window.location.href = paymentUrl;
                   return; // Dừng thực thi tiếp để chuyển trang
+                } else {
+                  console.warn("⚠️ Không tìm thấy paymentUrl trong response:", {
+                    paymentUrl: response.paymentUrl,
+                    payment_url: response.payment_url,
+                    vnpayUrl: response.vnpayUrl,
+                    redirectUrl: response.redirectUrl,
+                    url: response.url
+                  });
+                  
+                  // Hiển thị thông báo chi tiết cho user
+                  const responseFields = Object.keys(response).join(', ');
+                  alert(
+                    `API trả về thành công nhưng không có URL thanh toán.\n\nCác field có trong response: ${responseFields}\n\nVui lòng kiểm tra console để biết chi tiết hoặc liên hệ support.`
+                  );
                 }
               }
+            } else {
+              console.error("❌ Response rỗng hoặc null");
+              alert("Lỗi: Không nhận được response từ server");
             }
-
-            // Tạm thời chưa chuyển trang, chỉ log kết quả
-            alert(
-              "Đã gửi yêu cầu thanh toán thành công! Xem console để biết chi tiết cấu trúc dữ liệu."
-            );
           } catch (error: any) {
             console.error("❌ Lỗi khi gọi API thanh toán:", error);
 
@@ -872,7 +1015,7 @@ export default function BookingPage() {
     setPaymentMethod(method);
 
     // Nếu chọn VNPay, chuẩn bị gọi API
-    if (method === "vnpay" && selectedTrip && selectedSeats.length > 0) {
+    if (method === "vnpay") {
       console.log("VNPay selected - preparing API payload...");
 
       // Chuẩn bị payload theo yêu cầu
@@ -881,30 +1024,103 @@ export default function BookingPage() {
           ? true
           : false;
 
-      // Lấy thông tin chuyến đi
-      const tripSeats = [
-        {
-          tripId: selectedTrip.id,
-          fromStationId: parseInt(searchData.fromStationId),
-          toStationId: parseInt(searchData.toStationId),
-          seatIds: selectedSeats.map((seat) => parseInt(seat.id)),
-        },
-      ];
+      console.log("🔍 Trip type analysis:", {
+        tripType: searchData.tripType,
+        returnDate: searchData.returnDate,
+        isRoundTrip: isRoundTrip,
+        selectedTrip: selectedTrip?.id,
+        selectedDepartureTrip: selectedDepartureTrip?.id,
+        selectedReturnTrip: selectedReturnTrip?.id,
+        selectedSeats: selectedSeats.length,
+        selectedDepartureSeats: selectedDepartureSeats.length,
+        selectedReturnSeats: selectedReturnSeats.length,
+      });
 
-      // Chuẩn bị dữ liệu chuyến về mặc định (nếu là vé khứ hồi)
-      const returnTripSeats = isRoundTrip
-        ? [
-            {
-              tripId: 0, // Chưa có thông tin chuyến về thực tế
-              fromStationId: parseInt(searchData.toStationId),
-              toStationId: parseInt(searchData.fromStationId),
-              seatIds: [0], // Chưa có thông tin ghế chuyến về
-            },
-          ]
-        : [];
+      let tripSeats: Array<{
+        tripId: number;
+        fromStationId: number;
+        toStationId: number;
+        seatIds: number[];
+      }> = [];
+      let returnTripSeats: Array<{
+        tripId: number;
+        fromStationId: number;
+        toStationId: number;
+        seatIds: number[];
+      }> = [];
+
+      if (isRoundTrip) {
+        // Chuyến khứ hồi - sử dụng departure và return trip riêng biệt
+        if (!selectedDepartureTrip || selectedDepartureSeats.length === 0) {
+          alert("Vui lòng chọn chuyến đi và ghế cho chuyến đi!");
+          return;
+        }
+        if (!selectedReturnTrip || selectedReturnSeats.length === 0) {
+          alert("Vui lòng chọn chuyến về và ghế cho chuyến về!");
+          return;
+        }
+
+        // Thông tin chuyến đi
+        tripSeats = [
+          {
+            tripId: selectedDepartureTrip.id,
+            fromStationId: parseInt(searchData.fromStationId),
+            toStationId: parseInt(searchData.toStationId),
+            seatIds: selectedDepartureSeats.map((seat) => parseInt(seat.id)),
+          },
+        ];
+
+        // Thông tin chuyến về - sử dụng dữ liệu thực tế
+        returnTripSeats = [
+          {
+            tripId: selectedReturnTrip.id,
+            fromStationId: parseInt(searchData.toStationId), // Đảo ngược vì là chuyến về
+            toStationId: parseInt(searchData.fromStationId), // Đảo ngược vì là chuyến về
+            seatIds: selectedReturnSeats.map((seat) => parseInt(seat.id)),
+          },
+        ];
+
+        console.log("🎫 Round trip payload prepared:", {
+          departure: {
+            tripId: selectedDepartureTrip.id,
+            busName: selectedDepartureTrip.busName,
+            seatsCount: selectedDepartureSeats.length,
+            seatIds: selectedDepartureSeats.map((seat) => seat.id),
+          },
+          return: {
+            tripId: selectedReturnTrip.id,
+            busName: selectedReturnTrip.busName,
+            seatsCount: selectedReturnSeats.length,
+            seatIds: selectedReturnSeats.map((seat) => seat.id),
+          },
+        });
+      } else {
+        // Chuyến một chiều - sử dụng selectedTrip và selectedSeats
+        if (!selectedTrip || selectedSeats.length === 0) {
+          alert("Vui lòng chọn chuyến xe và ghế!");
+          return;
+        }
+
+        tripSeats = [
+          {
+            tripId: selectedTrip.id,
+            fromStationId: parseInt(searchData.fromStationId),
+            toStationId: parseInt(searchData.toStationId),
+            seatIds: selectedSeats.map((seat) => parseInt(seat.id)),
+          },
+        ];
+
+        returnTripSeats = []; // Rỗng cho chuyến một chiều
+
+        console.log("🎫 One way trip payload prepared:", {
+          tripId: selectedTrip.id,
+          busName: selectedTrip.busName,
+          seatsCount: selectedSeats.length,
+          seatIds: selectedSeats.map((seat) => seat.id),
+        });
+      }
 
       // Tạo payload
-
       const userId = JSON.parse(localStorage.getItem("user_data") || "{}")?.id;
 
       const payload: VNPayPayloadType = {
@@ -916,7 +1132,6 @@ export default function BookingPage() {
 
       console.log("VNPay API payload prepared:", payload);
 
-      // Lưu payload vào state để sử dụng khi nhấn nút thanh toán
       setVnpayPayload(payload);
     }
   };
@@ -942,13 +1157,36 @@ export default function BookingPage() {
         "trip.id (numeric, correct for API)": trip.id,
         "trip.tripId (string identifier, not for API)": trip.tripId,
         "tripIdToUse (final)": tripIdToUse,
-        "type": typeof tripIdToUse
+        "type": typeof tripIdToUse,
+        "trip.direction": trip.direction
+      });
+
+      // For return trips, we need to swap fromStationId and toStationId
+      // because the direction is opposite to the departure trip
+      let fromStationIdToUse = searchData.fromStationId;
+      let toStationIdToUse = searchData.toStationId;
+      
+      if (trip.direction === "return") {
+        fromStationIdToUse = searchData.toStationId;
+        toStationIdToUse = searchData.fromStationId;
+        console.log("🔄 Return trip detected in fetchSeatAvailability - swapping station IDs:", {
+          "original fromStationId": searchData.fromStationId,
+          "original toStationId": searchData.toStationId,
+          "swapped fromStationId": fromStationIdToUse,
+          "swapped toStationId": toStationIdToUse
+        });
+      }
+
+      console.log("🎫 Final station IDs for fetchSeatAvailability API call:", {
+        fromStationId: fromStationIdToUse,
+        toStationId: toStationIdToUse,
+        isReturnTrip: trip.direction === "return"
       });
 
       const seatData = await apiClient.getSeatAvailability(
         tripIdToUse,
-        searchData.fromStationId,
-        searchData.toStationId
+        fromStationIdToUse,
+        toStationIdToUse
       );
 
       console.log("🎫 Seat API response:", seatData);
@@ -1044,11 +1282,36 @@ export default function BookingPage() {
       return;
     }
 
+    // Filter out invalid trips and validate trip data
+    const validTrips = trips.filter((trip) => {
+      if (!trip) {
+        console.warn("⚠️ Skipping undefined trip in loadSeatAvailabilityForTrips");
+        return false;
+      }
+      if (!trip.id && trip.id !== 0) {
+        console.warn("⚠️ Skipping trip with missing or invalid id:", trip);
+        return false;
+      }
+      return true;
+    });
+
+    console.log("🎫 Valid trips for seat loading:", {
+      original: trips.length,
+      valid: validTrips.length,
+      filtered: trips.length - validTrips.length
+    });
+
     // Load seat availability for first few trips to avoid too many API calls
-    const tripsToLoad = trips.slice(0, 5); // Limit to first 5 trips
+    const tripsToLoad = validTrips.slice(0, 5); // Limit to first 5 trips
 
     for (const trip of tripsToLoad) {
       try {
+        // Additional validation for trip.id
+        if (!trip.id && trip.id !== 0) {
+          console.error("❌ Trip has invalid id, skipping:", trip);
+          continue;
+        }
+
         // Set loading state for this trip
         setLoadingSeatsByTrip((prev) => ({
           ...prev,
@@ -1069,14 +1332,37 @@ export default function BookingPage() {
         console.log("🎫 Using trip.id for seat availability API:", {
           "trip.id (numeric, correct for API)": trip.id,
           "trip.tripId (string identifier, not for API)": trip.tripId,
-          "tripIdToUse (final)": tripIdToUse
+          "tripIdToUse (final)": tripIdToUse,
+          "trip.direction": trip.direction
         });
 
-        // Call API directly with the searchData we received
+        // For return trips, we need to swap fromStationId and toStationId
+        // because the direction is opposite to the departure trip
+        let fromStationIdToUse = searchDataForSeats.fromStationId;
+        let toStationIdToUse = searchDataForSeats.toStationId;
+        
+        if (trip.direction === "return") {
+          fromStationIdToUse = searchDataForSeats.toStationId;
+          toStationIdToUse = searchDataForSeats.fromStationId;
+          console.log("🔄 Return trip detected - swapping station IDs:", {
+            "original fromStationId": searchDataForSeats.fromStationId,
+            "original toStationId": searchDataForSeats.toStationId,
+            "swapped fromStationId": fromStationIdToUse,
+            "swapped toStationId": toStationIdToUse
+          });
+        }
+
+        console.log("🎫 Final station IDs for API call:", {
+          fromStationId: fromStationIdToUse,
+          toStationId: toStationIdToUse,
+          isReturnTrip: trip.direction === "return"
+        });
+
+        // Call API with the correct station IDs
         const seatData = await apiClient.getSeatAvailability(
           tripIdToUse,
-          searchDataForSeats.fromStationId,
-          searchDataForSeats.toStationId
+          fromStationIdToUse,
+          toStationIdToUse
         );
 
         console.log("🎫 Seat data received for trip", trip.id, ":", {
@@ -1158,7 +1444,30 @@ export default function BookingPage() {
       console.log("🎫 Using trip.id for seat dialog API:", {
         "trip.id (numeric, correct for API)": trip.id,
         "trip.tripId (string identifier, not for API)": trip.tripId,
-        "tripIdToUse (final)": tripIdToUse
+        "tripIdToUse (final)": tripIdToUse,
+        "trip.direction": trip.direction
+      });
+
+      // For return trips, we need to swap fromStationId and toStationId
+      // because the direction is opposite to the departure trip
+      let fromStationIdToUse = searchData.fromStationId;
+      let toStationIdToUse = searchData.toStationId;
+      
+      if (trip.direction === "return") {
+        fromStationIdToUse = searchData.toStationId;
+        toStationIdToUse = searchData.fromStationId;
+        console.log("🔄 Return trip detected in handleOpenSeatDialog - swapping station IDs:", {
+          "original fromStationId": searchData.fromStationId,
+          "original toStationId": searchData.toStationId,
+          "swapped fromStationId": fromStationIdToUse,
+          "swapped toStationId": toStationIdToUse
+        });
+      }
+
+      console.log("🎫 Final station IDs for handleOpenSeatDialog API call:", {
+        fromStationId: fromStationIdToUse,
+        toStationId: toStationIdToUse,
+        isReturnTrip: trip.direction === "return"
       });
 
       console.log("🎯 Fetching fresh seat data for dialog...");
@@ -1166,8 +1475,8 @@ export default function BookingPage() {
       // Fetch fresh seat data specifically for dialog
       const seatData = await apiClient.getSeatAvailability(
         tripIdToUse,
-        searchData.fromStationId,
-        searchData.toStationId
+        fromStationIdToUse,
+        toStationIdToUse
       );
 
       console.log("🔍 Raw API response for dialog:", {
@@ -1282,8 +1591,23 @@ export default function BookingPage() {
   const calculateTotalPrice = () => {
     let basePrice = 0;
 
-    if (selectedTrip) {
-      basePrice = selectedSeats.length * selectedTrip.price;
+    // Handle different trip types
+    if (searchData.tripType === "roundTrip") {
+      // Round trip calculation
+      if (selectedDepartureTrip && selectedDepartureSeats.length > 0) {
+        basePrice += selectedDepartureSeats.length * selectedDepartureTrip.price;
+      }
+      if (selectedReturnTrip && selectedReturnSeats.length > 0) {
+        basePrice += selectedReturnSeats.length * selectedReturnTrip.price;
+      }
+    } else {
+      // One-way trip calculation
+      const currentTrip = selectedTrip || selectedDepartureTrip;
+      const currentSeats = selectedSeats.length > 0 ? selectedSeats : selectedDepartureSeats;
+      
+      if (currentTrip && currentSeats.length > 0) {
+        basePrice = currentSeats.length * currentTrip.price;
+      }
     }
 
     let shuttleFee = 0;
@@ -1897,7 +2221,254 @@ export default function BookingPage() {
   const renderSeatSelection = () => {
     const isRoundTrip = searchData.tripType === "roundTrip";
     
-    // For round trip, check if we need to show departure or return trip
+    // Check if we should show dual seat diagrams for round trip
+    const shouldShowDualDiagrams = isRoundTrip && 
+      selectedDepartureTrip && 
+      selectedReturnTrip && 
+      departureSeats.length > 0 && 
+      returnSeats.length > 0;
+
+    if (shouldShowDualDiagrams) {
+      // Dual seat diagram mode for round trip
+      return (
+        <Box sx={{ mt: 4 }}>
+          {/* Title for dual selection */}
+          <Typography variant="h5" gutterBottom sx={{ color: "#f48fb1", fontWeight: 700, textAlign: "center", mb: 4 }}>
+            🎫 Chọn ghế cho cả hai chuyến
+          </Typography>
+
+          {/* Trip Status Summary */}
+          <Box sx={{ mb: 4, display: "flex", justifyContent: "center", gap: 3 }}>
+            <Box 
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 1,
+                px: 3,
+                py: 2,
+                borderRadius: 3,
+                bgcolor: "rgba(25, 118, 210, 0.1)",
+                border: "2px solid #1976d2"
+              }}
+            >
+              <CheckCircle sx={{ color: "#1976d2", fontSize: 24 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Chuyến đi: {selectedDepartureTrip.busName}
+              </Typography>
+            </Box>
+            <Box 
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 1,
+                px: 3,
+                py: 2,
+                borderRadius: 3,
+                bgcolor: "rgba(123, 31, 162, 0.1)",
+                border: "2px solid #7b1fa2"
+              }}
+            >
+              <CheckCircle sx={{ color: "#7b1fa2", fontSize: 24 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Chuyến về: {selectedReturnTrip.busName}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Dual Seat Diagrams */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+              gap: 4,
+              mb: 4,
+            }}
+          >
+            {/* Departure Trip Seat Selection */}
+            <Paper
+              elevation={3}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                border: "3px solid #1976d2",
+                background: "linear-gradient(135deg, rgba(25, 118, 210, 0.02) 0%, white 100%)",
+              }}
+            >
+              <Typography variant="h6" gutterBottom sx={{ color: "#1976d2", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🛫 Chuyến đi - {selectedDepartureTrip.busName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {new Date(selectedDepartureTrip.timeStart).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}{" "}
+                - {new Date(selectedDepartureTrip.timeEnd).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })} • {searchData.departureDate}
+              </Typography>
+              
+              {/* Departure seat diagram */}
+              {renderSeatDiagram(
+                departureSeats.map(seat => ({
+                  ...seat,
+                  isSelected: selectedDepartureSeats.some(s => s.id === seat.id)
+                })), 
+                true, 
+                handleSelectDepartureSeat
+              )}
+              
+              {/* Selected departure seats summary */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(25, 118, 210, 0.08)", borderRadius: 2, border: "1px solid rgba(25, 118, 210, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#1976d2" }}>
+                  Ghế đã chọn ({selectedDepartureSeats.length}):
+                </Typography>
+                {selectedDepartureSeats.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedDepartureSeats.map((seat) => (
+                      <Chip
+                        key={seat.id}
+                        label={seat.seatNumber || seat.id}
+                        onDelete={() => handleSelectDepartureSeat(seat)}
+                        sx={{ 
+                          bgcolor: "#1976d2", 
+                          color: "white",
+                          fontWeight: 600,
+                          '& .MuiChip-deleteIcon': { color: 'white' }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#1976d2" }}>
+                  {formatPrice(selectedDepartureSeats.length * selectedDepartureTrip.price)}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Return Trip Seat Selection */}
+            <Paper
+              elevation={3}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                border: "3px solid #7b1fa2",
+                background: "linear-gradient(135deg, rgba(123, 31, 162, 0.02) 0%, white 100%)",
+              }}
+            >
+              <Typography variant="h6" gutterBottom sx={{ color: "#7b1fa2", fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🛬 Chuyến về - {selectedReturnTrip.busName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {new Date(selectedReturnTrip.timeStart).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}{" "}
+                - {new Date(selectedReturnTrip.timeEnd).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })} • {searchData.returnDate}
+              </Typography>
+              
+              {/* Return seat diagram */}
+              {renderSeatDiagram(
+                returnSeats.map(seat => ({
+                  ...seat,
+                  isSelected: selectedReturnSeats.some(s => s.id === seat.id)
+                })), 
+                true, 
+                handleSelectReturnSeat
+              )}
+              
+              {/* Selected return seats summary */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(123, 31, 162, 0.08)", borderRadius: 2, border: "1px solid rgba(123, 31, 162, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#7b1fa2" }}>
+                  Ghế đã chọn ({selectedReturnSeats.length}):
+                </Typography>
+                {selectedReturnSeats.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedReturnSeats.map((seat) => (
+                      <Chip
+                        key={seat.id}
+                        label={seat.seatNumber || seat.id}
+                        onDelete={() => handleSelectReturnSeat(seat)}
+                        sx={{ 
+                          bgcolor: "#7b1fa2", 
+                          color: "white",
+                          fontWeight: 600,
+                          '& .MuiChip-deleteIcon': { color: 'white' }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#7b1fa2" }}>
+                  {formatPrice(selectedReturnSeats.length * selectedReturnTrip.price)}
+                </Typography>
+              </Box>
+            </Paper>
+          </Box>
+
+          {/* Total Summary */}
+          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, background: "linear-gradient(135deg, rgba(244, 143, 177, 0.1) 0%, white 100%)", border: "2px solid #f48fb1" }}>
+            <Typography variant="h5" gutterBottom sx={{ color: "#f48fb1", fontWeight: 700, textAlign: "center", mb: 3 }}>
+              💰 Tổng quan thanh toán
+            </Typography>
+            
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" }, gap: 3, alignItems: "end" }}>
+              {/* Departure summary */}
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1976d2", mb: 1 }}>
+                  🛫 Chuyến đi
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {selectedDepartureSeats.length} ghế
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: "#1976d2" }}>
+                  {formatPrice(selectedDepartureSeats.length * selectedDepartureTrip.price)}
+                </Typography>
+              </Box>
+
+              {/* Return summary */}
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#7b1fa2", mb: 1 }}>
+                  🛬 Chuyến về
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {selectedReturnSeats.length} ghế
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: "#7b1fa2" }}>
+                  {formatPrice(selectedReturnSeats.length * selectedReturnTrip.price)}
+                </Typography>
+              </Box>
+
+              {/* Total */}
+              <Box sx={{ textAlign: "center", p: 3, bgcolor: "#f48fb1", borderRadius: 3, color: "white" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                  TỔNG CỘNG
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                  {formatPrice(
+                    (selectedDepartureSeats.length * selectedDepartureTrip.price) +
+                    (selectedReturnSeats.length * selectedReturnTrip.price)
+                  )}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      );
+    }
+
+    // Single trip mode (original logic for one-way or step-by-step round trip)
     const currentTrip = isRoundTrip && selectedDepartureTrip && selectedReturnTrip 
       ? selectedReturnTrip 
       : selectedDepartureTrip || selectedTrip;
@@ -2230,325 +2801,580 @@ export default function BookingPage() {
     );
   };
 
-  // Render payment with shuttle points
-  const renderPaymentWithShuttle = () => {
-    if (!selectedTrip) return null;
+  // Enhanced payment page with modern UI
+  function renderPaymentWithShuttle() {
+    console.log("🎯 renderPaymentWithShuttle called with:", {
+      selectedTrip: selectedTrip?.busName,
+      selectedDepartureTrip: selectedDepartureTrip?.busName,
+      selectedReturnTrip: selectedReturnTrip?.busName,
+      searchData,
+      activeStep
+    });
+
+    // For round trip, check if we have departure trip or return trip
+    const currentTrip = selectedTrip || selectedDepartureTrip || selectedReturnTrip;
+    
+    if (!currentTrip) {
+      console.log("🚨 No trip selected for payment page:", {
+        selectedTrip,
+        selectedDepartureTrip,
+        selectedReturnTrip
+      });
+      return (
+        <Box sx={{ mt: 4, textAlign: "center", p: 4 }}>
+          <Typography variant="h6" color="error">
+            ⚠️ Không tìm thấy thông tin chuyến xe
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Vui lòng quay lại chọn chuyến xe
+          </Typography>
+        </Box>
+      );
+    }
 
     const priceDetails = calculateTotalPrice();
+    console.log("💰 Price details calculated:", priceDetails);
 
     return (
       <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Điểm đón & Thanh toán
-        </Typography>
+        {/* Modern Header Section */}
+        <Box sx={{ textAlign: "center", mb: 6 }}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: 800,
+              background: "linear-gradient(45deg, #f48fb1 30%, #e91e63 90%)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 2 
+            }}
+          >
+            💳 Thanh toán & Hoàn tất đặt vé
+          </Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: "auto" }}>
+            Vui lòng hoàn tất thông tin để xác nhận đặt vé của bạn
+          </Typography>
+        </Box>
 
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 3,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 4,
           }}
         >
-          <Box sx={{ flex: { xs: "1", md: "2" } }}>
-            {/* Shuttle Points Section */}
-            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{ color: "#f48fb1" }}
-              >
-                Chọn điểm đón
-              </Typography>
-
-              {mockShuttlePoints.map((point) => (
-                <Card
-                  key={point.id}
-                  sx={{
-                    mb: 2,
-                    cursor: "pointer",
-                    border:
-                      shuttlePoint?.id === point.id
-                        ? "2px solid #f48fb1"
-                        : "1px solid #e0e0e0",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                    },
+          {/* Left Column - Main Payment Content */}
+          <Box>
+            {/* Enhanced Shuttle Points Section */}
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
+                mb: 4, 
+                borderRadius: 4,
+                background: "linear-gradient(135deg, rgba(244, 143, 177, 0.05) 0%, white 100%)",
+                border: "1px solid rgba(244, 143, 177, 0.2)",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  background: "linear-gradient(90deg, #f48fb1, #e91e63, #f48fb1)",
+                }
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
+                    bgcolor: "rgba(244, 143, 177, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mr: 2
                   }}
-                  onClick={() => handleSelectShuttlePoint(point)}
                 >
-                  <CardContent>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: "bold" }}
-                        >
-                          {point.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {point.address}
-                        </Typography>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", mt: 1 }}
-                        >
-                          <AccessTime
-                            sx={{
-                              fontSize: "0.875rem",
-                              mr: 0.5,
-                              color: "#f48fb1",
-                            }}
-                          />
-                          <Typography variant="body2">
-                            Giờ đón: {point.time}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ textAlign: "right" }}>
-                        {point.extraFee > 0 ? (
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ color: "#f48fb1" }}
-                          >
-                            {formatPrice(point.extraFee)}
-                          </Typography>
-                        ) : (
-                          <Chip size="small" label="Miễn phí" color="success" />
-                        )}
-                        {shuttlePoint?.id === point.id && (
-                          <Check sx={{ color: "#f48fb1", mt: 2 }} />
-                        )}
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
-            </Paper>
+                  <LocationOn sx={{ color: "#f48fb1", fontSize: 28 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#f48fb1", mb: 0.5 }}>
+                    🚌 Chọn điểm đón
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Chọn địa điểm thuận tiện để được đón
+                  </Typography>
+                </Box>
+              </Box>
 
-            {/* Payment Methods Section */}
-            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{ color: "#f48fb1" }}
-              >
-                Phương thức thanh toán
-              </Typography>
-
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                {paymentMethods.map((method) => (
-                  <Box
-                    sx={{ width: { xs: "100%", sm: "calc(50% - 8px)" } }}
-                    key={method.id}
+              <Box sx={{ display: "grid", gap: 2 }}>
+                {mockShuttlePoints.map((point) => (
+                  <Card
+                    key={point.id}
+                    sx={{
+                      cursor: "pointer",
+                      border: shuttlePoint?.id === point.id
+                        ? "3px solid #f48fb1"
+                        : "2px solid transparent",
+                      borderRadius: 3,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      background: shuttlePoint?.id === point.id
+                        ? "linear-gradient(135deg, rgba(244, 143, 177, 0.1) 0%, rgba(244, 143, 177, 0.05) 100%)"
+                        : "white",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 8px 25px rgba(244, 143, 177, 0.25)",
+                        borderColor: "#f48fb1",
+                      },
+                    }}
+                    onClick={() => handleSelectShuttlePoint(point)}
                   >
-                    <Card
-                      sx={{
-                        cursor: "pointer",
-                        border:
-                          paymentMethod === method.id
-                            ? "2px solid #f48fb1"
-                            : "1px solid #e0e0e0",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                        },
-                        height: "100%",
-                      }}
-                      onClick={() => handleSelectPaymentMethod(method.id)}
-                    >
-                      <CardContent>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Box sx={{ mr: 2, color: "#f48fb1" }}>
-                            {method.icon}
-                          </Box>
-                          <Typography variant="subtitle1">
-                            {method.name}
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: "#2c3e50" }}>
+                            {point.name}
                           </Typography>
-                          {paymentMethod === method.id && (
-                            <Check sx={{ ml: "auto", color: "#f48fb1" }} />
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            📍 {point.address}
+                          </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <AccessTime sx={{ fontSize: 18, mr: 1, color: "#f48fb1" }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              Giờ đón: {point.time}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ textAlign: "right", ml: 2 }}>
+                          {point.extraFee > 0 ? (
+                            <Typography variant="h6" sx={{ color: "#f48fb1", fontWeight: 700, mb: 1 }}>
+                              {formatPrice(point.extraFee)}
+                            </Typography>
+                          ) : (
+                            <Chip 
+                              size="medium" 
+                              label="🆓 Miễn phí" 
+                              sx={{ 
+                                bgcolor: "#4caf50", 
+                                color: "white", 
+                                fontWeight: 600,
+                                mb: 1
+                              }} 
+                            />
+                          )}
+                          {shuttlePoint?.id === point.id && (
+                            <Box 
+                              sx={{ 
+                                width: 32, 
+                                height: 32, 
+                                borderRadius: "50%", 
+                                bgcolor: "#f48fb1", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                justifyContent: "center",
+                                mx: "auto"
+                              }}
+                            >
+                              <Check sx={{ color: "white", fontSize: 20 }} />
+                            </Box>
                           )}
                         </Box>
-                      </CardContent>
-                    </Card>
-                  </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
               </Box>
             </Paper>
 
-            {/* Contact Information Section */}
-            <Paper elevation={3} sx={{ p: 3 }}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{ color: "#f48fb1" }}
-              >
-                Thông tin liên hệ
-              </Typography>
-
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box
-                  sx={{
+            {/* Enhanced Payment Methods Section */}
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
+                mb: 4, 
+                borderRadius: 4,
+                background: "linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, white 100%)",
+                border: "1px solid rgba(25, 118, 210, 0.2)",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  background: "linear-gradient(90deg, #1976d2, #2196f3, #1976d2)",
+                }
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
+                    bgcolor: "rgba(25, 118, 210, 0.1)",
                     display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: 2,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mr: 2
                   }}
                 >
-                  <Box sx={{ flex: 1 }}>
-                    <TextField
-                      fullWidth
-                      label="Họ và tên"
-                      placeholder="Nhập họ và tên người đặt"
-                      required
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <TextField
-                      fullWidth
-                      label="Số điện thoại"
-                      placeholder="Nhập số điện thoại"
-                      required
-                    />
-                  </Box>
+                  <CreditCard sx={{ color: "#1976d2", fontSize: 28 }} />
                 </Box>
                 <Box>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    placeholder="Nhập email"
-                    type="email"
-                  />
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#1976d2", mb: 0.5 }}>
+                    💳 Phương thức thanh toán
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Chọn cách thức thanh toán phù hợp với bạn
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+                {paymentMethods.map((method) => (
+                  <Card
+                    key={method.id}
+                    sx={{
+                      cursor: "pointer",
+                      border: paymentMethod === method.id
+                        ? "3px solid #1976d2"
+                        : "2px solid transparent",
+                      borderRadius: 3,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      background: paymentMethod === method.id
+                        ? "linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%)"
+                        : "white",
+                      minHeight: 80,
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 8px 25px rgba(25, 118, 210, 0.25)",
+                        borderColor: "#1976d2",
+                      },
+                    }}
+                    onClick={() => handleSelectPaymentMethod(method.id)}
+                  >
+                    <CardContent sx={{ p: 3, display: "flex", alignItems: "center", height: "100%" }}>
+                      <Box sx={{ 
+                        width: 40, 
+                        height: 40, 
+                        borderRadius: 2, 
+                        bgcolor: paymentMethod === method.id ? "#1976d2" : "rgba(25, 118, 210, 0.1)",
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        mr: 2,
+                        transition: "all 0.3s ease"
+                      }}>
+                        <Box sx={{ color: paymentMethod === method.id ? "white" : "#1976d2", fontSize: 20 }}>
+                          {method.icon}
+                        </Box>
+                      </Box>
+                      <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                        {method.name}
+                      </Typography>
+                      {paymentMethod === method.id && (
+                        <Box 
+                          sx={{ 
+                            width: 28, 
+                            height: 28, 
+                            borderRadius: "50%", 
+                            bgcolor: "#1976d2", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center"
+                          }}
+                        >
+                          <Check sx={{ color: "white", fontSize: 16 }} />
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+
+              {/* VNPay Info */}
+              {paymentMethod === "vnpay" && (
+                <Box sx={{ mt: 3, p: 3, bgcolor: "rgba(25, 118, 210, 0.05)", borderRadius: 3, border: "1px solid rgba(25, 118, 210, 0.2)" }}>
+                  <Typography variant="body2" sx={{ color: "#1976d2", fontWeight: 600, mb: 1 }}>
+                    ✅ Thanh toán qua VNPay
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Hỗ trợ thanh toán qua thẻ ATM, Visa, MasterCard, JCB và ví điện tử
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+
+            {/* Enhanced Contact Information Section */}
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
+                borderRadius: 4,
+                background: "linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, white 100%)",
+                border: "1px solid rgba(76, 175, 80, 0.2)",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  background: "linear-gradient(90deg, #4caf50, #66bb6a, #4caf50)",
+                }
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
+                    bgcolor: "rgba(76, 175, 80, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mr: 2
+                  }}
+                >
+                  <Person sx={{ color: "#4caf50", fontSize: 28 }} />
                 </Box>
                 <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#4caf50", mb: 0.5 }}>
+                    👤 Thông tin liên hệ
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Thông tin để xác nhận và liên lạc về chuyến đi
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gap: 3 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
                   <TextField
                     fullWidth
-                    label="Ghi chú"
-                    placeholder="Nhập ghi chú (nếu có)"
-                    multiline
-                    rows={3}
+                    label="👤 Họ và tên"
+                    placeholder="Nhập họ và tên người đặt"
+                    required
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 3,
+                        "&:hover fieldset": { borderColor: "#4caf50" },
+                        "&.Mui-focused fieldset": { borderColor: "#4caf50" },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="📱 Số điện thoại"
+                    placeholder="Nhập số điện thoại"
+                    required
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 3,
+                        "&:hover fieldset": { borderColor: "#4caf50" },
+                        "&.Mui-focused fieldset": { borderColor: "#4caf50" },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
+                    }}
                   />
                 </Box>
+                <TextField
+                  fullWidth
+                  label="📧 Email"
+                  placeholder="Nhập email để nhận thông tin vé"
+                  type="email"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      "&:hover fieldset": { borderColor: "#4caf50" },
+                      "&.Mui-focused fieldset": { borderColor: "#4caf50" },
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="📝 Ghi chú"
+                  placeholder="Nhập ghi chú cho chuyến đi (nếu có)"
+                  multiline
+                  rows={3}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      "&:hover fieldset": { borderColor: "#4caf50" },
+                      "&.Mui-focused fieldset": { borderColor: "#4caf50" },
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
+                  }}
+                />
               </Box>
             </Paper>
           </Box>
 
-          {/* Booking Summary */}
-          <Box sx={{ flex: { xs: "1", md: "1" } }}>
-            <Paper elevation={3} sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ color: "#f48fb1" }}>
-                Thông tin đặt vé
+          {/* Right Column - Enhanced Booking Summary */}
+          <Box>
+            <Paper 
+              elevation={12} 
+              sx={{ 
+                p: 4, 
+                borderRadius: 4,
+                background: "linear-gradient(135deg, rgba(244, 143, 177, 0.08) 0%, white 100%)",
+                border: "2px solid #f48fb1",
+                position: "sticky",
+                top: 20,
+                overflow: "hidden",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 6,
+                  background: "linear-gradient(90deg, #f48fb1, #e91e63, #f48fb1)",
+                }
+              }}
+            >
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "#f48fb1", mb: 1, textAlign: "center" }}>
+                🎫 Chi tiết đặt vé
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mb: 3 }}>
+                Xem lại thông tin trước khi thanh toán
               </Typography>
 
-              <Box sx={{ my: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  {selectedTrip.busName} - {selectedTrip.tripId}
+                             {/* Trip Information */}
+               <Box sx={{ mb: 3, p: 3, bgcolor: "rgba(244, 143, 177, 0.05)", borderRadius: 3 }}>
+                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "#2c3e50" }}>
+                   🚌 {currentTrip.busName}
+                 </Typography>
+                 <Box sx={{ display: "grid", gap: 2 }}>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🕐 Khởi hành:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                       {new Date(currentTrip.timeStart).toLocaleTimeString("vi-VN", {
+                         hour: "2-digit",
+                         minute: "2-digit",
+                       })} - {searchData.departureDate}
+                     </Typography>
+                   </Box>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>📍 Điểm đón:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600, textAlign: "right" }}>
+                       {shuttlePoint?.name || "⚠️ Chưa chọn"}
+                     </Typography>
+                   </Box>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🎯 Điểm đến:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                       {currentTrip.endLocation}
+                     </Typography>
+                   </Box>
+                 </Box>
+               </Box>
+
+              <Divider sx={{ my: 3, borderColor: "rgba(244, 143, 177, 0.3)" }} />
+
+              {/* Selected Seats */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "#f48fb1" }}>
+                  🪑 Ghế đã chọn ({selectedSeats.length}):
                 </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">Khởi hành:</Typography>
-                  <Typography variant="body2">
-                    {new Date(selectedTrip.timeStart).toLocaleTimeString(
-                      "vi-VN",
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )}{" "}
-                    - {searchData.departureDate}
-                  </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {selectedSeats.map((seat) => (
+                    <Chip
+                      key={seat.id}
+                      label={seat.seatNumber || seat.id}
+                      sx={{ 
+                        bgcolor: "#f48fb1", 
+                        color: "white", 
+                        fontWeight: 600,
+                        fontSize: "0.875rem"
+                      }}
+                    />
+                  ))}
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="body2">Điểm đi:</Typography>
-                  <Typography variant="body2">
-                    {shuttlePoint?.name || "Chưa chọn"}
-                  </Typography>
+              </Box>
+
+              <Divider sx={{ my: 3, borderColor: "rgba(244, 143, 177, 0.3)" }} />
+
+              {/* Price Breakdown */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "#f48fb1" }}>
+                  💰 Chi tiết giá:
+                </Typography>
+                <Box sx={{ display: "grid", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2">🎫 Giá vé:</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {formatPrice(priceDetails.basePrice)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2">🚌 Phí đưa đón:</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {formatPrice(priceDetails.shuttleFee)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2">⚙️ Phí dịch vụ:</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {formatPrice(priceDetails.serviceFee)}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="body2">Điểm đến:</Typography>
-                  <Typography variant="body2">
-                    {selectedTrip.endLocation}
-                  </Typography>
-                </Box>
               </Box>
 
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: 3, borderColor: "rgba(244, 143, 177, 0.5)" }} />
 
-              <Typography variant="subtitle1" gutterBottom>
-                Ghế đã chọn:
-              </Typography>
-
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                {selectedSeats.map((seat) => (
-                  <Chip
-                    key={seat.id}
-                    label={seat.seatNumber || seat.id}
-                    color="primary"
-                    sx={{ bgcolor: "#f48fb1" }}
-                  />
-                ))}
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2">Giá vé:</Typography>
-                <Typography variant="body2">
-                  {formatPrice(priceDetails.basePrice)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2">Phí đưa đón:</Typography>
-                <Typography variant="body2">
-                  {formatPrice(priceDetails.shuttleFee)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body2">Phí dịch vụ:</Typography>
-                <Typography variant="body2">
-                  {formatPrice(priceDetails.serviceFee)}
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontWeight: "bold",
-                  mt: 2,
+              {/* Total Amount */}
+              <Box 
+                sx={{ 
+                  p: 3, 
+                  bgcolor: "linear-gradient(135deg, #f48fb1 0%, #e91e63 100%)", 
+                  borderRadius: 3,
+                  textAlign: "center",
+                  mb: 3,
+                  color: "white"
                 }}
               >
-                <Typography variant="subtitle1">Tổng tiền:</Typography>
-                <Typography variant="subtitle1" sx={{ color: "#f48fb1" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                  TỔNG THANH TOÁN
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
                   {formatPrice(priceDetails.total)}
                 </Typography>
               </Box>
 
-              {/* Payment Method Display */}
+              {/* Selected Payment Method */}
               {paymentMethod && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: "#fce4ec", borderRadius: 2 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: "bold", color: "#f48fb1" }}
-                  >
-                    Phương thức thanh toán đã chọn:
+                <Box sx={{ p: 3, bgcolor: "rgba(25, 118, 210, 0.1)", borderRadius: 3, border: "1px solid rgba(25, 118, 210, 0.3)" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#1976d2", mb: 1 }}>
+                    💳 Phương thức thanh toán:
                   </Typography>
-                  <Typography variant="body2">
-                    {
-                      paymentMethods.find(
-                        (method) => method.id === paymentMethod
-                      )?.name
-                    }
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {paymentMethods.find((method) => method.id === paymentMethod)?.name}
                   </Typography>
                 </Box>
               )}
+
+              {/* Security Notice */}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(76, 175, 80, 0.1)", borderRadius: 2, border: "1px solid rgba(76, 175, 80, 0.3)" }}>
+                <Typography variant="caption" sx={{ color: "#4caf50", fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+                  🔒 Thanh toán được bảo mật 100%
+                </Typography>
+              </Box>
             </Paper>
           </Box>
         </Box>
@@ -3586,7 +4412,8 @@ export default function BookingPage() {
   );
 
   // Custom loading component
-  const renderLoading = () => (
+  function renderLoading() {
+    return (
     <Box sx={{ my: 4 }}>
       {/* Trip Search Results Skeleton */}
       <Box sx={{ mb: 3 }}>
@@ -3809,10 +4636,12 @@ export default function BookingPage() {
         </Typography>
       </Box>
     </Box>
-  );
+    );
+  }
 
   // Simple loading indicator for small components
-  const renderSimpleLoading = (message: string = "Đang tải...") => (
+  function renderSimpleLoading(message: string = "Đang tải...") {
+    return (
     <Box
       sx={{
         display: "flex",
@@ -3827,10 +4656,12 @@ export default function BookingPage() {
         {message}
       </Typography>
     </Box>
-  );
+    );
+  }
 
   // Error state component
-  const renderErrorState = (message: string, onRetry?: () => void) => (
+  function renderErrorState(message: string, onRetry?: () => void) {
+    return (
     <Alert
       severity="error"
       sx={{
@@ -3860,7 +4691,8 @@ export default function BookingPage() {
     >
       {message}
     </Alert>
-  );
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

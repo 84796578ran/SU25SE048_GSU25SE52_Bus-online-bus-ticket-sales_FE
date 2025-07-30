@@ -171,15 +171,24 @@ class ApiClient {
   // Seat availability API
   async getSeatAvailability(tripId: string | number, fromStationId: string | number, toStationId: string | number): Promise<any> {
     try {
-      // Validate required parameters
-      if (!tripId) {
-        throw new Error('tripId is required');
+      // Validate required parameters with detailed logging
+      console.log('🔍 getSeatAvailability called with params:', {
+        tripId,
+        fromStationId,
+        toStationId,
+        'tripId type': typeof tripId,
+        'fromStationId type': typeof fromStationId,
+        'toStationId type': typeof toStationId
+      });
+
+      if (tripId === null || tripId === undefined || tripId === '') {
+        throw new Error(`tripId is required, received: ${tripId} (type: ${typeof tripId})`);
       }
-      if (!fromStationId) {
-        throw new Error('fromStationId is required');
+      if (fromStationId === null || fromStationId === undefined || fromStationId === '') {
+        throw new Error(`fromStationId is required, received: ${fromStationId} (type: ${typeof fromStationId})`);
       }
-      if (!toStationId) {
-        throw new Error('toStationId is required');
+      if (toStationId === null || toStationId === undefined || toStationId === '') {
+        throw new Error(`toStationId is required, received: ${toStationId} (type: ${typeof toStationId})`);
       }
 
       const params = new URLSearchParams({
