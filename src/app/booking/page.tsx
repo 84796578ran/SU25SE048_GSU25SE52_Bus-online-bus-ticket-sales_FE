@@ -60,7 +60,7 @@ import { apiClient } from "@/services/api";
 import { bookingService, VNPayPayloadType } from "@/services/bookingService";
 
 // Define types
-interface TripType {
+interface BaseTripType {
   id: number;
   tripId: string;
   fromLocation: string;
@@ -74,8 +74,16 @@ interface TripType {
   description: string;
   status: number;
   isDeleted: boolean;
+}
+
+interface TripType extends BaseTripType {
   tripType?: "direct" | "transfer" | "triple"; // Optional field for trip classification
   direction?: "departure" | "return"; // Optional field for round-trip direction
+  // Fields for transfer trips
+  firstTrip?: BaseTripType;
+  secondTrip?: BaseTripType;
+  totalPrice?: number;
+  totalDuration?: string;
 }
 
 interface SeatType {
@@ -120,56 +128,7 @@ interface SearchDataType {
 // Define step titles
 const steps = ["Tìm chuyến xe", "Chọn ghế", "Thanh toán"];
 
-// Mock data for example
-const mockBusTrips = [
-  {
-    id: 1,
-    companyName: "Phương Trang",
-    departureTime: "07:00",
-    arrivalTime: "14:00",
-    duration: "7h",
-    price: 250000,
-    rating: 4.8,
-    busType: "Giường nằm cao cấp",
-    availableSeats: 12,
-    totalSeats: 40,
-    departurePoint: "Bến xe miền Đông",
-    arrivalPoint: "Bến xe miền Tây",
-    image: "/images/bus-sample-1.jpg",
-  },
-  {
-    id: 2,
-    companyName: "Hà Sơn",
-    departureTime: "08:30",
-    arrivalTime: "15:30",
-    duration: "7h",
-    price: 230000,
-    rating: 4.7,
-    busType: "Ghế ngồi cao cấp",
-    availableSeats: 8,
-    totalSeats: 30,
-    departurePoint: "Bến xe miền Đông",
-    arrivalPoint: "Bến xe miền Tây",
-    image: "/images/bus-sample-2.jpg",
-  },
-  {
-    id: 3,
-    companyName: "Kumho",
-    departureTime: "10:00",
-    arrivalTime: "17:00",
-    duration: "7h",
-    price: 300000,
-    rating: 4.9,
-    busType: "Limousine",
-    availableSeats: 5,
-    totalSeats: 20,
-    departurePoint: "Bến xe miền Đông",
-    arrivalPoint: "Bến xe miền Tây",
-    image: "/images/bus-sample-3.jpg",
-  },
-];
 
-// Mock seats data (fallback)
 const generateMockSeats = (): SeatType[] => {
   const rows = ["A", "B", "C", "D", "E"];
   const columns = [1, 2, 3, 4];
@@ -420,11 +379,44 @@ export default function BookingPage() {
               result.return.transferTrips &&
               result.return.transferTrips.length > 0
             ) {
-              const processedReturnTrips = result.return.transferTrips.map((trip: TripType) => ({
-                ...trip,
-                tripType: "transfer",
-                direction: "return",
-              }));
+              const processedReturnTrips = result.return.transferTrips.map((transferTrip: any, index: number) => {
+                const { firstTrip, secondTrip } = transferTrip;
+                
+                if (!firstTrip || !secondTrip) {
+                  console.warn(`⚠️ Return transfer trip ${index} missing firstTrip or secondTrip:`, transferTrip);
+                  return null;
+                }
+
+                const totalPrice = (firstTrip.price || 0) + (secondTrip.price || 0);
+                const startTime = new Date(firstTrip.timeStart);
+                const endTime = new Date(secondTrip.timeEnd);
+                const durationMs = endTime.getTime() - startTime.getTime();
+                const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+                const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                const totalDuration = `${durationHours}h${durationMinutes > 0 ? ` ${durationMinutes}m` : ''}`;
+
+                return {
+                  id: parseInt(`${firstTrip.id}${secondTrip.id}`),
+                  tripId: `${firstTrip.tripId}_${secondTrip.tripId}`,
+                  fromLocation: firstTrip.fromLocation,
+                  endLocation: secondTrip.endLocation,
+                  routeDescription: `${firstTrip.routeDescription} → ${secondTrip.routeDescription}`,
+                  timeStart: firstTrip.timeStart,
+                  timeEnd: secondTrip.timeEnd,
+                  price: totalPrice,
+                  routeId: firstTrip.routeId,
+                  busName: `${firstTrip.busName} → ${secondTrip.busName}`,
+                  description: `${firstTrip.fromLocation} → ${firstTrip.endLocation} → ${secondTrip.endLocation}`,
+                  status: Math.min(firstTrip.status, secondTrip.status),
+                  isDeleted: firstTrip.isDeleted || secondTrip.isDeleted,
+                  tripType: "transfer" as const,
+                  direction: "return" as const,
+                  firstTrip: firstTrip,
+                  secondTrip: secondTrip,
+                  totalPrice: totalPrice,
+                  totalDuration: totalDuration,
+                };
+              }).filter(Boolean);
               returnTrips = [...returnTrips, ...processedReturnTrips];
               allTrips = [...allTrips, ...processedReturnTrips];
             }
@@ -464,16 +456,53 @@ export default function BookingPage() {
 
           if (result.transferTrips && result.transferTrips.length > 0) {
             console.log("🔍 Processing transfer trips:", result.transferTrips);
-            const processedTrips = result.transferTrips.map((trip: TripType, index: number) => {
-              console.log(`🔍 Processing transfer trip ${index}:`, trip);
-              if (!trip.id && trip.id !== 0) {
-                console.warn(`⚠️ Transfer trip ${index} missing id:`, trip);
+            const processedTrips = result.transferTrips.map((transferTrip: any, index: number) => {
+              console.log(`🔍 Processing transfer trip ${index}:`, transferTrip);
+              
+              // Transfer trip has firstTrip and secondTrip structure
+              const { firstTrip, secondTrip } = transferTrip;
+              
+              if (!firstTrip || !secondTrip) {
+                console.warn(`⚠️ Transfer trip ${index} missing firstTrip or secondTrip:`, transferTrip);
+                return null;
               }
+
+              // Calculate total price and duration
+              const totalPrice = (firstTrip.price || 0) + (secondTrip.price || 0);
+              
+              // Calculate total duration
+              const startTime = new Date(firstTrip.timeStart);
+              const endTime = new Date(secondTrip.timeEnd);
+              const durationMs = endTime.getTime() - startTime.getTime();
+              const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+              const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+              const totalDuration = `${durationHours}h${durationMinutes > 0 ? ` ${durationMinutes}m` : ''}`;
+
               return {
-                ...trip,
-                tripType: "transfer",
+                // Use firstTrip as base, but override key fields
+                id: parseInt(`${firstTrip.id}${secondTrip.id}`), // Unique numeric ID for transfer trip
+                tripId: `${firstTrip.tripId}_${secondTrip.tripId}`,
+                fromLocation: firstTrip.fromLocation,
+                endLocation: secondTrip.endLocation,
+                routeDescription: `${firstTrip.routeDescription} → ${secondTrip.routeDescription}`,
+                timeStart: firstTrip.timeStart,
+                timeEnd: secondTrip.timeEnd,
+                price: totalPrice,
+                routeId: firstTrip.routeId, // Use first trip's route
+                busName: `${firstTrip.busName} → ${secondTrip.busName}`,
+                description: `${firstTrip.fromLocation} → ${firstTrip.endLocation} → ${secondTrip.endLocation}`,
+                status: Math.min(firstTrip.status, secondTrip.status), // Use most restrictive status
+                isDeleted: firstTrip.isDeleted || secondTrip.isDeleted,
+                tripType: "transfer" as const,
+                // Transfer-specific fields
+                firstTrip: firstTrip,
+                secondTrip: secondTrip,
+                totalPrice: totalPrice,
+                totalDuration: totalDuration,
               };
-            });
+            }).filter(Boolean); // Filter out null values
+            
+            console.log("🔍 Processed transfer trips:", processedTrips);
             departureTrips = [...departureTrips, ...processedTrips];
             allTrips = [...allTrips, ...processedTrips];
           }
@@ -1588,6 +1617,154 @@ export default function BookingPage() {
       .replace("₫", "đ");
   };
 
+  // Render transfer trip card with special layout
+  const renderTransferTripCard = (trip: TripType, index: number, onSelect: (trip: TripType) => void, isSelected: boolean) => {
+    if (trip.tripType !== "transfer" || !trip.firstTrip || !trip.secondTrip) {
+      return null;
+    }
+
+    return (
+      <motion.div
+        key={`transfer-${trip.id}`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.1 }}
+      >
+        <Card
+          onClick={() => onSelect(trip)}
+          sx={{
+            mb: 2,
+            cursor: "pointer",
+            border: isSelected ? "2px solid #f48fb1" : "1px solid rgba(0, 0, 0, 0.08)",
+            borderRadius: 3,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+              transform: "translateY(-2px)",
+            },
+            bgcolor: isSelected ? "rgba(244, 143, 177, 0.05)" : "white",
+          }}
+        >
+          <CardContent sx={{ p: 3 }}>
+            {/* Transfer Trip Header */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Chip 
+                label="Chuyến nối" 
+                size="small" 
+                sx={{ 
+                  bgcolor: "#fff3e0", 
+                  color: "#e65100",
+                  fontWeight: 600,
+                  mr: 2
+                }} 
+              />
+              <Typography variant="body2" color="text.secondary">
+                {trip.totalDuration} • {formatPrice(trip.price)}
+              </Typography>
+            </Box>
+
+            {/* First Trip */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderRadius: 2 }}>
+              <Box sx={{ flex: "1 1 150px", textAlign: "center" }}>
+                <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 600 }}>
+                  {new Date(trip.firstTrip.timeStart).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {trip.firstTrip.fromLocation}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                <DirectionsBus sx={{ color: "#f48fb1", fontSize: 20 }} />
+                <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
+                  {trip.firstTrip.busName}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: "1 1 150px", textAlign: "center" }}>
+                <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 600 }}>
+                  {new Date(trip.firstTrip.timeEnd).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {trip.firstTrip.endLocation}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Transfer Indicator */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", my: 1 }}>
+              <Box sx={{ height: 1, flex: 1, bgcolor: "rgba(0, 0, 0, 0.1)" }} />
+              <Typography variant="caption" sx={{ mx: 2, color: "text.secondary", fontWeight: 500 }}>
+                Chuyển xe
+              </Typography>
+              <Box sx={{ height: 1, flex: 1, bgcolor: "rgba(0, 0, 0, 0.1)" }} />
+            </Box>
+
+            {/* Second Trip */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderRadius: 2 }}>
+              <Box sx={{ flex: "1 1 150px", textAlign: "center" }}>
+                <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 600 }}>
+                  {new Date(trip.secondTrip.timeStart).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {trip.secondTrip.fromLocation}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                <DirectionsBus sx={{ color: "#f48fb1", fontSize: 20 }} />
+                <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
+                  {trip.secondTrip.busName}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: "1 1 150px", textAlign: "center" }}>
+                <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 600 }}>
+                  {new Date(trip.secondTrip.timeEnd).toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {trip.secondTrip.endLocation}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenSeatDialog(trip);
+                }}
+                sx={{
+                  borderColor: "#f48fb1",
+                  color: "#f48fb1",
+                  fontSize: "0.75rem",
+                }}
+              >
+                Xem ghế
+              </Button>
+              {isSelected && (
+                <Box sx={{ display: "flex", justifyContent: "center" }}>
+                  <CheckCircle sx={{ color: "#f48fb1", fontSize: 28 }} />
+                </Box>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
+
   const calculateTotalPrice = () => {
     let basePrice = 0;
 
@@ -1754,13 +1931,25 @@ export default function BookingPage() {
 
                   {departureTrips.length > 0 ? (
                     <Box>
-                      {departureTrips.map((trip, index) => (
-                        <motion.div
-                          key={`departure-${trip.id}`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                        >
+                      {departureTrips.map((trip, index) => {
+                        // Use special render for transfer trips in round-trip departure
+                        if (trip.tripType === "transfer") {
+                          return renderTransferTripCard(
+                            trip, 
+                            index, 
+                            handleSelectDepartureTrip, 
+                            selectedDepartureTrip?.id === trip.id
+                          );
+                        }
+                        
+                        // Regular departure trip card
+                        return (
+                          <motion.div
+                            key={`departure-${trip.id}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                          >
                           <Card
                             onClick={() => handleSelectDepartureTrip(trip)}
                             sx={{
@@ -1882,7 +2071,8 @@ export default function BookingPage() {
                             </CardContent>
                           </Card>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </Box>
                   ) : (
                     <Alert severity="info">
@@ -1918,13 +2108,25 @@ export default function BookingPage() {
 
                     {returnTrips.length > 0 ? (
                       <Box>
-                        {returnTrips.map((trip, index) => (
-                          <motion.div
-                            key={`return-${trip.id}`}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                          >
+                        {returnTrips.map((trip, index) => {
+                          // Use special render for transfer trips in return
+                          if (trip.tripType === "transfer") {
+                            return renderTransferTripCard(
+                              trip, 
+                              index, 
+                              handleSelectReturnTrip, 
+                              selectedReturnTrip?.id === trip.id
+                            );
+                          }
+                          
+                          // Regular return trip card
+                          return (
+                            <motion.div
+                              key={`return-${trip.id}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                            >
                             <Card
                               onClick={() => handleSelectReturnTrip(trip)}
                               sx={{
@@ -2051,7 +2253,8 @@ export default function BookingPage() {
                               </CardContent>
                             </Card>
                           </motion.div>
-                        ))}
+                          );
+                        })}
                       </Box>
                     ) : (
                       <Alert severity="info">
@@ -2078,13 +2281,25 @@ export default function BookingPage() {
                 </Box>
 
                 {departureTrips.length > 0 ? (
-                  departureTrips.map((trip, index) => (
-                    <motion.div
-                      key={`oneway-${trip.id}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
+                  departureTrips.map((trip, index) => {
+                    // Use special render for transfer trips
+                    if (trip.tripType === "transfer") {
+                      return renderTransferTripCard(
+                        trip, 
+                        index, 
+                        handleSelectDepartureTrip, 
+                        selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
+                      );
+                    }
+                    
+                    // Regular trip card
+                    return (
+                      <motion.div
+                        key={`oneway-${trip.id}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
                       <Card
                         onClick={() => handleSelectDepartureTrip(trip)}
                         sx={{
@@ -2203,7 +2418,8 @@ export default function BookingPage() {
                         </CardContent>
                       </Card>
                     </motion.div>
-                  ))
+                    );
+                  })
                 ) : (
                   <Alert severity="info">
                     Không tìm thấy chuyến xe nào cho lịch trình này
