@@ -1,9 +1,10 @@
 "use client";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function BookingConfirmPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "fail">(
     "loading"
   );
@@ -12,10 +13,18 @@ export default function BookingConfirmPage() {
     const responseCode = searchParams.get("vnp_ResponseCode");
     if (responseCode === "00") {
       setStatus("success");
+      // Redirect to home page after 2 seconds with payment success parameter
+      setTimeout(() => {
+        router.push("/?paymentSuccess=true&message=Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.");
+      }, 2000);
     } else {
       setStatus("fail");
+      // Redirect to home page after 3 seconds with payment failure parameter
+      setTimeout(() => {
+        router.push("/?paymentFailed=true&message=Thanh toán thất bại hoặc đã bị hủy. Vui lòng thử lại.");
+      }, 3000);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   return (
     <div className="confirm-wrapper">
