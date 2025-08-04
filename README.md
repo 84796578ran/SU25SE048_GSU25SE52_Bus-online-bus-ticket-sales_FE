@@ -1,24 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bus Online Ticket Sales System
+
+This is a [Next.js](https://nextjs.org) project for bus ticket sales system.
+
+## Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
 
 ## Getting Started
 
-First, run the development server:
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd SU25SE048_GSU25SE52_Bus-online-bus-ticket-sales_FE
+```
 
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Run the development server**
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Troubleshooting
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+If you encounter the error `Cannot find module '@tailwindcss/postcss'`, make sure you have run `npm install` to install all dependencies including `autoprefixer`.
+
+## Project Structure
+
+- `src/app/` - Next.js app router pages
+- `src/components/` - React components  
+- `src/services/` - API services
+- `src/types/` - TypeScript type definitions
 
 ## Learn More
 
