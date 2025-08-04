@@ -1639,6 +1639,7 @@ export default function BusTicketHomePage() {
                       }}>
                         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                           <DatePicker
+                            enableAccessibleFieldDOMStructure={false}
                             label="Ngày đi"
                             value={searchData.departureDate ? dayjs(searchData.departureDate) : null}
                             onChange={(newValue: dayjs.Dayjs | null) => {
@@ -1693,6 +1694,7 @@ export default function BusTicketHomePage() {
                         }}>
                           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                             <DatePicker
+                              enableAccessibleFieldDOMStructure={false}
                               label="Ngày về"
                               value={searchData.returnDate ? dayjs(searchData.returnDate) : null}
                               onChange={(newValue: dayjs.Dayjs | null) => {

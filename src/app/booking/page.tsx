@@ -210,17 +210,17 @@ export default function BookingPage() {
     tripType: "oneWay",
   });
   const [loading, setLoading] = useState<boolean>(true);
-
+  
   // Separate trips for departure and return (round-trip functionality)
   const [departureTrips, setDepartureTrips] = useState<TripType[]>([]);
   const [returnTrips, setReturnTrips] = useState<TripType[]>([]);
   const [trips, setTrips] = useState<TripType[]>([]); // Keep for backward compatibility
-
+  
   // Separate trip selections for round-trip
   const [selectedDepartureTrip, setSelectedDepartureTrip] = useState<TripType | null>(null);
   const [selectedReturnTrip, setSelectedReturnTrip] = useState<TripType | null>(null);
   const [selectedTrip, setSelectedTrip] = useState<TripType | null>(null); // Keep for one-way compatibility
-
+  
   // Separate seat management for departure and return trips
   const [departureSeats, setDepartureSeats] = useState<SeatType[]>([]);
   const [returnSeats, setReturnSeats] = useState<SeatType[]>([]);
@@ -269,9 +269,9 @@ export default function BookingPage() {
   // API function to fetch trips using search endpoint
   const fetchTrips = async (
     searchData: SearchDataType
-  ): Promise<{
-    departureTrips: TripType[],
-    returnTrips: TripType[],
+  ): Promise<{ 
+    departureTrips: TripType[], 
+    returnTrips: TripType[], 
     allTrips: TripType[] // For backward compatibility
   }> => {
     try {
@@ -384,7 +384,7 @@ export default function BookingPage() {
             ) {
               const processedReturnTrips = result.return.transferTrips.map((transferTrip: any, index: number) => {
                 const { firstTrip, secondTrip } = transferTrip;
-
+                
                 if (!firstTrip || !secondTrip) {
                   console.warn(`⚠️ Return transfer trip ${index} missing firstTrip or secondTrip:`, transferTrip);
                   return null;
@@ -461,10 +461,10 @@ export default function BookingPage() {
             console.log("🔍 Processing transfer trips:", result.transferTrips);
             const processedTrips = result.transferTrips.map((transferTrip: any, index: number) => {
               console.log(`🔍 Processing transfer trip ${index}:`, transferTrip);
-
+              
               // Transfer trip has firstTrip and secondTrip structure
               const { firstTrip, secondTrip } = transferTrip;
-
+              
               if (!firstTrip || !secondTrip) {
                 console.warn(`⚠️ Transfer trip ${index} missing firstTrip or secondTrip:`, transferTrip);
                 return null;
@@ -472,7 +472,7 @@ export default function BookingPage() {
 
               // Calculate total price and duration
               const totalPrice = (firstTrip.price || 0) + (secondTrip.price || 0);
-
+              
               // Calculate total duration
               const startTime = new Date(firstTrip.timeStart);
               const endTime = new Date(secondTrip.timeEnd);
@@ -504,7 +504,7 @@ export default function BookingPage() {
                 totalDuration: totalDuration,
               };
             }).filter(Boolean); // Filter out null values
-
+            
             console.log("🔍 Processed transfer trips:", processedTrips);
             departureTrips = [...departureTrips, ...processedTrips];
             allTrips = [...allTrips, ...processedTrips];
@@ -578,10 +578,10 @@ export default function BookingPage() {
         returnTrips: { original: returnTrips.length, validated: validatedReturnTrips.length }
       });
 
-      return {
-        departureTrips: validatedDepartureTrips,
-        returnTrips: validatedReturnTrips,
-        allTrips: validatedAllTrips
+      return { 
+        departureTrips: validatedDepartureTrips, 
+        returnTrips: validatedReturnTrips, 
+        allTrips: validatedAllTrips 
       };
     } catch (error) {
       console.error("Error fetching trips:", error);
@@ -645,7 +645,7 @@ export default function BookingPage() {
       setLoading(true);
       try {
         const { departureTrips, returnTrips, allTrips } = await fetchTrips(searchDataFromUrl);
-
+        
         // Set the separated trip data
         setDepartureTrips(departureTrips);
         setReturnTrips(returnTrips);
@@ -757,7 +757,7 @@ export default function BookingPage() {
       if (activeStep === 0) {
         const isRoundTripMovingToSeats = searchData.tripType === "roundTrip" && selectedDepartureTrip && selectedReturnTrip;
         const isOneWayMovingToSeats = searchData.tripType !== "roundTrip" && selectedTrip;
-
+        
         if (isRoundTripMovingToSeats) {
           console.log("🎯 Moving to step 2 - Loading seats for ROUND TRIP:", {
             departureTrip: {
@@ -778,7 +778,7 @@ export default function BookingPage() {
               fetchSeatAvailability(selectedDepartureTrip),
               fetchSeatAvailability(selectedReturnTrip)
             ]);
-
+            
             console.log("🎯 Seat data fetched for round trip:", {
               departure: {
                 count: departureSeatData.length,
@@ -789,11 +789,11 @@ export default function BookingPage() {
                 sample: returnSeatData.slice(0, 3),
               }
             });
-
+            
             setDepartureSeats(departureSeatData);
             setReturnSeats(returnSeatData);
             setSeats(departureSeatData); // Keep for backward compatibility
-
+            
             console.log("🎯 Seats state updated for round trip");
           } catch (error) {
             console.error("Error loading seats for round trip:", error);
@@ -830,7 +830,7 @@ export default function BookingPage() {
             );
           }
         }
-
+        
       } else {
         // Small delay for smooth transition
         setTimeout(() => {
@@ -893,11 +893,11 @@ export default function BookingPage() {
                 });
 
                 // Kiểm tra các khả năng có thể của paymentUrl
-                const paymentUrl = response.paymentUrl ||
-                  response.payment_url ||
-                  response.vnpayUrl ||
-                  response.redirectUrl ||
-                  response.url;
+                const paymentUrl = response.paymentUrl || 
+                                  response.payment_url || 
+                                  response.vnpayUrl || 
+                                  response.redirectUrl || 
+                                  response.url;
 
                 if (paymentUrl) {
                   console.log(
@@ -914,7 +914,7 @@ export default function BookingPage() {
                     redirectUrl: response.redirectUrl,
                     url: response.url
                   });
-
+                  
                   // Hiển thị thông báo chi tiết cho user
                   const responseFields = Object.keys(response).join(', ');
                   alert(
@@ -1182,7 +1182,7 @@ export default function BookingPage() {
       // because the direction is opposite to the departure trip
       let fromStationIdToUse = searchData.fromStationId;
       let toStationIdToUse = searchData.toStationId;
-
+      
       if (trip.direction === "return") {
         fromStationIdToUse = searchData.toStationId;
         toStationIdToUse = searchData.fromStationId;
@@ -1249,8 +1249,9 @@ export default function BookingPage() {
                   ? "GRAY (đã đặt)"
                   : "WHITE (trống)",
                 seatNumber: displaySeatNumber,
-                "Logic check": `!${apiSeat.isAvailable
-                  } = ${!apiSeat.isAvailable}`,
+                "Logic check": `!${
+                  apiSeat.isAvailable
+                } = ${!apiSeat.isAvailable}`,
               });
             }
 
@@ -1356,7 +1357,7 @@ export default function BookingPage() {
         // because the direction is opposite to the departure trip
         let fromStationIdToUse = searchDataForSeats.fromStationId;
         let toStationIdToUse = searchDataForSeats.toStationId;
-
+        
         if (trip.direction === "return") {
           fromStationIdToUse = searchDataForSeats.toStationId;
           toStationIdToUse = searchDataForSeats.fromStationId;
@@ -1390,22 +1391,22 @@ export default function BookingPage() {
         // Transform the data similar to fetchSeatAvailability
         const transformedSeats = Array.isArray(seatData)
           ? seatData.map((apiSeat: any, index: number) => {
-            const seatsPerRow = 4;
-            const rowIndex = Math.floor(index / seatsPerRow);
-            const columnIndex = (index % seatsPerRow) + 1;
-            const rowLetter = String.fromCharCode(65 + rowIndex);
+              const seatsPerRow = 4;
+              const rowIndex = Math.floor(index / seatsPerRow);
+              const columnIndex = (index % seatsPerRow) + 1;
+              const rowLetter = String.fromCharCode(65 + rowIndex);
 
-            return {
-              id: apiSeat.id.toString(),
-              row: rowLetter,
-              column: columnIndex,
-              isBooked: !apiSeat.isAvailable,
-              price: trip.price,
-              seatNumber: `${rowLetter}${columnIndex}`,
-              seatType: "regular",
-              isSelected: false,
-            };
-          })
+              return {
+                id: apiSeat.id.toString(),
+                row: rowLetter,
+                column: columnIndex,
+                isBooked: !apiSeat.isAvailable,
+                price: trip.price,
+                seatNumber: `${rowLetter}${columnIndex}`,
+                seatType: "regular",
+                isSelected: false,
+              };
+            })
           : [];
 
         const availableSeats = transformedSeats.filter(
@@ -1468,7 +1469,7 @@ export default function BookingPage() {
       // because the direction is opposite to the departure trip
       let fromStationIdToUse = searchData.fromStationId;
       let toStationIdToUse = searchData.toStationId;
-
+      
       if (trip.direction === "return") {
         fromStationIdToUse = searchData.toStationId;
         toStationIdToUse = searchData.fromStationId;
@@ -1534,8 +1535,9 @@ export default function BookingPage() {
                   ? "GRAY (đã đặt)"
                   : "WHITE (trống)",
                 seatNumber: displaySeatNumber,
-                "Logic check": `!${apiSeat.isAvailable
-                  } = ${!apiSeat.isAvailable}`,
+                "Logic check": `!${
+                  apiSeat.isAvailable
+                } = ${!apiSeat.isAvailable}`,
               });
             }
 
@@ -1634,15 +1636,15 @@ export default function BookingPage() {
           <CardContent sx={{ p: 3 }}>
             {/* Transfer Trip Header */}
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Chip
-                label="Chuyến nối"
-                size="small"
-                sx={{
-                  bgcolor: "#fff3e0",
+              <Chip 
+                label="Chuyến nối" 
+                size="small" 
+                sx={{ 
+                  bgcolor: "#fff3e0", 
                   color: "#e65100",
                   fontWeight: 600,
                   mr: 2
-                }}
+                }} 
               />
               <Typography variant="body2" color="text.secondary">
                 {trip.totalDuration} • {formatPrice(trip.price)}
@@ -1767,7 +1769,7 @@ export default function BookingPage() {
       // One-way trip calculation
       const currentTrip = selectedTrip || selectedDepartureTrip;
       const currentSeats = selectedSeats.length > 0 ? selectedSeats : selectedDepartureSeats;
-
+      
       if (currentTrip && currentSeats.length > 0) {
         basePrice = currentSeats.length * currentTrip.price;
       }
@@ -1805,7 +1807,7 @@ export default function BookingPage() {
   // Render search and trips
   const renderSearchTrips = () => {
     const isRoundTrip = searchData.tripType === "roundTrip";
-
+    
     return (
       <Box sx={{ mt: 4 }}>
         {/* Search Information Panel */}
@@ -1921,13 +1923,13 @@ export default function BookingPage() {
                         // Use special render for transfer trips in round-trip departure
                         if (trip.tripType === "transfer") {
                           return renderTransferTripCard(
-                            trip,
-                            index,
-                            handleSelectDepartureTrip,
+                            trip, 
+                            index, 
+                            handleSelectDepartureTrip, 
                             selectedDepartureTrip?.id === trip.id
                           );
                         }
-
+                        
                         // Regular departure trip card
                         return (
                           <motion.div
@@ -1936,127 +1938,127 @@ export default function BookingPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                           >
-                            <Card
-                              onClick={() => handleSelectDepartureTrip(trip)}
-                              sx={{
-                                mb: 2,
-                                cursor: "pointer",
-                                border:
-                                  selectedDepartureTrip?.id === trip.id
-                                    ? "2px solid #1976d2"
-                                    : "1px solid rgba(0, 0, 0, 0.08)",
-                                borderRadius: 3,
-                                transition: "all 0.3s ease",
-                                "&:hover": {
-                                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                  transform: "translateY(-2px)",
-                                },
-                                bgcolor:
-                                  selectedDepartureTrip?.id === trip.id
-                                    ? "rgba(25, 118, 210, 0.05)"
-                                    : "white",
-                              }}
-                            >
-                              <CardContent sx={{ p: 3 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                                  <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                    <Typography
-                                      variant="h6"
-                                      sx={{ color: "#1976d2", fontWeight: 700 }}
-                                    >
-                                      {new Date(trip.timeStart).toLocaleTimeString(
-                                        "vi-VN",
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        }
-                                      )}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      color="text.secondary"
-                                    >
-                                      {trip.fromLocation}
-                                    </Typography>
-                                  </Box>
-                                  <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                    <DirectionsBus
-                                      sx={{ color: "#1976d2", fontSize: 24 }}
-                                    />
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        display: "block",
-                                        color: "text.secondary",
-                                      }}
-                                    >
-                                      {trip.busName}
-                                    </Typography>
-                                  </Box>
-                                  <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                    <Typography
-                                      variant="h6"
-                                      sx={{ color: "#1976d2", fontWeight: 700 }}
-                                    >
-                                      {new Date(trip.timeEnd).toLocaleTimeString(
-                                        "vi-VN",
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        }
-                                      )}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      color="text.secondary"
-                                    >
-                                      {trip.endLocation}
-                                    </Typography>
-                                  </Box>
-                                  <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                    <Typography
-                                      variant="h6"
-                                      sx={{
-                                        color: "#f48fb1",
-                                        fontWeight: 700,
-                                      }}
-                                    >
-                                      {formatPrice(trip.price)}
-                                    </Typography>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenSeatDialog(trip);
-                                      }}
-                                      sx={{
-                                        mt: 1,
-                                        borderColor: "#1976d2",
-                                        color: "#1976d2",
-                                        fontSize: "0.75rem",
-                                      }}
-                                    >
-                                      Xem ghế
-                                    </Button>
-                                  </Box>
-                                  {selectedDepartureTrip?.id === trip.id && (
-                                    <Box
-                                      sx={{
-                                        flex: "0 0 auto",
-                                        display: "flex",
-                                        justifyContent: "center",
-                                      }}
-                                    >
-                                      <CheckCircle
-                                        sx={{ color: "#1976d2", fontSize: 28 }}
-                                      />
-                                    </Box>
-                                  )}
+                          <Card
+                            onClick={() => handleSelectDepartureTrip(trip)}
+                            sx={{
+                              mb: 2,
+                              cursor: "pointer",
+                              border:
+                                selectedDepartureTrip?.id === trip.id
+                                  ? "2px solid #1976d2"
+                                  : "1px solid rgba(0, 0, 0, 0.08)",
+                              borderRadius: 3,
+                              transition: "all 0.3s ease",
+                              "&:hover": {
+                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                transform: "translateY(-2px)",
+                              },
+                              bgcolor:
+                                selectedDepartureTrip?.id === trip.id
+                                  ? "rgba(25, 118, 210, 0.05)"
+                                  : "white",
+                            }}
+                          >
+                            <CardContent sx={{ p: 3 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                                <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{ color: "#1976d2", fontWeight: 700 }}
+                                  >
+                                    {new Date(trip.timeStart).toLocaleTimeString(
+                                      "vi-VN",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {trip.fromLocation}
+                                  </Typography>
                                 </Box>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
+                                <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                                  <DirectionsBus
+                                    sx={{ color: "#1976d2", fontSize: 24 }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      display: "block",
+                                      color: "text.secondary",
+                                    }}
+                                  >
+                                    {trip.busName}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{ color: "#1976d2", fontWeight: 700 }}
+                                  >
+                                    {new Date(trip.timeEnd).toLocaleTimeString(
+                                      "vi-VN",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {trip.endLocation}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      color: "#f48fb1",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {formatPrice(trip.price)}
+                                  </Typography>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenSeatDialog(trip);
+                                    }}
+                                    sx={{
+                                      mt: 1,
+                                      borderColor: "#1976d2",
+                                      color: "#1976d2",
+                                      fontSize: "0.75rem",
+                                    }}
+                                  >
+                                    Xem ghế
+                                  </Button>
+                                </Box>
+                                {selectedDepartureTrip?.id === trip.id && (
+                                  <Box
+                                    sx={{
+                                      flex: "0 0 auto",
+                                      display: "flex",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <CheckCircle
+                                      sx={{ color: "#1976d2", fontSize: 28 }}
+                                    />
+                                  </Box>
+                                )}
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
                         );
                       })}
                     </Box>
@@ -2098,13 +2100,13 @@ export default function BookingPage() {
                           // Use special render for transfer trips in return
                           if (trip.tripType === "transfer") {
                             return renderTransferTripCard(
-                              trip,
-                              index,
-                              handleSelectReturnTrip,
+                              trip, 
+                              index, 
+                              handleSelectReturnTrip, 
                               selectedReturnTrip?.id === trip.id
                             );
                           }
-
+                          
                           // Regular return trip card
                           return (
                             <motion.div
@@ -2113,132 +2115,132 @@ export default function BookingPage() {
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.3, delay: index * 0.1 }}
                             >
-                              <Card
-                                onClick={() => handleSelectReturnTrip(trip)}
-                                sx={{
-                                  mb: 2,
-                                  cursor: "pointer",
-                                  border:
-                                    selectedReturnTrip?.id === trip.id
-                                      ? "2px solid #7b1fa2"
-                                      : "1px solid rgba(0, 0, 0, 0.08)",
-                                  borderRadius: 3,
-                                  transition: "all 0.3s ease",
-                                  "&:hover": {
-                                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                    transform: "translateY(-2px)",
-                                  },
-                                  bgcolor:
-                                    selectedReturnTrip?.id === trip.id
-                                      ? "rgba(123, 31, 162, 0.05)"
-                                      : "white",
-                                }}
-                              >
-                                <CardContent sx={{ p: 3 }}>
-                                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                                    <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                      <Typography
-                                        variant="h6"
-                                        sx={{
-                                          color: "#7b1fa2",
-                                          fontWeight: 700,
-                                        }}
-                                      >
-                                        {new Date(
-                                          trip.timeStart
-                                        ).toLocaleTimeString("vi-VN", {
+                            <Card
+                              onClick={() => handleSelectReturnTrip(trip)}
+                              sx={{
+                                mb: 2,
+                                cursor: "pointer",
+                                border:
+                                  selectedReturnTrip?.id === trip.id
+                                    ? "2px solid #7b1fa2"
+                                    : "1px solid rgba(0, 0, 0, 0.08)",
+                                borderRadius: 3,
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                                  transform: "translateY(-2px)",
+                                },
+                                bgcolor:
+                                  selectedReturnTrip?.id === trip.id
+                                    ? "rgba(123, 31, 162, 0.05)"
+                                    : "white",
+                              }}
+                            >
+                              <CardContent sx={{ p: 3 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                                  <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        color: "#7b1fa2",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      {new Date(
+                                        trip.timeStart
+                                      ).toLocaleTimeString("vi-VN", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      {trip.fromLocation}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                                    <DirectionsBus
+                                      sx={{ color: "#7b1fa2", fontSize: 24 }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        display: "block",
+                                        color: "text.secondary",
+                                      }}
+                                    >
+                                      {trip.busName}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        color: "#7b1fa2",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      {new Date(trip.timeEnd).toLocaleTimeString(
+                                        "vi-VN",
+                                        {
                                           hour: "2-digit",
                                           minute: "2-digit",
-                                        })}
-                                      </Typography>
-                                      <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                      >
-                                        {trip.fromLocation}
-                                      </Typography>
-                                    </Box>
-                                    <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                      <DirectionsBus
-                                        sx={{ color: "#7b1fa2", fontSize: 24 }}
-                                      />
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          display: "block",
-                                          color: "text.secondary",
-                                        }}
-                                      >
-                                        {trip.busName}
-                                      </Typography>
-                                    </Box>
-                                    <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                      <Typography
-                                        variant="h6"
-                                        sx={{
-                                          color: "#7b1fa2",
-                                          fontWeight: 700,
-                                        }}
-                                      >
-                                        {new Date(trip.timeEnd).toLocaleTimeString(
-                                          "vi-VN",
-                                          {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          }
-                                        )}
-                                      </Typography>
-                                      <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                      >
-                                        {trip.endLocation}
-                                      </Typography>
-                                    </Box>
-                                    <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                      <Typography
-                                        variant="h6"
-                                        sx={{
-                                          color: "#f48fb1",
-                                          fontWeight: 700,
-                                        }}
-                                      >
-                                        {formatPrice(trip.price)}
-                                      </Typography>
-                                      <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenSeatDialog(trip);
-                                        }}
-                                        sx={{
-                                          mt: 1,
-                                          borderColor: "#7b1fa2",
-                                          color: "#7b1fa2",
-                                          fontSize: "0.75rem",
-                                        }}
-                                      >
-                                        Xem ghế
-                                      </Button>
-                                    </Box>
-                                    {selectedReturnTrip?.id === trip.id && (
-                                      <Box
-                                        sx={{
-                                          flex: "0 0 auto",
-                                          display: "flex",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <CheckCircle
-                                          sx={{ color: "#7b1fa2", fontSize: 28 }}
-                                        />
-                                      </Box>
-                                    )}
+                                        }
+                                      )}
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      {trip.endLocation}
+                                    </Typography>
                                   </Box>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
+                                  <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        color: "#f48fb1",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      {formatPrice(trip.price)}
+                                    </Typography>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenSeatDialog(trip);
+                                      }}
+                                      sx={{
+                                        mt: 1,
+                                        borderColor: "#7b1fa2",
+                                        color: "#7b1fa2",
+                                        fontSize: "0.75rem",
+                                      }}
+                                    >
+                                      Xem ghế
+                                    </Button>
+                                  </Box>
+                                  {selectedReturnTrip?.id === trip.id && (
+                                    <Box
+                                      sx={{
+                                        flex: "0 0 auto",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      <CheckCircle
+                                        sx={{ color: "#7b1fa2", fontSize: 28 }}
+                                      />
+                                    </Box>
+                                  )}
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
                           );
                         })}
                       </Box>
@@ -2271,13 +2273,13 @@ export default function BookingPage() {
                     // Use special render for transfer trips
                     if (trip.tripType === "transfer") {
                       return renderTransferTripCard(
-                        trip,
-                        index,
-                        handleSelectDepartureTrip,
+                        trip, 
+                        index, 
+                        handleSelectDepartureTrip, 
                         selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
                       );
                     }
-
+                    
                     // Regular trip card
                     return (
                       <motion.div
@@ -2286,124 +2288,124 @@ export default function BookingPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
                       >
-                        <Card
-                          onClick={() => handleSelectDepartureTrip(trip)}
-                          sx={{
-                            mb: 2,
-                            cursor: "pointer",
-                            border:
-                              selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
-                                ? "2px solid #f48fb1"
-                                : "1px solid rgba(0, 0, 0, 0.08)",
-                            borderRadius: 3,
-                            transition: "all 0.3s ease",
-                            "&:hover": {
-                              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                              transform: "translateY(-2px)",
-                            },
-                            bgcolor:
-                              selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
-                                ? "rgba(244, 143, 177, 0.05)"
-                                : "white",
-                          }}
-                        >
-                          <CardContent sx={{ p: 3 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                              <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                <Typography
-                                  variant="h6"
-                                  sx={{ color: "#f48fb1", fontWeight: 700 }}
-                                >
-                                  {new Date(trip.timeStart).toLocaleTimeString(
-                                    "vi-VN",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  {trip.fromLocation}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                <DirectionsBus
-                                  sx={{ color: "#f48fb1", fontSize: 24 }}
-                                />
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    display: "block",
-                                    color: "text.secondary",
-                                  }}
-                                >
-                                  {trip.busName}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
-                                <Typography
-                                  variant="h6"
-                                  sx={{ color: "#f48fb1", fontWeight: 700 }}
-                                >
-                                  {new Date(trip.timeEnd).toLocaleTimeString(
-                                    "vi-VN",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  {trip.endLocation}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
-                                <Typography
-                                  variant="h6"
-                                  sx={{ color: "#f48fb1", fontWeight: 700 }}
-                                >
-                                  {formatPrice(trip.price)}
-                                </Typography>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenSeatDialog(trip);
-                                  }}
-                                  sx={{
-                                    mt: 1,
-                                    borderColor: "#f48fb1",
-                                    color: "#f48fb1",
-                                    fontSize: "0.75rem",
-                                  }}
-                                >
-                                  Xem ghế
-                                </Button>
-                              </Box>
-                              {(selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id) && (
-                                <Box
-                                  sx={{
-                                    flex: "0 0 auto",
-                                    display: "flex",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <CheckCircle
-                                    sx={{ color: "#f48fb1", fontSize: 28 }}
-                                  />
-                                </Box>
-                              )}
+                      <Card
+                        onClick={() => handleSelectDepartureTrip(trip)}
+                        sx={{
+                          mb: 2,
+                          cursor: "pointer",
+                          border:
+                            selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
+                              ? "2px solid #f48fb1"
+                              : "1px solid rgba(0, 0, 0, 0.08)",
+                          borderRadius: 3,
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                            transform: "translateY(-2px)",
+                          },
+                          bgcolor:
+                            selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id
+                              ? "rgba(244, 143, 177, 0.05)"
+                              : "white",
+                        }}
+                      >
+                        <CardContent sx={{ p: 3 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                            <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                              <Typography
+                                variant="h6"
+                                sx={{ color: "#f48fb1", fontWeight: 700 }}
+                              >
+                                {new Date(trip.timeStart).toLocaleTimeString(
+                                  "vi-VN",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {trip.fromLocation}
+                              </Typography>
                             </Box>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
+                            <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                              <DirectionsBus
+                                sx={{ color: "#f48fb1", fontSize: 24 }}
+                              />
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  display: "block",
+                                  color: "text.secondary",
+                                }}
+                              >
+                                {trip.busName}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ flex: "1 1 200px", textAlign: "center" }}>
+                              <Typography
+                                variant="h6"
+                                sx={{ color: "#f48fb1", fontWeight: 700 }}
+                              >
+                                {new Date(trip.timeEnd).toLocaleTimeString(
+                                  "vi-VN",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {trip.endLocation}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ flex: "0 0 auto", textAlign: "center" }}>
+                              <Typography
+                                variant="h6"
+                                sx={{ color: "#f48fb1", fontWeight: 700 }}
+                              >
+                                {formatPrice(trip.price)}
+                              </Typography>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenSeatDialog(trip);
+                                }}
+                                sx={{
+                                  mt: 1,
+                                  borderColor: "#f48fb1",
+                                  color: "#f48fb1",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                Xem ghế
+                              </Button>
+                            </Box>
+                            {(selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id) && (
+                              <Box
+                                sx={{
+                                  flex: "0 0 auto",
+                                  display: "flex",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <CheckCircle
+                                  sx={{ color: "#f48fb1", fontSize: 28 }}
+                                />
+                              </Box>
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                     );
                   })
                 ) : (
@@ -2422,12 +2424,12 @@ export default function BookingPage() {
   // Render seat selection
   const renderSeatSelection = () => {
     const isRoundTrip = searchData.tripType === "roundTrip";
-
+    
     // Check if we should show dual seat diagrams for round trip
-    const shouldShowDualDiagrams = isRoundTrip &&
-      selectedDepartureTrip &&
-      selectedReturnTrip &&
-      departureSeats.length > 0 &&
+    const shouldShowDualDiagrams = isRoundTrip && 
+      selectedDepartureTrip && 
+      selectedReturnTrip && 
+      departureSeats.length > 0 && 
       returnSeats.length > 0;
 
     if (shouldShowDualDiagrams) {
@@ -2441,10 +2443,10 @@ export default function BookingPage() {
 
           {/* Trip Status Summary */}
           <Box sx={{ mb: 4, display: "flex", justifyContent: "center", gap: 3 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
+            <Box 
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
                 gap: 1,
                 px: 3,
                 py: 2,
@@ -2458,10 +2460,10 @@ export default function BookingPage() {
                 Chuyến đi: {selectedDepartureTrip.busName}
               </Typography>
             </Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
+            <Box 
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
                 gap: 1,
                 px: 3,
                 py: 2,
@@ -2509,17 +2511,17 @@ export default function BookingPage() {
                   minute: "2-digit",
                 })} • {searchData.departureDate}
               </Typography>
-
+              
               {/* Departure seat diagram */}
               {renderSeatDiagram(
                 departureSeats.map(seat => ({
                   ...seat,
                   isSelected: selectedDepartureSeats.some(s => s.id === seat.id)
-                })),
-                true,
+                })), 
+                true, 
                 handleSelectDepartureSeat
               )}
-
+              
               {/* Selected departure seats summary */}
               <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(25, 118, 210, 0.08)", borderRadius: 2, border: "1px solid rgba(25, 118, 210, 0.2)" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#1976d2" }}>
@@ -2532,8 +2534,8 @@ export default function BookingPage() {
                         key={seat.id}
                         label={seat.seatNumber || seat.id}
                         onDelete={() => handleSelectDepartureSeat(seat)}
-                        sx={{
-                          bgcolor: "#1976d2",
+                        sx={{ 
+                          bgcolor: "#1976d2", 
                           color: "white",
                           fontWeight: 600,
                           '& .MuiChip-deleteIcon': { color: 'white' }
@@ -2575,17 +2577,17 @@ export default function BookingPage() {
                   minute: "2-digit",
                 })} • {searchData.returnDate}
               </Typography>
-
+              
               {/* Return seat diagram */}
               {renderSeatDiagram(
                 returnSeats.map(seat => ({
                   ...seat,
                   isSelected: selectedReturnSeats.some(s => s.id === seat.id)
-                })),
-                true,
+                })), 
+                true, 
                 handleSelectReturnSeat
               )}
-
+              
               {/* Selected return seats summary */}
               <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(123, 31, 162, 0.08)", borderRadius: 2, border: "1px solid rgba(123, 31, 162, 0.2)" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#7b1fa2" }}>
@@ -2598,8 +2600,8 @@ export default function BookingPage() {
                         key={seat.id}
                         label={seat.seatNumber || seat.id}
                         onDelete={() => handleSelectReturnSeat(seat)}
-                        sx={{
-                          bgcolor: "#7b1fa2",
+                        sx={{ 
+                          bgcolor: "#7b1fa2", 
                           color: "white",
                           fontWeight: 600,
                           '& .MuiChip-deleteIcon': { color: 'white' }
@@ -2624,7 +2626,7 @@ export default function BookingPage() {
             <Typography variant="h5" gutterBottom sx={{ color: "#f48fb1", fontWeight: 700, textAlign: "center", mb: 3 }}>
               💰 Tổng quan thanh toán
             </Typography>
-
+            
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" }, gap: 3, alignItems: "end" }}>
               {/* Departure summary */}
               <Box sx={{ textAlign: "center" }}>
@@ -2671,17 +2673,17 @@ export default function BookingPage() {
     }
 
     // Single trip mode (original logic for one-way or step-by-step round trip)
-    const currentTrip = isRoundTrip && selectedDepartureTrip && selectedReturnTrip
-      ? selectedReturnTrip
+    const currentTrip = isRoundTrip && selectedDepartureTrip && selectedReturnTrip 
+      ? selectedReturnTrip 
       : selectedDepartureTrip || selectedTrip;
-
+    
     if (!currentTrip) return null;
 
     // Determine which trip we're selecting seats for
-    const isDepartureSelection = !isRoundTrip || !selectedDepartureTrip ||
+    const isDepartureSelection = !isRoundTrip || !selectedDepartureTrip || 
       (selectedDepartureTrip && !selectedReturnTrip && departureSeats.length === 0);
-
-    const isReturnSelection = isRoundTrip && selectedDepartureTrip && selectedReturnTrip &&
+    
+    const isReturnSelection = isRoundTrip && selectedDepartureTrip && selectedReturnTrip && 
       (departureSeats.length > 0 && returnSeats.length === 0);
 
     return (
@@ -2691,10 +2693,10 @@ export default function BookingPage() {
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
               {/* Departure Trip Status */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
+              <Box 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
                   gap: 1,
                   px: 2,
                   py: 1,
@@ -2703,11 +2705,11 @@ export default function BookingPage() {
                   border: selectedDepartureTrip ? "1px solid #1976d2" : "1px solid rgba(0, 0, 0, 0.1)"
                 }}
               >
-                <CheckCircle
-                  sx={{
-                    color: selectedDepartureTrip ? "#1976d2" : "#ccc",
-                    fontSize: 20
-                  }}
+                <CheckCircle 
+                  sx={{ 
+                    color: selectedDepartureTrip ? "#1976d2" : "#ccc", 
+                    fontSize: 20 
+                  }} 
                 />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Chuyến đi: {selectedDepartureTrip ? "Đã chọn" : "Chưa chọn"}
@@ -2715,10 +2717,10 @@ export default function BookingPage() {
               </Box>
 
               {/* Return Trip Status */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
+              <Box 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
                   gap: 1,
                   px: 2,
                   py: 1,
@@ -2727,11 +2729,11 @@ export default function BookingPage() {
                   border: selectedReturnTrip ? "1px solid #7b1fa2" : "1px solid rgba(0, 0, 0, 0.1)"
                 }}
               >
-                <CheckCircle
-                  sx={{
-                    color: selectedReturnTrip ? "#7b1fa2" : "#ccc",
-                    fontSize: 20
-                  }}
+                <CheckCircle 
+                  sx={{ 
+                    color: selectedReturnTrip ? "#7b1fa2" : "#ccc", 
+                    fontSize: 20 
+                  }} 
                 />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   Chuyến về: {selectedReturnTrip ? "Đã chọn" : "Chưa chọn"}
@@ -2782,8 +2784,8 @@ export default function BookingPage() {
             >
               {/* Enhanced seat diagram with API integration */}
               {renderSeatDiagram(
-                seats,
-                true,
+                seats, 
+                true, 
                 isRoundTrip ? (
                   isDepartureSelection ? handleSelectDepartureSeat : handleSelectReturnSeat
                 ) : handleSelectSeat
@@ -2855,7 +2857,7 @@ export default function BookingPage() {
                   const currentSeats = isRoundTrip ? (
                     isDepartureSelection ? departureSeats : returnSeats
                   ) : selectedSeats;
-
+                  
                   return currentSeats.length > 0 ? (
                     <Box
                       sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
@@ -2872,8 +2874,8 @@ export default function BookingPage() {
                               handleSelectSeat(seat);
                             }
                           }}
-                          sx={{
-                            bgcolor: isDepartureSelection || !isRoundTrip ? "#1976d2" : "#7b1fa2"
+                          sx={{ 
+                            bgcolor: isDepartureSelection || !isRoundTrip ? "#1976d2" : "#7b1fa2" 
                           }}
                         />
                       ))}
@@ -2897,7 +2899,7 @@ export default function BookingPage() {
                   <Typography variant="subtitle1" gutterBottom sx={{ color: "#f48fb1" }}>
                     Tổng quan khứ hồi:
                   </Typography>
-
+                  
                   {/* Departure Trip Summary */}
                   <Box sx={{ mb: 2, p: 2, bgcolor: "rgba(25, 118, 210, 0.05)", borderRadius: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "#1976d2", mb: 1 }}>
@@ -3015,7 +3017,7 @@ export default function BookingPage() {
 
     // For round trip, check if we have departure trip or return trip
     const currentTrip = selectedTrip || selectedDepartureTrip || selectedReturnTrip;
-
+    
     if (!currentTrip) {
       console.log("🚨 No trip selected for payment page:", {
         selectedTrip,
@@ -3041,15 +3043,15 @@ export default function BookingPage() {
       <Box sx={{ mt: 4 }}>
         {/* Modern Header Section */}
         <Box sx={{ textAlign: "center", mb: 6 }}>
-          <Typography
-            variant="h3"
-            sx={{
+          <Typography 
+            variant="h3" 
+            sx={{ 
               fontWeight: 800,
               background: "linear-gradient(45deg, #f48fb1 30%, #e91e63 90%)",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              mb: 2
+              mb: 2 
             }}
           >
             💳 Thanh toán & Hoàn tất đặt vé
@@ -3069,11 +3071,11 @@ export default function BookingPage() {
           {/* Left Column - Main Payment Content */}
           <Box>
             {/* Enhanced Shuttle Points Section */}
-            <Paper
-              elevation={8}
-              sx={{
-                p: 4,
-                mb: 4,
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
+                mb: 4, 
                 borderRadius: 4,
                 background: "linear-gradient(135deg, rgba(244, 143, 177, 0.05) 0%, white 100%)",
                 border: "1px solid rgba(244, 143, 177, 0.2)",
@@ -3091,11 +3093,11 @@ export default function BookingPage() {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
                     bgcolor: "rgba(244, 143, 177, 0.1)",
                     display: "flex",
                     alignItems: "center",
@@ -3159,26 +3161,26 @@ export default function BookingPage() {
                               {formatPrice(point.extraFee)}
                             </Typography>
                           ) : (
-                            <Chip
-                              size="medium"
-                              label="🆓 Miễn phí"
-                              sx={{
-                                bgcolor: "#4caf50",
-                                color: "white",
+                            <Chip 
+                              size="medium" 
+                              label="🆓 Miễn phí" 
+                              sx={{ 
+                                bgcolor: "#4caf50", 
+                                color: "white", 
                                 fontWeight: 600,
                                 mb: 1
-                              }}
+                              }} 
                             />
                           )}
                           {shuttlePoint?.id === point.id && (
-                            <Box
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: "50%",
-                                bgcolor: "#f48fb1",
-                                display: "flex",
-                                alignItems: "center",
+                            <Box 
+                              sx={{ 
+                                width: 32, 
+                                height: 32, 
+                                borderRadius: "50%", 
+                                bgcolor: "#f48fb1", 
+                                display: "flex", 
+                                alignItems: "center", 
                                 justifyContent: "center",
                                 mx: "auto"
                               }}
@@ -3195,11 +3197,11 @@ export default function BookingPage() {
             </Paper>
 
             {/* Enhanced Payment Methods Section */}
-            <Paper
-              elevation={8}
-              sx={{
-                p: 4,
-                mb: 4,
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
+                mb: 4, 
                 borderRadius: 4,
                 background: "linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, white 100%)",
                 border: "1px solid rgba(25, 118, 210, 0.2)",
@@ -3217,11 +3219,11 @@ export default function BookingPage() {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
                     bgcolor: "rgba(25, 118, 210, 0.1)",
                     display: "flex",
                     alignItems: "center",
@@ -3265,13 +3267,13 @@ export default function BookingPage() {
                     onClick={() => handleSelectPaymentMethod(method.id)}
                   >
                     <CardContent sx={{ p: 3, display: "flex", alignItems: "center", height: "100%" }}>
-                      <Box sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 2,
+                      <Box sx={{ 
+                        width: 40, 
+                        height: 40, 
+                        borderRadius: 2, 
                         bgcolor: paymentMethod === method.id ? "#1976d2" : "rgba(25, 118, 210, 0.1)",
-                        display: "flex",
-                        alignItems: "center",
+                        display: "flex", 
+                        alignItems: "center", 
                         justifyContent: "center",
                         mr: 2,
                         transition: "all 0.3s ease"
@@ -3284,14 +3286,14 @@ export default function BookingPage() {
                         {method.name}
                       </Typography>
                       {paymentMethod === method.id && (
-                        <Box
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: "50%",
-                            bgcolor: "#1976d2",
-                            display: "flex",
-                            alignItems: "center",
+                        <Box 
+                          sx={{ 
+                            width: 28, 
+                            height: 28, 
+                            borderRadius: "50%", 
+                            bgcolor: "#1976d2", 
+                            display: "flex", 
+                            alignItems: "center", 
                             justifyContent: "center"
                           }}
                         >
@@ -3316,11 +3318,144 @@ export default function BookingPage() {
               )}
             </Paper>
 
+            {/* Customer Information Section - Hiển thị khi đã đăng nhập */}
+            {isAuthenticated && user && (
+              <Paper 
+                elevation={8} 
+                sx={{ 
+                  p: 4, 
+                  mb: 4,
+                  borderRadius: 4,
+                  background: "linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, white 100%)",
+                  border: "1px solid rgba(33, 150, 243, 0.2)",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: "linear-gradient(90deg, #2196f3, #42a5f5, #2196f3)",
+                  }
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Box 
+                    sx={{ 
+                      width: 48, 
+                      height: 48, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(33, 150, 243, 0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2
+                    }}
+                  >
+                    <Person sx={{ fontSize: 24, color: "#2196f3" }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#1976d2", mb: 0.5 }}>
+                      Thông tin khách hàng
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Thông tin tài khoản của bạn
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
+                  <Box>
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(33, 150, 243, 0.05)",
+                      border: "1px solid rgba(33, 150, 243, 0.1)"
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Họ và tên
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        {user.fullName}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  
+                  <Box>
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(33, 150, 243, 0.05)",
+                      border: "1px solid rgba(33, 150, 243, 0.1)"
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Email
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        {user.gmail}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box>
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(33, 150, 243, 0.05)",
+                      border: "1px solid rgba(33, 150, 243, 0.1)"
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Mã khách hàng
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        {user.customerId}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {user.gender && (
+                    <Box>
+                      <Box sx={{ 
+                        p: 3, 
+                        borderRadius: 3, 
+                        bgcolor: "rgba(33, 150, 243, 0.05)",
+                        border: "1px solid rgba(33, 150, 243, 0.1)"
+                      }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Giới tính
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                          {user.gender === 'male' ? 'Nam' : user.gender === 'female' ? 'Nữ' : user.gender}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+
+                <Box sx={{ 
+                  mt: 3, 
+                  p: 2.5, 
+                  bgcolor: "rgba(76, 175, 80, 0.05)", 
+                  borderRadius: 3, 
+                  border: "1px solid rgba(76, 175, 80, 0.2)",
+                  display: "flex",
+                  alignItems: "center"
+                }}>
+                  <CheckCircle sx={{ color: "#4caf50", mr: 1.5, fontSize: 20 }} />
+                  <Typography variant="body2" sx={{ color: "#2e7d32", fontWeight: 600 }}>
+                    Thông tin tài khoản đã được xác thực
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
+
             {/* Enhanced Contact Information Section */}
-            <Paper
-              elevation={8}
-              sx={{
-                p: 4,
+            <Paper 
+              elevation={8} 
+              sx={{ 
+                p: 4, 
                 borderRadius: 4,
                 background: "linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, white 100%)",
                 border: "1px solid rgba(76, 175, 80, 0.2)",
@@ -3338,11 +3473,11 @@ export default function BookingPage() {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
+                <Box 
+                  sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: 3, 
                     bgcolor: "rgba(76, 175, 80, 0.1)",
                     display: "flex",
                     alignItems: "center",
@@ -3428,10 +3563,10 @@ export default function BookingPage() {
 
           {/* Right Column - Enhanced Booking Summary */}
           <Box>
-            <Paper
-              elevation={12}
-              sx={{
-                p: 4,
+            <Paper 
+              elevation={12} 
+              sx={{ 
+                p: 4, 
                 borderRadius: 4,
                 background: "linear-gradient(135deg, rgba(244, 143, 177, 0.08) 0%, white 100%)",
                 border: "2px solid #f48fb1",
@@ -3456,35 +3591,35 @@ export default function BookingPage() {
                 Xem lại thông tin trước khi thanh toán
               </Typography>
 
-              {/* Trip Information */}
-              <Box sx={{ mb: 3, p: 3, bgcolor: "rgba(244, 143, 177, 0.05)", borderRadius: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "#2c3e50" }}>
-                  🚌 {currentTrip.busName}
-                </Typography>
-                <Box sx={{ display: "grid", gap: 2 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🕐 Khởi hành:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {new Date(currentTrip.timeStart).toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })} - {searchData.departureDate}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>📍 Điểm đón:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, textAlign: "right" }}>
-                      {shuttlePoint?.name || "⚠️ Chưa chọn"}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🎯 Điểm đến:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {currentTrip.endLocation}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
+                             {/* Trip Information */}
+               <Box sx={{ mb: 3, p: 3, bgcolor: "rgba(244, 143, 177, 0.05)", borderRadius: 3 }}>
+                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "#2c3e50" }}>
+                   🚌 {currentTrip.busName}
+                 </Typography>
+                 <Box sx={{ display: "grid", gap: 2 }}>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🕐 Khởi hành:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                       {new Date(currentTrip.timeStart).toLocaleTimeString("vi-VN", {
+                         hour: "2-digit",
+                         minute: "2-digit",
+                       })} - {searchData.departureDate}
+                     </Typography>
+                   </Box>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>📍 Điểm đón:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600, textAlign: "right" }}>
+                       {shuttlePoint?.name || "⚠️ Chưa chọn"}
+                     </Typography>
+                   </Box>
+                   <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                     <Typography variant="body2" sx={{ color: "#666", fontWeight: 500 }}>🎯 Điểm đến:</Typography>
+                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                       {currentTrip.endLocation}
+                     </Typography>
+                   </Box>
+                 </Box>
+               </Box>
 
               <Divider sx={{ my: 3, borderColor: "rgba(244, 143, 177, 0.3)" }} />
 
@@ -3498,9 +3633,9 @@ export default function BookingPage() {
                     <Chip
                       key={seat.id}
                       label={seat.seatNumber || seat.id}
-                      sx={{
-                        bgcolor: "#f48fb1",
-                        color: "white",
+                      sx={{ 
+                        bgcolor: "#f48fb1", 
+                        color: "white", 
                         fontWeight: 600,
                         fontSize: "0.875rem"
                       }}
@@ -3541,10 +3676,10 @@ export default function BookingPage() {
               <Divider sx={{ my: 3, borderColor: "rgba(244, 143, 177, 0.5)" }} />
 
               {/* Total Amount */}
-              <Box
-                sx={{
-                  p: 3,
-                  bgcolor: "linear-gradient(135deg, #f48fb1 0%, #e91e63 100%)",
+              <Box 
+                sx={{ 
+                  p: 3, 
+                  bgcolor: "linear-gradient(135deg, #f48fb1 0%, #e91e63 100%)", 
                   borderRadius: 3,
                   textAlign: "center",
                   mb: 3,
@@ -3797,8 +3932,9 @@ export default function BookingPage() {
                             const minutes = Math.floor(
                               (diffMs % (1000 * 60 * 60)) / (1000 * 60)
                             );
-                            return `${hours}h${minutes > 0 ? ` ${minutes}m` : ""
-                              }`;
+                            return `${hours}h${
+                              minutes > 0 ? ` ${minutes}m` : ""
+                            }`;
                           })()}
                       </Typography>
                     </Box>
@@ -4267,7 +4403,8 @@ export default function BookingPage() {
                     // Debug logging for first few seats to check data
                     if (index < 3) {
                       console.log(
-                        `🔍 Seat rendering debug - Row ${rowKey}, Seat ${index + 1
+                        `🔍 Seat rendering debug - Row ${rowKey}, Seat ${
+                          index + 1
                         }:`,
                         {
                           seatId: seat.id,
@@ -4279,8 +4416,8 @@ export default function BookingPage() {
                           expectedColor: isSelected
                             ? "PINK"
                             : isBooked
-                              ? "GRAY"
-                              : "WHITE",
+                            ? "GRAY"
+                            : "WHITE",
                           seat: seat,
                         }
                       );
@@ -4298,8 +4435,8 @@ export default function BookingPage() {
                             isBooked
                               ? `Ghế ${seat.seatNumber} - Đã đặt`
                               : isSelected
-                                ? `Ghế ${seat.seatNumber} - Đã chọn`
-                                : `Ghế ${seat.seatNumber} - Có thể chọn`
+                              ? `Ghế ${seat.seatNumber} - Đã chọn`
+                              : `Ghế ${seat.seatNumber} - Có thể chọn`
                           }
                           sx={{
                             minWidth: 45,
@@ -4310,8 +4447,8 @@ export default function BookingPage() {
                             cursor: isBooked
                               ? "not-allowed"
                               : isInteractive
-                                ? "pointer"
-                                : "default",
+                              ? "pointer"
+                              : "default",
                             // Fixed color logic:
                             // - Ghế đã chọn: màu hồng
                             // - Ghế đã đặt: màu xám
@@ -4319,39 +4456,39 @@ export default function BookingPage() {
                             bgcolor: isSelected
                               ? "#f48fb1" // Màu hồng cho ghế đã chọn
                               : isBooked
-                                ? "#9e9e9e" // Màu xám cho ghế đã đặt
-                                : "white", // Màu trắng cho ghế trống
+                              ? "#9e9e9e" // Màu xám cho ghế đã đặt
+                              : "white", // Màu trắng cho ghế trống
                             color: isSelected
                               ? "white" // Chữ trắng cho ghế đã chọn
                               : isBooked
-                                ? "white" // Chữ trắng cho ghế đã đặt
-                                : "#424242", // Chữ xám đậm cho ghế trống
+                              ? "white" // Chữ trắng cho ghế đã đặt
+                              : "#424242", // Chữ xám đậm cho ghế trống
                             border: isSelected
                               ? "2px solid #e91e63"
                               : isBooked
-                                ? "1px solid #757575"
-                                : "1px solid #e0e0e0",
+                              ? "1px solid #757575"
+                              : "1px solid #e0e0e0",
                             borderRadius: 2,
                             position: "relative",
                             transition: "all 0.2s ease-in-out",
                             boxShadow: isSelected
                               ? "0 2px 8px rgba(244, 143, 177, 0.3)"
                               : isBooked
-                                ? "none"
-                                : "0 1px 3px rgba(0, 0, 0, 0.1)",
+                              ? "none"
+                              : "0 1px 3px rgba(0, 0, 0, 0.1)",
                             "&:hover": isInteractive
                               ? {
-                                bgcolor: isBooked
-                                  ? "#757575" // Xám đậm hơn cho ghế đã đặt khi hover
-                                  : isSelected
+                                  bgcolor: isBooked
+                                    ? "#757575" // Xám đậm hơn cho ghế đã đặt khi hover
+                                    : isSelected
                                     ? "#e91e63" // Hồng đậm cho ghế đã chọn khi hover
                                     : "#f48fb1", // Hồng cho ghế trống khi hover
-                                color: "white",
-                                transform: !isBooked ? "scale(1.05)" : "none",
-                                boxShadow: !isBooked
-                                  ? "0 4px 12px rgba(244, 143, 177, 0.4)"
-                                  : "none",
-                              }
+                                  color: "white",
+                                  transform: !isBooked ? "scale(1.05)" : "none",
+                                  boxShadow: !isBooked
+                                    ? "0 4px 12px rgba(244, 143, 177, 0.4)"
+                                    : "none",
+                                }
                               : {},
                             "&:disabled": {
                               bgcolor: "#9e9e9e", // Màu xám cho ghế disabled (chỉ ghế đã đặt)
@@ -4578,11 +4715,11 @@ export default function BookingPage() {
             {dialogSeatLoading
               ? renderSimpleLoading("Đang tải sơ đồ ghế...")
               : dialogSeatError
-                ? renderErrorState(
+              ? renderErrorState(
                   dialogSeatError,
                   () => seatDialogTrip && handleOpenSeatDialog(seatDialogTrip)
                 )
-                : /* Non-interactive seat diagram for preview using dialog seats */
+              : /* Non-interactive seat diagram for preview using dialog seats */
                 renderSeatDiagram(dialogSeats, false)}
           </Box>
         )}
@@ -4614,257 +4751,242 @@ export default function BookingPage() {
   // Custom loading component
   function renderLoading() {
     return (
-      <Box sx={{ my: 4 }}>
-        {/* Trip Search Results Skeleton */}
-        <Box sx={{ mb: 3 }}>
-          {[1, 2, 3].map((index) => (
-            <Card key={index} sx={{ mb: 3, borderRadius: 4 }}>
-              <CardContent sx={{ p: 0 }}>
-                {/* Header Skeleton */}
-                <Box sx={{ p: 3, pb: 2 }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box 
+          sx={{ 
+            position: 'relative',
+            minHeight: '60vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.03) 0%, rgba(186, 104, 200, 0.03) 100%)',
+            borderRadius: 4,
+            overflow: 'hidden',
+            my: 4
+          }}
+        >
+          {/* Animated background elements */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'radial-gradient(circle, rgba(244, 143, 177, 0.1) 1px, transparent 1px)',
+                backgroundSize: '30px 30px',
+                animation: 'float 20s infinite linear',
+              },
+              '@keyframes float': {
+                '0%': { transform: 'translate(0, 0) rotate(0deg)' },
+                '100%': { transform: 'translate(-30px, -30px) rotate(360deg)' },
+              }
+            }}
+          />
+
+          {/* Main loading content */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <Box sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+              {/* Rotating bus icon */}
+              <Box sx={{ display: 'inline-block', mb: 3 }}>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                >
                   <Box
                     sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", md: "row" },
-                      alignItems: { xs: "stretch", md: "center" },
-                      gap: { xs: 3, md: 2 },
-                      pr: { xs: 0, md: 12 },
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #f48fb1 0%, #ba68c8 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 32px rgba(244, 143, 177, 0.3)',
+                      position: 'relative',
                     }}
                   >
-                    {/* Departure Skeleton */}
-                    <Box
-                      sx={{
-                        flex: "0 0 auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: { xs: "flex-start", md: "center" },
-                        minWidth: 120,
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                        <Skeleton
-                          variant="circular"
-                          width={16}
-                          height={16}
-                          sx={{ mr: 1.5 }}
-                        />
-                        <Skeleton variant="text" width={80} height={40} />
-                      </Box>
-                      <Skeleton variant="text" width={100} height={20} />
-                      <Skeleton variant="text" width={80} height={16} />
-                    </Box>
-
-                    {/* Journey Skeleton */}
-                    <Box
-                      sx={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        py: { xs: 2, md: 1 },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          width: "100%",
-                          minWidth: { xs: 200, md: 300 },
-                          position: "relative",
-                        }}
-                      >
-                        <Skeleton
-                          variant="rectangular"
-                          width="100%"
-                          height={3}
-                          sx={{ borderRadius: 2 }}
-                        />
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            bgcolor: "white",
-                            borderRadius: "50%",
-                            p: 1,
-                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                          }}
-                        >
-                          <Skeleton variant="circular" width={20} height={20} />
-                        </Box>
-                      </Box>
-                      <Skeleton
-                        variant="text"
-                        width={120}
-                        height={20}
-                        sx={{ mt: 1.5 }}
-                      />
-                    </Box>
-
-                    {/* Arrival Skeleton */}
-                    <Box
-                      sx={{
-                        flex: "0 0 auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: { xs: "flex-end", md: "center" },
-                        minWidth: 120,
-                        textAlign: { xs: "right", md: "center" },
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                        <Skeleton
-                          variant="text"
-                          width={80}
-                          height={40}
-                          sx={{ mr: 1.5 }}
-                        />
-                        <Skeleton variant="circular" width={16} height={16} />
-                      </Box>
-                      <Skeleton variant="text" width={100} height={20} />
-                      <Skeleton variant="text" width={80} height={16} />
-                    </Box>
-                  </Box>
-
-                  {/* Type badges skeleton */}
-                  <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-                    <Skeleton
-                      variant="rectangular"
-                      width={80}
-                      height={24}
-                      sx={{ borderRadius: 2, mb: 0.5 }}
-                    />
-                    <Skeleton
-                      variant="rectangular"
-                      width={60}
-                      height={20}
-                      sx={{ borderRadius: 1.5 }}
-                    />
-                  </Box>
-                </Box>
-
-                {/* Price Section Skeleton */}
-                <Box
-                  sx={{
-                    px: 3,
-                    py: 2,
-                    bgcolor: "rgba(0, 0, 0, 0.02)",
-                    borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Skeleton variant="circular" width={20} height={20} />
-                      <Skeleton variant="text" width={100} height={16} />
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Skeleton variant="circular" width={20} height={20} />
-                      <Skeleton variant="text" width={80} height={16} />
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box sx={{ textAlign: "right" }}>
-                      <Skeleton variant="text" width={40} height={16} />
-                      <Skeleton variant="text" width={100} height={24} />
-                    </Box>
-                  </Box>
-                </Box>
-
-                {/* Action Buttons Skeleton */}
-                <Box
-                  sx={{
-                    px: 3,
-                    py: 2.5,
-                    borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", gap: 1.5 }}>
-                    <Skeleton
-                      variant="rectangular"
-                      width={100}
-                      height={32}
-                      sx={{ borderRadius: 2 }}
-                    />
-                    <Skeleton
-                      variant="rectangular"
-                      width={90}
-                      height={32}
-                      sx={{ borderRadius: 2 }}
+                    <DirectionsBus 
+                      sx={{ 
+                        fontSize: '32px', 
+                        color: 'white',
+                        filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
+                      }} 
                     />
                   </Box>
                 </motion.div>
               </Box>
-            </motion.div>
 
-          {/* Floating particles */ }
-          { [...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            style={{
-              position: 'absolute',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: `linear-gradient(135deg, ${i % 2 === 0 ? '#f48fb1' : '#ba68c8'} 0%, ${i % 2 === 0 ? '#ba68c8' : '#f48fb1'} 100%)`,
-              left: `${20 + i * 10}%`,
-              top: `${30 + Math.sin(i) * 20}%`,
-            }}
-            animate={{
-              y: [-20, 20, -20],
-              opacity: [0.3, 1, 0.3],
-              scale: [0.8, 1.2, 0.8],
-            }}
-            transition={{
-              duration: 3 + i * 0.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.3
-            }}
-          />
+              {/* Loading text */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: '#ba68c8', 
+                    fontWeight: 600,
+                    mb: 1,
+                    textShadow: '0 2px 4px rgba(186, 104, 200, 0.2)'
+                  }}
+                >
+                  Đang tải chuyến xe...
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    mb: 4
+                  }}
+                >
+                  Vui lòng chờ trong giây lát
+                </Typography>
+              </motion.div>
+
+              {/* Progress steps */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
+                  {['Tìm kiếm', 'Xử lý', 'Hoàn thành'].map((step, index) => (
+                    <motion.div
+                      key={step}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.8 + index * 0.2, duration: 0.4 }}
+                    >
+                      <Box
+                        sx={{
+                          px: 3,
+                          py: 1,
+                          borderRadius: 20,
+                          background: index === 1 ? 
+                            'linear-gradient(135deg, #f48fb1 0%, #ba68c8 100%)' : 
+                            'rgba(186, 104, 200, 0.1)',
+                          color: index === 1 ? 'white' : '#ba68c8',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          border: index === 1 ? 'none' : '1px solid rgba(186, 104, 200, 0.3)',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        {step}
+                      </Box>
+                    </motion.div>
+                  ))}
+                </Box>
+              </motion.div>
+
+              {/* Animated progress bar */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ delay: 1, duration: 2, ease: 'easeInOut' }}
+              >
+                <Box
+                  sx={{
+                    width: 300,
+                    height: 4,
+                    backgroundColor: 'rgba(186, 104, 200, 0.2)',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}
+                >
+                  <Box
+                    component={motion.div}
+                    sx={{
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #f48fb1 0%, #ba68c8 100%)',
+                      borderRadius: 2,
+                    }}
+                    initial={{ width: '0%' }}
+                    animate={{ width: '70%' }}
+                    transition={{ delay: 1.2, duration: 2, ease: 'easeInOut' }}
+                  />
+                </Box>
+              </motion.div>
+            </Box>
+          </motion.div>
+
+          {/* Floating particles */}
+          {[...Array(6)].map((_, i) => (
+            <Box
+              key={i}
+              component={motion.div}
+              sx={{
+                position: 'absolute',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${i % 2 === 0 ? '#f48fb1' : '#ba68c8'} 0%, ${i % 2 === 0 ? '#ba68c8' : '#f48fb1'} 100%)`,
+                left: `${20 + i * 10}%`,
+                top: `${30 + Math.sin(i) * 20}%`,
+              }}
+              animate={{
+                y: [-20, 20, -20],
+                opacity: [0.3, 1, 0.3],
+                scale: [0.8, 1.2, 0.8],
+              }}
+              transition={{
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: i * 0.3
+              }}
+            />
           ))}
         </Box>
       </motion.div>
     );
   }
 
-  {/* Loading Status */ }
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      py: 3,
-    }}
-  >
-    <CircularProgress
-      size={24}
-      sx={{ color: "#f48fb1", mr: 2 }}
-      thickness={4}
-    />
-    <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 500 }}>
-      Đang tìm chuyến xe phù hợp...
-    </Typography>
-  </Box>
-    </Box >
+  // Loading message component
+  function renderLoadingMessage(message: string) {
+    return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        my: 2,
+        p: 2,
+        borderRadius: 2,
+        bgcolor: "rgba(244, 143, 177, 0.08)",
+        border: "1px solid rgba(244, 143, 177, 0.2)",
+      }}
+    >
+      <CircularProgress size={20} sx={{ color: "#f48fb1" }} thickness={4} />
+      <Typography variant="body2" sx={{ color: "#f48fb1", fontWeight: 500 }}>
+        {message}
+      </Typography>
+    </Box>
     );
-}
+  }
 
-// Simple loading indicator for small components
-function renderSimpleLoading(message: string = "Đang tải...") {
-  return (
+  // Simple loading indicator for small components
+  function renderSimpleLoading(message: string = "Đang tải...") {
+    return (
     <Box
       sx={{
         display: "flex",
@@ -4879,12 +5001,12 @@ function renderSimpleLoading(message: string = "Đang tải...") {
         {message}
       </Typography>
     </Box>
-  );
-}
+    );
+  }
 
-// Error state component
-function renderErrorState(message: string, onRetry?: () => void) {
-  return (
+  // Error state component
+  function renderErrorState(message: string, onRetry?: () => void) {
+    return (
     <Alert
       severity="error"
       sx={{
@@ -4914,129 +5036,129 @@ function renderErrorState(message: string, onRetry?: () => void) {
     >
       {message}
     </Alert>
-  );
-}
+    );
+  }
 
-return (
-  <Container maxWidth="lg" sx={{ py: 4 }}>
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Box
-        sx={{
-          mb: 4,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button
-            component={Link}
-            href="/"
-            startIcon={<ArrowBack />}
-            sx={{
-              mb: { xs: 2, sm: 0 },
-              mr: 2,
-              color: "#f48fb1",
-              "&:hover": {
-                bgcolor: "rgba(244, 143, 177, 0.08)",
-              },
-            }}
-          >
-            Trang chủ
-          </Button>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-              Đặt vé xe
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Hoàn tất đặt vé chỉ với vài bước đơn giản
-            </Typography>
-          </Box>
-        </Box>
         <Box
-          component="img"
-          src="/images/pic4.png"
-          alt="XeTiic Logo"
           sx={{
-            width: { xs: 40, sm: 48 },
-            height: { xs: 40, sm: 48 },
-            display: { xs: "none", sm: "block" },
-            mr: 1.5,
-            borderRadius: 1,
-            objectFit: "contain",
-            filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
+            mb: 4,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
           }}
-        />
-      </Box>
-    </motion.div>
-
-    {completed ? (
-      renderBookingSuccess()
-    ) : (
-      <>
-        <Box sx={{ width: "100%", mb: 4 }}>
-          <Stepper
-            activeStep={activeStep}
-            alternativeLabel={!isMobile}
-            orientation={isMobile ? "vertical" : "horizontal"}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Button
+              component={Link}
+              href="/"
+              startIcon={<ArrowBack />}
+              sx={{
+                mb: { xs: 2, sm: 0 },
+                mr: 2,
+                color: "#f48fb1",
+                "&:hover": {
+                  bgcolor: "rgba(244, 143, 177, 0.08)",
+                },
+              }}
+            >
+              Trang chủ
+            </Button>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                Đặt vé xe
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Hoàn tất đặt vé chỉ với vài bước đơn giản
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            component="img"
+            src="/images/pic4.png"
+            alt="XeTiic Logo"
             sx={{
-              "& .MuiStepLabel-root .Mui-completed": {
-                color: "#f48fb1", // circle color (COMPLETED)
-              },
-              "& .MuiStepLabel-root .Mui-active": {
-                color: "#f48fb1", // circle color (ACTIVE)
-              },
+              width: { xs: 40, sm: 48 },
+              height: { xs: 40, sm: 48 },
+              display: { xs: "none", sm: "block" },
+              mr: 1.5,
+              borderRadius: 1,
+              objectFit: "contain",
+              filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
             }}
-          >
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+          />
         </Box>
+      </motion.div>
 
-        {getStepContent()}
+      {completed ? (
+        renderBookingSuccess()
+      ) : (
+        <>
+          <Box sx={{ width: "100%", mb: 4 }}>
+            <Stepper
+              activeStep={activeStep}
+              alternativeLabel={!isMobile}
+              orientation={isMobile ? "vertical" : "horizontal"}
+              sx={{
+                "& .MuiStepLabel-root .Mui-completed": {
+                  color: "#f48fb1", // circle color (COMPLETED)
+                },
+                "& .MuiStepLabel-root .Mui-active": {
+                  color: "#f48fb1", // circle color (ACTIVE)
+                },
+              }}
+            >
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
 
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-          <Button
-            variant="outlined"
-            onClick={handleBack}
-            disabled={activeStep === 0}
-            startIcon={<ArrowBack />}
-          >
-            Quay lại
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            endIcon={
-              activeStep === steps.length - 1 ? (
-                <ShoppingCart />
-              ) : (
-                <ArrowForward />
-              )
-            }
-            sx={{
-              bgcolor: "#f48fb1",
-              "&:hover": {
-                bgcolor: "#e91e63",
-              },
-            }}
-          >
-            {activeStep === steps.length - 1 ? "Hoàn tất đặt vé" : "Tiếp tục"}
-          </Button>
-        </Box>
-      </>
-    )}
+          {getStepContent()}
 
-    {/* Seat Dialog */}
-    {renderSeatDialog()}
-  </Container>
-);
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
+            <Button
+              variant="outlined"
+              onClick={handleBack}
+              disabled={activeStep === 0}
+              startIcon={<ArrowBack />}
+            >
+              Quay lại
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              endIcon={
+                activeStep === steps.length - 1 ? (
+                  <ShoppingCart />
+                ) : (
+                  <ArrowForward />
+                )
+              }
+              sx={{
+                bgcolor: "#f48fb1",
+                "&:hover": {
+                  bgcolor: "#e91e63",
+                },
+              }}
+            >
+              {activeStep === steps.length - 1 ? "Hoàn tất đặt vé" : "Tiếp tục"}
+            </Button>
+          </Box>
+        </>
+      )}
+
+      {/* Seat Dialog */}
+      {renderSeatDialog()}
+    </Container>
+  );
 }
