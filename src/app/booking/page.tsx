@@ -3316,139 +3316,6 @@ export default function BookingPage() {
               )}
             </Paper>
 
-            {/* Customer Information Section - Hiển thị khi đã đăng nhập */}
-            {isAuthenticated && user && (
-              <Paper
-                elevation={8}
-                sx={{
-                  p: 4,
-                  mb: 4,
-                  borderRadius: 4,
-                  background: "linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, white 100%)",
-                  border: "1px solid rgba(33, 150, 243, 0.2)",
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    background: "linear-gradient(90deg, #2196f3, #42a5f5, #2196f3)",
-                  }
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 3,
-                      bgcolor: "rgba(33, 150, 243, 0.1)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mr: 2
-                    }}
-                  >
-                    <Person sx={{ fontSize: 24, color: "#2196f3" }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#1976d2", mb: 0.5 }}>
-                      Thông tin khách hàng
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Thông tin tài khoản của bạn
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
-                  <Box>
-                    <Box sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      bgcolor: "rgba(33, 150, 243, 0.05)",
-                      border: "1px solid rgba(33, 150, 243, 0.1)"
-                    }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Họ và tên
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                        {user.fullName}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box>
-                    <Box sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      bgcolor: "rgba(33, 150, 243, 0.05)",
-                      border: "1px solid rgba(33, 150, 243, 0.1)"
-                    }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Email
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                        {user.gmail}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box>
-                    <Box sx={{
-                      p: 3,
-                      borderRadius: 3,
-                      bgcolor: "rgba(33, 150, 243, 0.05)",
-                      border: "1px solid rgba(33, 150, 243, 0.1)"
-                    }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Mã khách hàng
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                        {user.customerId}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {user.gender && (
-                    <Box>
-                      <Box sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        bgcolor: "rgba(33, 150, 243, 0.05)",
-                        border: "1px solid rgba(33, 150, 243, 0.1)"
-                      }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Giới tính
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                          {user.gender === 'male' ? 'Nam' : user.gender === 'female' ? 'Nữ' : user.gender}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-
-                <Box sx={{
-                  mt: 3,
-                  p: 2.5,
-                  bgcolor: "rgba(76, 175, 80, 0.05)",
-                  borderRadius: 3,
-                  border: "1px solid rgba(76, 175, 80, 0.2)",
-                  display: "flex",
-                  alignItems: "center"
-                }}>
-                  <CheckCircle sx={{ color: "#4caf50", mr: 1.5, fontSize: 20 }} />
-                  <Typography variant="body2" sx={{ color: "#2e7d32", fontWeight: 600 }}>
-                    Thông tin tài khoản đã được xác thực
-                  </Typography>
-                </Box>
-              </Paper>
-            )}
-
             {/* Enhanced Contact Information Section */}
             <Paper
               elevation={8}
@@ -4747,408 +4614,429 @@ export default function BookingPage() {
   // Custom loading component
   function renderLoading() {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box
-          sx={{
-            position: 'relative',
-            minHeight: '60vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg, rgba(244, 143, 177, 0.03) 0%, rgba(186, 104, 200, 0.03) 100%)',
-            borderRadius: 4,
-            overflow: 'hidden',
-            my: 4
-          }}
-        >
-          {/* Animated background elements */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '-50%',
-                left: '-50%',
-                width: '200%',
-                height: '200%',
-                background: 'radial-gradient(circle, rgba(244, 143, 177, 0.1) 1px, transparent 1px)',
-                backgroundSize: '30px 30px',
-                animation: 'float 20s infinite linear',
-              },
-              '@keyframes float': {
-                '0%': { transform: 'translate(0, 0) rotate(0deg)' },
-                '100%': { transform: 'translate(-30px, -30px) rotate(360deg)' },
-              }
-            }}
-          />
+      <Box sx={{ my: 4 }}>
+        {/* Trip Search Results Skeleton */}
+        <Box sx={{ mb: 3 }}>
+          {[1, 2, 3].map((index) => (
+            <Card key={index} sx={{ mb: 3, borderRadius: 4 }}>
+              <CardContent sx={{ p: 0 }}>
+                {/* Header Skeleton */}
+                <Box sx={{ p: 3, pb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", md: "row" },
+                      alignItems: { xs: "stretch", md: "center" },
+                      gap: { xs: 3, md: 2 },
+                      pr: { xs: 0, md: 12 },
+                    }}
+                  >
+                    {/* Departure Skeleton */}
+                    <Box
+                      sx={{
+                        flex: "0 0 auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: { xs: "flex-start", md: "center" },
+                        minWidth: 120,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                        <Skeleton
+                          variant="circular"
+                          width={16}
+                          height={16}
+                          sx={{ mr: 1.5 }}
+                        />
+                        <Skeleton variant="text" width={80} height={40} />
+                      </Box>
+                      <Skeleton variant="text" width={100} height={20} />
+                      <Skeleton variant="text" width={80} height={16} />
+                    </Box>
 
-          {/* Main loading content */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            <Box sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-              {/* Rotating bus icon */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                style={{ display: 'inline-block', marginBottom: '24px' }}
-              >
-                <Box
-                  sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #f48fb1 0%, #ba68c8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 8px 32px rgba(244, 143, 177, 0.3)',
-                    position: 'relative',
-                    '&::before': {
-                      content: '🚌',
-                      fontSize: '32px',
-                      filter: 'contrast(0) brightness(2)',
-                    }
-                  }}
-                />
-              </motion.div>
-
-              {/* Loading text */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: '#ba68c8',
-                    fontWeight: 600,
-                    mb: 1,
-                    textShadow: '0 2px 4px rgba(186, 104, 200, 0.2)'
-                  }}
-                >
-                  Đang tải chuyến xe...
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    mb: 4
-                  }}
-                >
-                  Vui lòng chờ trong giây lát
-                </Typography>
-              </motion.div>
-
-              {/* Progress steps */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
-                  {['Tìm kiếm', 'Xử lý', 'Hoàn thành'].map((step, index) => (
-                    <motion.div
-                      key={step}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.8 + index * 0.2, duration: 0.4 }}
+                    {/* Journey Skeleton */}
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        py: { xs: 2, md: 1 },
+                      }}
                     >
                       <Box
                         sx={{
-                          px: 3,
-                          py: 1,
-                          borderRadius: 20,
-                          background: index === 1 ?
-                            'linear-gradient(135deg, #f48fb1 0%, #ba68c8 100%)' :
-                            'rgba(186, 104, 200, 0.1)',
-                          color: index === 1 ? 'white' : '#ba68c8',
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          border: index === 1 ? 'none' : '1px solid rgba(186, 104, 200, 0.3)',
-                          transition: 'all 0.3s ease'
+                          display: "flex",
+                          alignItems: "center",
+                          width: "100%",
+                          minWidth: { xs: 200, md: 300 },
+                          position: "relative",
                         }}
                       >
-                        {step}
+                        <Skeleton
+                          variant="rectangular"
+                          width="100%"
+                          height={3}
+                          sx={{ borderRadius: 2 }}
+                        />
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            bgcolor: "white",
+                            borderRadius: "50%",
+                            p: 1,
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                          }}
+                        >
+                          <Skeleton variant="circular" width={20} height={20} />
+                        </Box>
                       </Box>
-                    </motion.div>
-                  ))}
-                </Box>
-              </motion.div>
+                      <Skeleton
+                        variant="text"
+                        width={120}
+                        height={20}
+                        sx={{ mt: 1.5 }}
+                      />
+                    </Box>
 
-              {/* Animated progress bar */}
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: '100%' }}
-                transition={{ delay: 1, duration: 2, ease: 'easeInOut' }}
-              >
+                    {/* Arrival Skeleton */}
+                    <Box
+                      sx={{
+                        flex: "0 0 auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: { xs: "flex-end", md: "center" },
+                        minWidth: 120,
+                        textAlign: { xs: "right", md: "center" },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                        <Skeleton
+                          variant="text"
+                          width={80}
+                          height={40}
+                          sx={{ mr: 1.5 }}
+                        />
+                        <Skeleton variant="circular" width={16} height={16} />
+                      </Box>
+                      <Skeleton variant="text" width={100} height={20} />
+                      <Skeleton variant="text" width={80} height={16} />
+                    </Box>
+                  </Box>
+
+                  {/* Type badges skeleton */}
+                  <Box sx={{ position: "absolute", top: 16, right: 16 }}>
+                    <Skeleton
+                      variant="rectangular"
+                      width={80}
+                      height={24}
+                      sx={{ borderRadius: 2, mb: 0.5 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      width={60}
+                      height={20}
+                      sx={{ borderRadius: 1.5 }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Price Section Skeleton */}
                 <Box
                   sx={{
-                    width: 300,
-                    height: 4,
-                    backgroundColor: 'rgba(186, 104, 200, 0.2)',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    position: 'relative'
+                    px: 3,
+                    py: 2,
+                    bgcolor: "rgba(0, 0, 0, 0.02)",
+                    borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 2,
                   }}
                 >
-                  <motion.div
-                    style={{
-                      height: '100%',
-                      background: 'linear-gradient(90deg, #f48fb1 0%, #ba68c8 100%)',
-                      borderRadius: 2,
-                    }}
-                    initial={{ width: '0%' }}
-                    animate={{ width: '70%' }}
-                    transition={{ delay: 1.2, duration: 2, ease: 'easeInOut' }}
-                  />
-                </Box>
-              </motion.div>
-            </Box>
-          </motion.div>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Skeleton variant="circular" width={20} height={20} />
+                      <Skeleton variant="text" width={100} height={16} />
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Skeleton variant="circular" width={20} height={20} />
+                      <Skeleton variant="text" width={80} height={16} />
+                    </Box>
+                  </Box>
 
-          {/* Floating particles */}
-          {[...Array(6)].map((_, i) => (
-            <motion.div
-              key={i}
-              style={{
-                position: 'absolute',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${i % 2 === 0 ? '#f48fb1' : '#ba68c8'} 0%, ${i % 2 === 0 ? '#ba68c8' : '#f48fb1'} 100%)`,
-                left: `${20 + i * 10}%`,
-                top: `${30 + Math.sin(i) * 20}%`,
-              }}
-              animate={{
-                y: [-20, 20, -20],
-                opacity: [0.3, 1, 0.3],
-                scale: [0.8, 1.2, 0.8],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: i * 0.3
-              }}
-            />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{ textAlign: "right" }}>
+                      <Skeleton variant="text" width={40} height={16} />
+                      <Skeleton variant="text" width={100} height={24} />
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Action Buttons Skeleton */}
+                <Box
+                  sx={{
+                    px: 3,
+                    py: 2.5,
+                    borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 2,
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 1.5 }}>
+                    <Skeleton
+                      variant="rectangular"
+                      width={100}
+                      height={32}
+                      sx={{ borderRadius: 2 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      width={90}
+                      height={32}
+                      sx={{ borderRadius: 2 }}
+                    />
+                  </Box>
+                </motion.div>
+              </Box>
+            </motion.div>
+
+          {/* Floating particles */ }
+          { [...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: 'absolute',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${i % 2 === 0 ? '#f48fb1' : '#ba68c8'} 0%, ${i % 2 === 0 ? '#ba68c8' : '#f48fb1'} 100%)`,
+              left: `${20 + i * 10}%`,
+              top: `${30 + Math.sin(i) * 20}%`,
+            }}
+            animate={{
+              y: [-20, 20, -20],
+              opacity: [0.3, 1, 0.3],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 3 + i * 0.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: i * 0.3
+            }}
+          />
           ))}
         </Box>
       </motion.div>
     );
   }
 
-  // Loading message component
-  function renderLoadingMessage(message: string) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          my: 2,
-          p: 2,
-          borderRadius: 2,
-          bgcolor: "rgba(244, 143, 177, 0.08)",
-          border: "1px solid rgba(244, 143, 177, 0.2)",
-        }}
-      >
-        <CircularProgress size={20} sx={{ color: "#f48fb1" }} thickness={4} />
-        <Typography variant="body2" sx={{ color: "#f48fb1", fontWeight: 500 }}>
-          {message}
-        </Typography>
-      </Box>
+  {/* Loading Status */ }
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      py: 3,
+    }}
+  >
+    <CircularProgress
+      size={24}
+      sx={{ color: "#f48fb1", mr: 2 }}
+      thickness={4}
+    />
+    <Typography variant="body1" sx={{ color: "#f48fb1", fontWeight: 500 }}>
+      Đang tìm chuyến xe phù hợp...
+    </Typography>
+  </Box>
+    </Box >
     );
-  }
+}
 
-  // Simple loading indicator for small components
-  function renderSimpleLoading(message: string = "Đang tải...") {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          py: 2,
-          gap: 1.5,
-        }}
-      >
-        <CircularProgress size={20} sx={{ color: "#f48fb1" }} thickness={4} />
-        <Typography variant="body2" sx={{ color: "#f48fb1", fontWeight: 500 }}>
-          {message}
-        </Typography>
-      </Box>
-    );
-  }
-
-  // Error state component
-  function renderErrorState(message: string, onRetry?: () => void) {
-    return (
-      <Alert
-        severity="error"
-        sx={{
-          my: 2,
-          borderRadius: 3,
-          "& .MuiAlert-message": {
-            width: "100%",
-          },
-        }}
-        action={
-          onRetry && (
-            <Button
-              size="small"
-              onClick={onRetry}
-              sx={{
-                color: "#d32f2f",
-                fontWeight: 600,
-                "&:hover": {
-                  bgcolor: "rgba(211, 47, 47, 0.04)",
-                },
-              }}
-            >
-              Thử lại
-            </Button>
-          )
-        }
-      >
-        {message}
-      </Alert>
-    );
-  }
-
+// Simple loading indicator for small components
+function renderSimpleLoading(message: string = "Đang tải...") {
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box
-          sx={{
-            mb: 4,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Button
-              component={Link}
-              href="/"
-              startIcon={<ArrowBack />}
-              sx={{
-                mb: { xs: 2, sm: 0 },
-                mr: 2,
-                color: "#f48fb1",
-                "&:hover": {
-                  bgcolor: "rgba(244, 143, 177, 0.08)",
-                },
-              }}
-            >
-              Trang chủ
-            </Button>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                Đặt vé xe
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Hoàn tất đặt vé chỉ với vài bước đơn giản
-              </Typography>
-            </Box>
-          </Box>
-          <Box
-            component="img"
-            src="/images/pic4.png"
-            alt="XeTiic Logo"
-            sx={{
-              width: { xs: 40, sm: 48 },
-              height: { xs: 40, sm: 48 },
-              display: { xs: "none", sm: "block" },
-              mr: 1.5,
-              borderRadius: 1,
-              objectFit: "contain",
-              filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
-            }}
-          />
-        </Box>
-      </motion.div>
-
-      {completed ? (
-        renderBookingSuccess()
-      ) : (
-        <>
-          <Box sx={{ width: "100%", mb: 4 }}>
-            <Stepper
-              activeStep={activeStep}
-              alternativeLabel={!isMobile}
-              orientation={isMobile ? "vertical" : "horizontal"}
-              sx={{
-                "& .MuiStepLabel-root .Mui-completed": {
-                  color: "#f48fb1", // circle color (COMPLETED)
-                },
-                "& .MuiStepLabel-root .Mui-active": {
-                  color: "#f48fb1", // circle color (ACTIVE)
-                },
-              }}
-            >
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
-
-          {getStepContent()}
-
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button
-              variant="outlined"
-              onClick={handleBack}
-              disabled={activeStep === 0}
-              startIcon={<ArrowBack />}
-            >
-              Quay lại
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              endIcon={
-                activeStep === steps.length - 1 ? (
-                  <ShoppingCart />
-                ) : (
-                  <ArrowForward />
-                )
-              }
-              sx={{
-                bgcolor: "#f48fb1",
-                "&:hover": {
-                  bgcolor: "#e91e63",
-                },
-              }}
-            >
-              {activeStep === steps.length - 1 ? "Hoàn tất đặt vé" : "Tiếp tục"}
-            </Button>
-          </Box>
-        </>
-      )}
-
-      {/* Seat Dialog */}
-      {renderSeatDialog()}
-    </Container>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        py: 2,
+        gap: 1.5,
+      }}
+    >
+      <CircularProgress size={20} sx={{ color: "#f48fb1" }} thickness={4} />
+      <Typography variant="body2" sx={{ color: "#f48fb1", fontWeight: 500 }}>
+        {message}
+      </Typography>
+    </Box>
   );
+}
+
+// Error state component
+function renderErrorState(message: string, onRetry?: () => void) {
+  return (
+    <Alert
+      severity="error"
+      sx={{
+        my: 2,
+        borderRadius: 3,
+        "& .MuiAlert-message": {
+          width: "100%",
+        },
+      }}
+      action={
+        onRetry && (
+          <Button
+            size="small"
+            onClick={onRetry}
+            sx={{
+              color: "#d32f2f",
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: "rgba(211, 47, 47, 0.04)",
+              },
+            }}
+          >
+            Thử lại
+          </Button>
+        )
+      }
+    >
+      {message}
+    </Alert>
+  );
+}
+
+return (
+  <Container maxWidth="lg" sx={{ py: 4 }}>
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Button
+            component={Link}
+            href="/"
+            startIcon={<ArrowBack />}
+            sx={{
+              mb: { xs: 2, sm: 0 },
+              mr: 2,
+              color: "#f48fb1",
+              "&:hover": {
+                bgcolor: "rgba(244, 143, 177, 0.08)",
+              },
+            }}
+          >
+            Trang chủ
+          </Button>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+              Đặt vé xe
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Hoàn tất đặt vé chỉ với vài bước đơn giản
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          component="img"
+          src="/images/pic4.png"
+          alt="XeTiic Logo"
+          sx={{
+            width: { xs: 40, sm: 48 },
+            height: { xs: 40, sm: 48 },
+            display: { xs: "none", sm: "block" },
+            mr: 1.5,
+            borderRadius: 1,
+            objectFit: "contain",
+            filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
+          }}
+        />
+      </Box>
+    </motion.div>
+
+    {completed ? (
+      renderBookingSuccess()
+    ) : (
+      <>
+        <Box sx={{ width: "100%", mb: 4 }}>
+          <Stepper
+            activeStep={activeStep}
+            alternativeLabel={!isMobile}
+            orientation={isMobile ? "vertical" : "horizontal"}
+            sx={{
+              "& .MuiStepLabel-root .Mui-completed": {
+                color: "#f48fb1", // circle color (COMPLETED)
+              },
+              "& .MuiStepLabel-root .Mui-active": {
+                color: "#f48fb1", // circle color (ACTIVE)
+              },
+            }}
+          >
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Box>
+
+        {getStepContent()}
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
+          <Button
+            variant="outlined"
+            onClick={handleBack}
+            disabled={activeStep === 0}
+            startIcon={<ArrowBack />}
+          >
+            Quay lại
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            endIcon={
+              activeStep === steps.length - 1 ? (
+                <ShoppingCart />
+              ) : (
+                <ArrowForward />
+              )
+            }
+            sx={{
+              bgcolor: "#f48fb1",
+              "&:hover": {
+                bgcolor: "#e91e63",
+              },
+            }}
+          >
+            {activeStep === steps.length - 1 ? "Hoàn tất đặt vé" : "Tiếp tục"}
+          </Button>
+        </Box>
+      </>
+    )}
+
+    {/* Seat Dialog */}
+    {renderSeatDialog()}
+  </Container>
+);
 }
