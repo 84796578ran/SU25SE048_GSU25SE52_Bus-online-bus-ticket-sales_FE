@@ -10,7 +10,7 @@ export default function BookingConfirmPage() {
   );
 
   useEffect(() => {
-    const responseCode = searchParams.get("vnp_ResponseCode");
+    const responseCode = searchParams?.get("vnp_ResponseCode");
     if (responseCode === "00") {
       setStatus("success");
       // Redirect to home page after 2 seconds with payment success parameter
