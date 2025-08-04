@@ -29,6 +29,11 @@ import {
   Alert,
   Autocomplete,
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/services/api';
 import {
@@ -298,6 +303,8 @@ export default function BusTicketHomePage() {
   useEffect(() => {
     const loginSuccess = searchParams.get('loginSuccess');
     const registerSuccess = searchParams.get('registerSuccess');
+    const paymentSuccess = searchParams.get('paymentSuccess');
+    const paymentFailed = searchParams.get('paymentFailed');
     const message = searchParams.get('message');
 
     if (loginSuccess === 'true') {
@@ -307,7 +314,6 @@ export default function BusTicketHomePage() {
         type: 'success'
       });
       
-      // Clean URL without refreshing page
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('loginSuccess');
       newUrl.searchParams.delete('message');
@@ -324,6 +330,34 @@ export default function BusTicketHomePage() {
       // Clean URL without refreshing page
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('registerSuccess');
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    if (paymentSuccess === 'true') {
+      setNotification({
+        open: true,
+        message: message || 'Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.',
+        type: 'success'
+      });
+      
+      // Clean URL without refreshing page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('paymentSuccess');
+      newUrl.searchParams.delete('message');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    if (paymentFailed === 'true') {
+      setNotification({
+        open: true,
+        message: message || 'Thanh toán thất bại hoặc đã bị hủy. Vui lòng thử lại.',
+        type: 'error'
+      });
+      
+      // Clean URL without refreshing page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('paymentFailed');
       newUrl.searchParams.delete('message');
       window.history.replaceState({}, '', newUrl.toString());
     }
@@ -1603,40 +1637,49 @@ export default function BusTicketHomePage() {
                           md: tripType === 'roundTrip' ? '1 1 22%' : '1 1 38%'  // Increased for better balance
                         }
                       }}>
-                        <TextField
-                          fullWidth
-                          label="Ngày đi"
-                          type="date"
-                          value={searchData.departureDate}
-                          onChange={(e) => handleInputChange('departureDate', e.target.value)}
-                          InputLabelProps={{ shrink: true }}
-                          InputProps={{
-                            startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1', fontSize: '1.2rem' }} />,
-                          }}
-                          inputProps={{
-                            min: new Date().toISOString().split('T')[0]
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 3,
-                              backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#f48fb1',
+                        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                          <DatePicker
+                            label="Ngày đi"
+                            value={searchData.departureDate ? dayjs(searchData.departureDate) : null}
+                            onChange={(newValue: dayjs.Dayjs | null) => {
+                              const dateValue = newValue ? newValue.format('YYYY-MM-DD') : '';
+                              handleInputChange('departureDate', dateValue);
+                            }}
+                            minDate={dayjs()}
+                            format="DD/MM/YYYY"
+                            slots={{
+                              textField: TextField,
+                            }}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                InputProps: {
+                                  startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1', fontSize: '1.2rem' }} />,
+                                },
+                                sx: {
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        borderColor: '#f48fb1',
+                                      }
+                                    },
+                                    '&.Mui-focused': {
+                                      backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                      boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                    }
+                                  },
+                                  '& .MuiInputLabel-root': {
+                                    fontWeight: 600,
+                                  }
                                 }
-                              },
-                              '&.Mui-focused': {
-                                backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                                boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
                               }
-                            },
-                            '& .MuiInputLabel-root': {
-                              fontWeight: 600,
-                            }
-                          }}
-                        />
+                            }}
+                          />
+                        </LocalizationProvider>
                       </Box>
 
                       {/* Return Date - Only show when roundTrip */}
@@ -1648,40 +1691,49 @@ export default function BusTicketHomePage() {
                             md: '1 1 30%'  // Increased for better balance in roundTrip mode
                           }
                         }}>
-                          <TextField
-                            fullWidth
-                            label="Ngày về"
-                            type="date"
-                            value={searchData.returnDate}
-                            onChange={(e) => handleInputChange('returnDate', e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                            InputProps={{
-                              startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1' }} />,
-                            }}
-                            inputProps={{
-                              min: searchData.departureDate || new Date().toISOString().split('T')[0]
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 3,
-                                backgroundColor: 'rgba(244, 143, 177, 0.02)',
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(244, 143, 177, 0.04)',
-                                  '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#f48fb1',
+                          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                            <DatePicker
+                              label="Ngày về"
+                              value={searchData.returnDate ? dayjs(searchData.returnDate) : null}
+                              onChange={(newValue: dayjs.Dayjs | null) => {
+                                const dateValue = newValue ? newValue.format('YYYY-MM-DD') : '';
+                                handleInputChange('returnDate', dateValue);
+                              }}
+                              minDate={searchData.departureDate ? dayjs(searchData.departureDate) : dayjs()}
+                              format="DD/MM/YYYY"
+                              slots={{
+                                textField: TextField,
+                              }}
+                              slotProps={{
+                                textField: {
+                                  fullWidth: true,
+                                  InputProps: {
+                                    startAdornment: <CalendarToday sx={{ mr: 1, color: '#f48fb1' }} />,
+                                  },
+                                  sx: {
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 3,
+                                      backgroundColor: 'rgba(244, 143, 177, 0.02)',
+                                      transition: 'all 0.3s ease',
+                                      '&:hover': {
+                                        backgroundColor: 'rgba(244, 143, 177, 0.04)',
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                          borderColor: '#f48fb1',
+                                        }
+                                      },
+                                      '&.Mui-focused': {
+                                        backgroundColor: 'rgba(244, 143, 177, 0.06)',
+                                        boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
+                                      }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                      fontWeight: 600,
+                                    }
                                   }
-                                },
-                                '&.Mui-focused': {
-                                  backgroundColor: 'rgba(244, 143, 177, 0.06)',
-                                  boxShadow: '0 0 0 3px rgba(244, 143, 177, 0.1)',
                                 }
-                              },
-                              '& .MuiInputLabel-root': {
-                                fontWeight: 600,
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          </LocalizationProvider>
                         </Box>
                       )}
 
