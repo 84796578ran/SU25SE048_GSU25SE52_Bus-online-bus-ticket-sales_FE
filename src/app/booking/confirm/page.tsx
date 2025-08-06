@@ -10,18 +10,20 @@ export default function BookingConfirmPage() {
   );
 
   useEffect(() => {
-    const responseCode = searchParams.get("vnp_ResponseCode");
+    const responseCode = searchParams?.get("vnp_ResponseCode");
     if (responseCode === "00") {
       setStatus("success");
-      // Redirect to home page after 2 seconds with payment success parameter
+      // Redirect to booking page with payment success status
       setTimeout(() => {
-        router.push("/?paymentSuccess=true&message=Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.");
+        router.push("/booking?paymentStatus=success");
       }, 2000);
     } else {
       setStatus("fail");
-      // Redirect to home page after 3 seconds with payment failure parameter
+      // Get error message from VNPay response
+      const errorMessage = searchParams?.get("vnp_Message") || "Thanh toán thất bại hoặc đã bị hủy";
+      // Redirect to booking page with payment failure status and error message
       setTimeout(() => {
-        router.push("/?paymentFailed=true&message=Thanh toán thất bại hoặc đã bị hủy. Vui lòng thử lại.");
+        router.push(`/booking?paymentStatus=failed&paymentError=${encodeURIComponent(errorMessage)}`);
       }, 3000);
     }
   }, [searchParams, router]);
@@ -66,7 +68,8 @@ export default function BookingConfirmPage() {
               />
             </svg>
           </div>
-          <p className="desc fail-text">Thanh toán thất bại hoặc bị huỷ.</p>
+          <p className="desc fail-text">Thanh toán thất bại hoặc bị hủy.</p>
+          <p className="desc-sub">Đang chuyển hướng để xem chi tiết vé...</p>
         </div>
       )}
       <style jsx>{`
@@ -136,6 +139,11 @@ export default function BookingConfirmPage() {
           color: #b71c1c;
           font-weight: 600;
           letter-spacing: 0.01em;
+        }
+        .desc-sub {
+          font-size: 0.9rem;
+          color: #777;
+          margin-top: 0.5rem;
         }
         @media (max-width: 480px) {
           .confirm-content {

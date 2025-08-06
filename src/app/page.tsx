@@ -301,11 +301,11 @@ export default function BusTicketHomePage() {
 
   // Check for success messages from URL params
   useEffect(() => {
-    const loginSuccess = searchParams.get('loginSuccess');
-    const registerSuccess = searchParams.get('registerSuccess');
-    const paymentSuccess = searchParams.get('paymentSuccess');
-    const paymentFailed = searchParams.get('paymentFailed');
-    const message = searchParams.get('message');
+    const loginSuccess = searchParams?.get('loginSuccess');
+    const registerSuccess = searchParams?.get('registerSuccess');
+    const paymentSuccess = searchParams?.get('paymentSuccess');
+    const paymentFailed = searchParams?.get('paymentFailed');
+    const message = searchParams?.get('message');
 
     if (loginSuccess === 'true') {
       setNotification({

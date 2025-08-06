@@ -7,8 +7,13 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import theme from './theme';
 
+// Create a cache for the client side
+const createEmotionCache = () => {
+  return createCache({ key: 'css', prepend: true });
+};
+
 // Client-side cache, shared for the whole session of the user in the browser.
-const clientSideEmotionCache = createCache({ key: 'css' });
+const clientSideEmotionCache = createEmotionCache();
 
 export default function MUIThemeProvider({
   children,

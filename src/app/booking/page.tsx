@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Container,
   Box,
@@ -96,6 +96,7 @@ interface SeatType {
   seatNumber?: string;
   seatType?: string;
   isSelected?: boolean;
+  tripId?: number; // Add tripId to identify which trip this seat belongs to
 }
 
 interface ApiSeatResponse {
@@ -194,6 +195,13 @@ const paymentMethods = [
 export default function BookingPage() {
   // VNPayPayloadType được import từ bookingService.ts
 
+  // Client-side hydration check to prevent Material-UI hydration issues
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // State
   const [activeStep, setActiveStep] = useState<number>(0);
   const [searchData, setSearchData] = useState<SearchDataType>({
@@ -233,6 +241,8 @@ export default function BookingPage() {
   );
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [completed, setCompleted] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<"success" | "failed" | null>(null);
+  const [paymentError, setPaymentError] = useState<string>("");
   const [vnpayPayload, setVnpayPayload] = useState<VNPayPayloadType | null>(
     null
   );
@@ -251,6 +261,10 @@ export default function BookingPage() {
   // Authentication hook
   const { user, isAuthenticated } = useAuth();
 
+  // Phone number state for Google login users
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState<string>("");
+  const [isPhoneEditable, setIsPhoneEditable] = useState<boolean>(false);
+
   // Seat availability by trip id for displaying in trip cards
   const [seatAvailabilityByTrip, setSeatAvailabilityByTrip] = useState<
     Record<string, { available: number; total: number }>
@@ -259,12 +273,25 @@ export default function BookingPage() {
     Record<string, boolean>
   >({});
 
-  // Responsive design
+  // Responsive design - use client-side only to prevent hydration mismatch
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(theme.breakpoints.down("sm").replace('@media ', ''));
+    setIsMobile(mediaQuery.matches);
+    
+    const handleResize = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleResize);
+    return () => mediaQuery.removeEventListener('change', handleResize);
+  }, [theme.breakpoints]);
 
   // Get search params from URL
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // API function to fetch trips using search endpoint
   const fetchTrips = async (
@@ -591,6 +618,8 @@ export default function BookingPage() {
 
   // Effect to check for VNPay payment return parameters
   useEffect(() => {
+    if (!searchParams) return;
+    
     const vnpResponseCode = searchParams.get("vnp_ResponseCode");
     const vnpTransactionStatus = searchParams.get("vnp_TransactionStatus");
 
@@ -603,14 +632,73 @@ export default function BookingPage() {
 
       // Redirect to unified confirmation page
       console.log("🔄 Redirecting to confirmation page");
-      window.location.href =
-        "/booking/confirm?" + window.location.search.substring(1);
+      if (typeof window !== 'undefined') {
+        window.location.href =
+          "/booking/confirm?" + window.location.search.substring(1);
+      }
       return;
+    }
+  }, [searchParams]);
+
+  // Effect to handle payment status from confirm page
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const paymentStatusParam = searchParams.get("paymentStatus");
+    const paymentErrorParam = searchParams.get("paymentError");
+
+    // Check if this is a redirect from confirm page with payment status
+    if (paymentStatusParam) {
+      console.log("🔍 Detected payment status from confirm page:", {
+        paymentStatus: paymentStatusParam,
+        paymentError: paymentErrorParam,
+      });
+
+              // Try to restore booking data from localStorage
+        try {
+          if (typeof window !== 'undefined') {
+            const savedBookingData = localStorage.getItem('bookingData');
+            if (savedBookingData) {
+              const bookingData = JSON.parse(savedBookingData);
+              console.log("📥 Restoring booking data from localStorage:", bookingData);
+              
+              // Restore booking state
+              setSearchData(bookingData.searchData);
+              setSelectedTrip(bookingData.selectedTrip);
+              setSelectedSeats(bookingData.selectedSeats);
+              setShuttlePoint(bookingData.shuttlePoint);
+              setCustomerPhoneNumber(bookingData.customerPhoneNumber);
+              
+              // Clear localStorage after restoring
+              localStorage.removeItem('bookingData');
+            }
+          }
+        } catch (error) {
+          console.error("❌ Error restoring booking data:", error);
+        }
+
+      // Set payment status and completed state
+      setPaymentStatus(paymentStatusParam as "success" | "failed");
+      if (paymentErrorParam) {
+        setPaymentError(decodeURIComponent(paymentErrorParam));
+      }
+      setCompleted(true);
+      setActiveStep(2); // Set to payment step
+
+              // Clean up URL parameters
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("paymentStatus");
+          url.searchParams.delete("paymentError");
+          window.history.replaceState({}, "", url.toString());
+        }
     }
   }, [searchParams]);
 
   // Effect to load data from URL parameters
   useEffect(() => {
+    if (!searchParams) return;
+    
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     const fromId = searchParams.get("fromId");
@@ -689,6 +777,42 @@ export default function BookingPage() {
     }
   }, [searchParams]);
 
+  // Effect to initialize phone number from user data
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Get phone number from user data (might be from Google login or regular login)
+      const phoneFromUser = (user as any).phone || "";
+      setCustomerPhoneNumber(phoneFromUser);
+      
+      // If phone is empty or not provided, make it editable
+      setIsPhoneEditable(!phoneFromUser || phoneFromUser.length === 0);
+      
+      console.log("📱 Phone number initialization:", {
+        userPhone: phoneFromUser,
+        isEditable: !phoneFromUser || phoneFromUser.length === 0,
+        userFullData: user
+      });
+    }
+  }, [isAuthenticated, user]);
+
+  // Effect to update current time on client side to prevent hydration mismatch
+  useEffect(() => {
+    const updateTime = () => {
+      const timeElement = document.getElementById('current-time');
+      if (timeElement) {
+        timeElement.textContent = new Date().toLocaleString("vi-VN");
+      }
+    };
+
+    // Update time immediately
+    updateTime();
+
+    // Update time every second
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Handle step navigation
   const handleNext = async () => {
     // Step 1: Trip selection validation
@@ -735,7 +859,7 @@ export default function BookingPage() {
     }
 
     // Step 3: Payment validation
-    if (activeStep === 2 && (!shuttlePoint || !paymentMethod)) {
+    if (activeStep === 2) {
       if (!shuttlePoint) {
         alert("Vui lòng chọn điểm đón");
         return;
@@ -744,6 +868,19 @@ export default function BookingPage() {
         alert("Vui lòng chọn phương thức thanh toán");
         return;
       }
+      // Validate phone number
+      if (isAuthenticated && isPhoneEditable && (!customerPhoneNumber || customerPhoneNumber.trim().length === 0)) {
+        alert("Vui lòng nhập số điện thoại");
+        return;
+      }
+      // Basic phone number validation
+      if (isAuthenticated && customerPhoneNumber && customerPhoneNumber.trim().length > 0) {
+        const phoneRegex = /^[0-9]{10,11}$/;
+        if (!phoneRegex.test(customerPhoneNumber.replace(/\s/g, ''))) {
+          alert("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số");
+          return;
+        }
+      }
     }
 
     // Add loading state for step transitions
@@ -751,7 +888,9 @@ export default function BookingPage() {
 
     if (activeStep < steps.length - 1) {
       setActiveStep((prevStep) => prevStep + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
 
       // If moving to seat selection, fetch real seat data
       if (activeStep === 0) {
@@ -904,7 +1043,25 @@ export default function BookingPage() {
                     "🌐 Chuyển hướng đến URL thanh toán:",
                     paymentUrl
                   );
-                  window.location.href = paymentUrl;
+
+                  // Save booking data to localStorage before redirect
+                  const bookingData = {
+                    searchData,
+                    selectedTrip,
+                    selectedSeats,
+                    shuttlePoint,
+                    customerPhoneNumber,
+                    totalPrice: calculateTotalPrice().total,
+                    timestamp: typeof window !== 'undefined' ? Date.now() : 0
+                  };
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+                  }
+                  console.log("💾 Saved booking data to localStorage:", bookingData);
+
+                  if (typeof window !== 'undefined') {
+                    window.location.href = paymentUrl;
+                  }
                   return; // Dừng thực thi tiếp để chuyển trang
                 } else {
                   console.warn("⚠️ Không tìm thấy paymentUrl trong response:", {
@@ -915,16 +1072,19 @@ export default function BookingPage() {
                     url: response.url
                   });
                   
-                  // Hiển thị thông báo chi tiết cho user
-                  const responseFields = Object.keys(response).join(', ');
-                  alert(
-                    `API trả về thành công nhưng không có URL thanh toán.\n\nCác field có trong response: ${responseFields}\n\nVui lòng kiểm tra console để biết chi tiết hoặc liên hệ support.`
-                  );
+                  // Set payment failed status
+                  setPaymentStatus("failed");
+                  setPaymentError("Không thể tạo URL thanh toán. Vui lòng thử lại.");
+                  setCompleted(true);
+                  return;
                 }
               }
             } else {
               console.error("❌ Response rỗng hoặc null");
-              alert("Lỗi: Không nhận được response từ server");
+              setPaymentStatus("failed");
+              setPaymentError("Không nhận được phản hồi từ server");
+              setCompleted(true);
+              return;
             }
           } catch (error: any) {
             console.error("❌ Lỗi khi gọi API thanh toán:", error);
@@ -940,17 +1100,21 @@ export default function BookingPage() {
               console.error("- Error message:", error.message);
             }
 
-            alert(
-              "Có lỗi xảy ra khi xử lý thanh toán. Vui lòng xem console để biết chi tiết."
-            );
+            setPaymentStatus("failed");
+            setPaymentError(error.message || "Có lỗi xảy ra khi xử lý thanh toán");
+            setCompleted(true);
+            return;
           }
         }
 
-        // Chỉ để test, tạm thời vẫn chuyển sang màn hình hoàn tất
+        // Thanh toán thành công mặc định (cho test)
+        setPaymentStatus("success");
         setCompleted(true);
       } catch (error) {
         console.error("Error during payment processing:", error);
-        alert("Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.");
+        setPaymentStatus("failed");
+        setPaymentError("Có lỗi xảy ra trong quá trình thanh toán");
+        setCompleted(true);
       } finally {
         setSeatLoading(false);
       }
@@ -959,7 +1123,9 @@ export default function BookingPage() {
 
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   // Handle trip selection
@@ -1025,6 +1191,43 @@ export default function BookingPage() {
   // Handle shuttle point selection
   const handleSelectShuttlePoint = (point: ShuttlePointType) => {
     setShuttlePoint(point);
+  };
+
+  // Handle phone number save/update
+  const handleSavePhoneNumber = async () => {
+    if (!customerPhoneNumber || customerPhoneNumber.trim().length === 0) {
+      alert("Vui lòng nhập số điện thoại");
+      return;
+    }
+
+    // Basic phone number validation
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(customerPhoneNumber.replace(/\s/g, ''))) {
+      alert("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số");
+      return;
+    }
+
+    try {
+      console.log("📱 Saving phone number:", customerPhoneNumber);
+      
+      // Here you could call an API to update the user's phone number if needed
+      // await apiClient.updateUserPhone(user.id, customerPhoneNumber);
+      
+      // For now, just update the local state and localStorage
+      if (user && typeof window !== 'undefined') {
+        const updatedUserData = {
+          ...user,
+          phone: customerPhoneNumber
+        };
+        localStorage.setItem('user_data', JSON.stringify(updatedUserData));
+      }
+      
+      setIsPhoneEditable(false);
+      console.log("✅ Phone number saved successfully");
+    } catch (error) {
+      console.error("❌ Error saving phone number:", error);
+      alert("Có lỗi khi lưu số điện thoại. Vui lòng thử lại.");
+    }
   };
 
   // Handle payment method selection
@@ -1138,7 +1341,9 @@ export default function BookingPage() {
       }
 
       // Tạo payload
-      const userId = JSON.parse(localStorage.getItem("user_data") || "{}")?.id;
+      const userId = typeof window !== 'undefined' 
+        ? JSON.parse(localStorage.getItem("user_data") || "{}")?.id
+        : null;
 
       const payload: VNPayPayloadType = {
         customerId: userId,
@@ -1148,6 +1353,7 @@ export default function BookingPage() {
       };
 
       console.log("VNPay API payload prepared:", payload);
+      console.log("📱 Customer phone number for booking:", customerPhoneNumber);
 
       setVnpayPayload(payload);
     }
@@ -1162,12 +1368,101 @@ export default function BookingPage() {
       console.log("🎫 Fetching seat availability for trip:", {
         "trip.id (will use this)": trip.id,
         "trip.tripId (string, not used)": trip.tripId,
+        "trip.tripType": trip.tripType,
         fromStationId: searchData.fromStationId,
         toStationId: searchData.toStationId,
         "API expects numeric tripId": true,
       });
 
-      // Use trip.id directly as it's the correct numeric ID for the API
+      // Handle transfer trips differently - need to fetch seats for both firstTrip and secondTrip
+      if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
+        console.log("🔄 Transfer trip detected - fetching seats for both trips:", {
+          "firstTrip.id": trip.firstTrip.id,
+          "secondTrip.id": trip.secondTrip.id,
+          "firstTrip.busName": trip.firstTrip.busName,
+          "secondTrip.busName": trip.secondTrip.busName,
+        });
+
+        // Fetch seats for first trip
+        const firstTripSeats = await apiClient.getSeatAvailability(
+          trip.firstTrip!.id,
+          searchData.fromStationId,
+          searchData.toStationId
+        );
+
+        // Fetch seats for second trip
+        const secondTripSeats = await apiClient.getSeatAvailability(
+          trip.secondTrip!.id,
+          searchData.fromStationId,
+          searchData.toStationId
+        );
+
+        console.log("🎫 Transfer trip seat data:", {
+          "firstTrip seats count": Array.isArray(firstTripSeats) ? firstTripSeats.length : 0,
+          "secondTrip seats count": Array.isArray(secondTripSeats) ? secondTripSeats.length : 0,
+        });
+
+        // Combine seats from both trips
+        const allSeats = [];
+        
+        // Add first trip seats
+        if (Array.isArray(firstTripSeats)) {
+          const transformedFirstSeats = firstTripSeats.map((apiSeat: ApiSeatResponse, index: number) => {
+            const seatsPerRow = 4;
+            const rowIndex = Math.floor(index / seatsPerRow);
+            const columnIndex = (index % seatsPerRow) + 1;
+            const rowLetter = String.fromCharCode(65 + rowIndex);
+            const displaySeatNumber = `${rowLetter}${columnIndex}`;
+
+            return {
+              id: apiSeat.id.toString(),
+              row: rowLetter,
+              column: columnIndex,
+              isBooked: !apiSeat.isAvailable,
+              price: trip.firstTrip!.price,
+              seatNumber: displaySeatNumber,
+              seatType: "regular",
+              isSelected: false,
+              tripId: trip.firstTrip!.id, // Add tripId to identify which trip this seat belongs to
+            };
+          });
+          allSeats.push(...transformedFirstSeats);
+        }
+
+        // Add second trip seats
+        if (Array.isArray(secondTripSeats)) {
+          const transformedSecondSeats = secondTripSeats.map((apiSeat: ApiSeatResponse, index: number) => {
+            const seatsPerRow = 4;
+            const rowIndex = Math.floor(index / seatsPerRow);
+            const columnIndex = (index % seatsPerRow) + 1;
+            const rowLetter = String.fromCharCode(65 + rowIndex);
+            const displaySeatNumber = `${rowLetter}${columnIndex}`;
+
+            return {
+              id: apiSeat.id.toString(),
+              row: rowLetter,
+              column: columnIndex,
+              isBooked: !apiSeat.isAvailable,
+              price: trip.secondTrip!.price,
+              seatNumber: displaySeatNumber,
+              seatType: "regular",
+              isSelected: false,
+              tripId: trip.secondTrip!.id, // Add tripId to identify which trip this seat belongs to
+            };
+          });
+          allSeats.push(...transformedSecondSeats);
+        }
+
+        console.log("🎫 Combined transfer trip seats:", {
+          "total seats": allSeats.length,
+          "first trip seats": allSeats.filter(seat => seat.tripId === trip.firstTrip!.id).length,
+          "second trip seats": allSeats.filter(seat => seat.tripId === trip.secondTrip!.id).length,
+        });
+
+        return allSeats;
+      }
+
+      // For direct trips, use the original logic
       const tripIdToUse = trip.id;
 
       console.log("🎫 Using trip.id for seat availability API:", {
@@ -1260,15 +1555,14 @@ export default function BookingPage() {
         );
 
         console.log("🎫 Transformed seats:", {
-          count: transformedSeats.length,
-          sample: transformedSeats.slice(0, 3),
-          bookedCount: transformedSeats.filter((s) => s.isBooked).length,
-          availableCount: transformedSeats.filter((s) => !s.isBooked).length,
+          "total seats": transformedSeats.length,
+          "available seats": transformedSeats.filter(seat => !seat.isBooked).length,
+          "booked seats": transformedSeats.filter(seat => seat.isBooked).length,
         });
 
         return transformedSeats;
       } else {
-        console.warn("🎫 Unexpected seat data format:", seatData);
+        console.warn("⚠️ No seat data returned from API or invalid format");
         return [];
       }
     } catch (error) {
@@ -1451,14 +1745,104 @@ export default function BookingPage() {
     console.log("🎫 Opening seat dialog for trip:", {
       "trip.id (numeric, will use)": trip.id,
       "trip.tripId (string, display only)": trip.tripId,
+      "trip.tripType": trip.tripType,
       busName: trip.busName,
     });
 
     try {
-      // Use trip.id directly as it's the correct numeric ID for the API
+      // Handle transfer trips differently - only show first trip's seats
+      if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
+        console.log("🔄 Transfer trip detected in handleOpenSeatDialog:", {
+          "firstTrip.id": trip.firstTrip.id,
+          "secondTrip.id": trip.secondTrip.id,
+          "firstTrip.busName": trip.firstTrip.busName,
+          "secondTrip.busName": trip.secondTrip.busName,
+        });
+
+        // For transfer trips, only show seats for the first trip
+        console.log("🎫 Transfer trip seat selection - showing only first trip seats");
+        
+        // Use the first trip's ID for seat fetching
+        const firstTripId = trip.firstTrip.id;
+        
+        console.log("🎫 Using first trip ID for transfer trip seat dialog:", {
+          "firstTrip.id": firstTripId,
+          "original trip.id": trip.id,
+        });
+
+        // For return trips, we need to swap fromStationId and toStationId
+        let fromStationIdToUse = searchData.fromStationId;
+        let toStationIdToUse = searchData.toStationId;
+        
+        if (trip.direction === "return") {
+          fromStationIdToUse = searchData.toStationId;
+          toStationIdToUse = searchData.fromStationId;
+          console.log("🔄 Return trip detected in handleOpenSeatDialog - swapping station IDs:", {
+            "original fromStationId": searchData.fromStationId,
+            "original toStationId": searchData.toStationId,
+            "swapped fromStationId": fromStationIdToUse,
+            "swapped toStationId": toStationIdToUse
+          });
+        }
+
+        console.log("🎫 Final station IDs for transfer trip first leg API call:", {
+          fromStationId: fromStationIdToUse,
+          toStationId: toStationIdToUse,
+          isReturnTrip: trip.direction === "return"
+        });
+
+        // Fetch seats for the first trip only
+        const firstTripSeats = await apiClient.getSeatAvailability(
+          firstTripId,
+          fromStationIdToUse,
+          toStationIdToUse
+        );
+
+        console.log("🔍 Raw API response for first trip seats:", {
+          dataType: typeof firstTripSeats,
+          isArray: Array.isArray(firstTripSeats),
+          length: Array.isArray(firstTripSeats) ? firstTripSeats.length : "N/A",
+          sample: Array.isArray(firstTripSeats) ? firstTripSeats.slice(0, 5) : "N/A",
+        });
+
+        // Transform API response to SeatType[]
+        if (Array.isArray(firstTripSeats) && firstTripSeats.length > 0) {
+          const transformedSeats: SeatType[] = firstTripSeats.map(
+            (apiSeat: ApiSeatResponse, index: number) => {
+              const seatsPerRow = 4;
+              const rowIndex = Math.floor(index / seatsPerRow);
+              const columnIndex = (index % seatsPerRow) + 1;
+              
+              return {
+                id: apiSeat.seatId,
+                row: String.fromCharCode(65 + rowIndex), // A, B, C, etc.
+                column: columnIndex,
+                isBooked: !apiSeat.isAvailable,
+                price: trip.firstTrip!.price, // Use first trip's price
+                seatNumber: apiSeat.seatId,
+                seatType: "standard",
+                isSelected: false,
+                tripId: firstTripId, // Use first trip's ID
+              };
+            }
+          );
+
+          console.log("🎫 First trip seats loaded successfully:", transformedSeats.length, "seats");
+          setDialogSeats(transformedSeats);
+          setDialogSeatLoading(false);
+          return;
+        } else {
+          console.log("❌ No seats found for first trip");
+          setDialogSeatError("Không tìm thấy ghế cho chuyến đầu tiên");
+          setDialogSeatLoading(false);
+          return;
+        }
+      }
+
+      // For direct trips, use the original logic
       const tripIdToUse = trip.id;
 
-      console.log("🎫 Using trip.id for seat dialog API:", {
+      console.log("🎫 Using trip.id for direct trip seat dialog API:", {
         "trip.id (numeric, correct for API)": trip.id,
         "trip.tripId (string identifier, not for API)": trip.tripId,
         "tripIdToUse (final)": tripIdToUse,
@@ -3407,6 +3791,85 @@ export default function BookingPage() {
                       border: "1px solid rgba(33, 150, 243, 0.1)"
                     }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Số điện thoại
+                      </Typography>
+                      {isPhoneEditable ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          <TextField
+                            fullWidth
+                            value={customerPhoneNumber}
+                            onChange={(e) => setCustomerPhoneNumber(e.target.value)}
+                            placeholder="Nhập số điện thoại"
+                            variant="outlined"
+                            size="small"
+                            InputProps={{
+                              sx: {
+                                bgcolor: "white",
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#1976d2",
+                                },
+                                "&:hover .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#1976d2",
+                                },
+                                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                  borderColor: "#1976d2",
+                                },
+                              }
+                            }}
+                            helperText={customerPhoneNumber.trim().length === 0 ? "Vui lòng nhập số điện thoại" : ""}
+                            error={customerPhoneNumber.trim().length === 0}
+                          />
+                          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setIsPhoneEditable(false);
+                                // Reset to original value if user cancels
+                                setCustomerPhoneNumber((user as any).phone || "");
+                              }}
+                              sx={{ color: "#666", fontSize: "0.75rem" }}
+                            >
+                              Hủy
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={handleSavePhoneNumber}
+                              variant="contained"
+                              sx={{ 
+                                bgcolor: "#1976d2", 
+                                fontSize: "0.75rem",
+                                "&:hover": { bgcolor: "#1565c0" }
+                              }}
+                            >
+                              Lưu
+                            </Button>
+                          </Box>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                            {customerPhoneNumber || 'Chưa cập nhật'}
+                          </Typography>
+                          <Button
+                            size="small"
+                            onClick={() => setIsPhoneEditable(true)}
+                            sx={{ color: "#1976d2", fontSize: "0.75rem" }}
+                          >
+                            {customerPhoneNumber ? "Sửa" : "Thêm"}
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box>
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(33, 150, 243, 0.05)",
+                      border: "1px solid rgba(33, 150, 243, 0.1)"
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Mã khách hàng
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#1976d2" }}>
@@ -3448,117 +3911,27 @@ export default function BookingPage() {
                     Thông tin tài khoản đã được xác thực
                   </Typography>
                 </Box>
+
+                {/* Phone number reminder for Google login users */}
+                {isPhoneEditable && (!customerPhoneNumber || customerPhoneNumber.trim().length === 0) && (
+                  <Box sx={{ 
+                    mt: 2, 
+                    p: 2.5, 
+                    bgcolor: "rgba(255, 193, 7, 0.1)", 
+                    borderRadius: 3, 
+                    border: "1px solid rgba(255, 193, 7, 0.3)",
+                    display: "flex",
+                    alignItems: "center"
+                  }}>
+                    <Info sx={{ color: "#ff9800", mr: 1.5, fontSize: 20 }} />
+                    <Typography variant="body2" sx={{ color: "#f57c00", fontWeight: 600 }}>
+                      📱 Vui lòng cập nhật số điện thoại để hoàn tất đặt vé
+                    </Typography>
+                  </Box>
+                )}
               </Paper>
             )}
 
-            {/* Enhanced Contact Information Section */}
-            <Paper 
-              elevation={8} 
-              sx={{ 
-                p: 4, 
-                borderRadius: 4,
-                background: "linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, white 100%)",
-                border: "1px solid rgba(76, 175, 80, 0.2)",
-                position: "relative",
-                overflow: "hidden",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 4,
-                  background: "linear-gradient(90deg, #4caf50, #66bb6a, #4caf50)",
-                }
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                <Box 
-                  sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: 3, 
-                    bgcolor: "rgba(76, 175, 80, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mr: 2
-                  }}
-                >
-                  <Person sx={{ color: "#4caf50", fontSize: 28 }} />
-                </Box>
-                <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, color: "#4caf50", mb: 0.5 }}>
-                    👤 Thông tin liên hệ
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Thông tin để xác nhận và liên lạc về chuyến đi
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ display: "grid", gap: 3 }}>
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
-                  <TextField
-                    fullWidth
-                    label="👤 Họ và tên"
-                    placeholder="Nhập họ và tên người đặt"
-                    required
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        "&:hover fieldset": { borderColor: "#4caf50" },
-                        "&.Mui-focused fieldset": { borderColor: "#4caf50" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="📱 Số điện thoại"
-                    placeholder="Nhập số điện thoại"
-                    required
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 3,
-                        "&:hover fieldset": { borderColor: "#4caf50" },
-                        "&.Mui-focused fieldset": { borderColor: "#4caf50" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
-                    }}
-                  />
-                </Box>
-                <TextField
-                  fullWidth
-                  label="📧 Email"
-                  placeholder="Nhập email để nhận thông tin vé"
-                  type="email"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      "&:hover fieldset": { borderColor: "#4caf50" },
-                      "&.Mui-focused fieldset": { borderColor: "#4caf50" },
-                    },
-                    "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="📝 Ghi chú"
-                  placeholder="Nhập ghi chú cho chuyến đi (nếu có)"
-                  multiline
-                  rows={3}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      "&:hover fieldset": { borderColor: "#4caf50" },
-                      "&.Mui-focused fieldset": { borderColor: "#4caf50" },
-                    },
-                    "& .MuiInputLabel-root.Mui-focused": { color: "#4caf50" },
-                  }}
-                />
-              </Box>
-            </Paper>
           </Box>
 
           {/* Right Column - Enhanced Booking Summary */}
@@ -3719,12 +4092,16 @@ export default function BookingPage() {
     );
   };
 
-  // Render booking success
-  const renderBookingSuccess = () => {
-    // Generate random booking code
+  // Render booking result (success or failure)
+  const renderBookingResult = () => {
+    const isSuccess = paymentStatus === "success";
     const bookingCode = `XTB${Math.floor(Math.random() * 1000000)
       .toString()
       .padStart(6, "0")}`;
+
+    const handleBackToHome = () => {
+      router.push("/");
+    };
 
     return (
       <Box sx={{ my: 8, textAlign: "center" }}>
@@ -3738,41 +4115,68 @@ export default function BookingPage() {
               width: 100,
               height: 100,
               borderRadius: "50%",
-              bgcolor: "#f48fb1",
+              bgcolor: isSuccess ? "#4caf50" : "#f44336",
               color: "white",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               mx: "auto",
               mb: 3,
-              boxShadow: "0 8px 25px rgba(244, 143, 177, 0.4)",
+              boxShadow: isSuccess 
+                ? "0 8px 25px rgba(76, 175, 80, 0.4)" 
+                : "0 8px 25px rgba(244, 67, 54, 0.4)",
             }}
           >
-            <Check sx={{ fontSize: 60 }} />
+            {isSuccess ? (
+              <Check sx={{ fontSize: 60 }} />
+            ) : (
+              <Close sx={{ fontSize: 60 }} />
+            )}
           </Box>
         </motion.div>
 
         <Typography
           variant="h4"
           gutterBottom
-          sx={{ color: "#f48fb1", fontWeight: "bold" }}
+          sx={{ 
+            color: isSuccess ? "#4caf50" : "#f44336", 
+            fontWeight: "bold" 
+          }}
         >
-          Đặt vé thành công!
+          {isSuccess ? "🎉 Đặt vé thành công!" : "❌ Thanh toán thất bại"}
         </Typography>
 
-        <Typography variant="subtitle1" sx={{ mb: 4 }}>
-          Cảm ơn bạn đã đặt vé. Mã đặt vé của bạn là{" "}
-          <Box component="span" sx={{ fontWeight: "bold", color: "#f48fb1" }}>
-            {bookingCode}
-          </Box>
+        <Typography variant="subtitle1" sx={{ mb: 4, color: "text.secondary" }}>
+          {isSuccess ? (
+            <>
+              Cảm ơn bạn đã đặt vé. Mã đặt vé của bạn là{" "}
+              <Box component="span" sx={{ fontWeight: "bold", color: "#4caf50" }}>
+                {bookingCode}
+              </Box>
+            </>
+          ) : (
+            <>
+              {paymentError || "Có lỗi xảy ra trong quá trình thanh toán"}
+              <br />
+              <Box component="span" sx={{ fontSize: "0.9rem", color: "text.disabled" }}>
+                Vui lòng thử lại hoặc liên hệ hỗ trợ khách hàng
+              </Box>
+            </>
+          )}
         </Typography>
 
-        {/* Enhanced Ticket Design */}
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        >
+        {isSuccess && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            {/* Enhanced Ticket Design for Success */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
           <Box
             sx={{
               maxWidth: 700,
@@ -4130,30 +4534,433 @@ export default function BookingPage() {
             </Box>
           </Box>
         </motion.div>
-
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <Button
-            variant="contained"
-            component={Link}
-            href="/"
-            sx={{
-              bgcolor: "#f48fb1",
-              "&:hover": {
-                bgcolor: "#e91e63",
-              },
-              py: 1.5,
-              px: 4,
-              fontWeight: "bold",
-              boxShadow: "0 8px 25px rgba(244, 143, 177, 0.4)",
-            }}
-          >
-            Trở về trang chủ
-          </Button>
         </motion.div>
+        )}
+
+        {/* Failure Template */}
+        {!isSuccess && (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            {/* Enhanced Ticket Design for Failure */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <Box
+                sx={{
+                  maxWidth: 700,
+                  mx: "auto",
+                  mb: 5,
+                  position: "relative",
+                }}
+              >
+                <Paper
+                  elevation={5}
+                  sx={{
+                    p: 4,
+                    borderRadius: 3,
+                    position: "relative",
+                    overflow: "hidden",
+                    background: "linear-gradient(135deg, #fff 0%, #ffebee 100%)",
+                    border: "1px dashed #f44336",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "5px",
+                      background:
+                        "linear-gradient(90deg, #f44336, #d32f2f, #f44336)",
+                      backgroundSize: "200% 100%",
+                      animation: "shimmer 2s ease-in-out infinite",
+                      "@keyframes shimmer": {
+                        "0%": { backgroundPosition: "-200% 0" },
+                        "100%": { backgroundPosition: "200% 0" },
+                      },
+                    },
+                  }}
+                >
+                  {/* Ticket Header */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
+                      pb: 2,
+                      borderBottom: "1px dashed #f44336",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Box
+                        component="img"
+                        src="/images/pic4.png"
+                        alt="XeTiic Logo"
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          mr: 2,
+                          borderRadius: 1,
+                          objectFit: "contain",
+                          filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
+                        }}
+                      />
+                      <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                        Vé Xe BusTicket
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Trạng thái
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: "bold", color: "#f44336" }}
+                      >
+                        THẤT BẠI
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Payment Status Info */}
+                  <Box sx={{ mb: 3, textAlign: "center" }}>
+                    <Typography variant="h6" sx={{ mb: 2, color: "#f44336" }}>
+                      ⚠️ Thanh toán không thành công
+                    </Typography>
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Lý do:</strong> {paymentError || "Giao dịch không thành công"}
+                      </Typography>
+                      
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Thời gian:</strong> <span id="current-time">-</span>
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Ticket Content - Same as success but with failed status */}
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {/* Route Info */}
+                    <Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 2,
+                          mb: 3,
+                        }}
+                      >
+                        <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Điểm đi
+                          </Typography>
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: "bold", mt: 0.5 }}
+                          >
+                            {shuttlePoint?.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            {selectedTrip &&
+                              new Date(selectedTrip.timeStart).toLocaleTimeString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            mx: 2,
+                            px: 2,
+                          }}
+                        >
+                          <DirectionsBus
+                            sx={{ color: "#f44336", fontSize: "1.5rem", mb: 0.5 }}
+                          />
+                          <Box
+                            sx={{
+                              width: { xs: "80px", sm: "120px" },
+                              height: "2px",
+                              bgcolor: "#f44336",
+                              position: "relative",
+                              "&::before, &::after": {
+                                content: '""',
+                                position: "absolute",
+                                width: "6px",
+                                height: "6px",
+                                borderRadius: "50%",
+                                bgcolor: "#f44336",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                              },
+                              "&::before": {
+                                left: 0,
+                              },
+                              "&::after": {
+                                right: 0,
+                              },
+                            }}
+                          />
+                          <Typography variant="body2" sx={{ mt: 0.5 }}>
+                            {selectedTrip &&
+                              (() => {
+                                const start = new Date(selectedTrip.timeStart);
+                                const end = new Date(selectedTrip.timeEnd);
+                                const diffMs = end.getTime() - start.getTime();
+                                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                const minutes = Math.floor(
+                                  (diffMs % (1000 * 60 * 60)) / (1000 * 60)
+                                );
+                                return `${hours}h${
+                                  minutes > 0 ? ` ${minutes}m` : ""
+                                }`;
+                              })()}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Điểm đến
+                          </Typography>
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: "bold", mt: 0.5 }}
+                          >
+                            {selectedTrip?.endLocation}
+                          </Typography>
+                          <Typography variant="body2">
+                            {selectedTrip &&
+                              new Date(selectedTrip.timeEnd).toLocaleTimeString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    {/* Details */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        gap: { xs: 2, sm: 3 },
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Nhà xe
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "bold", mb: 1.5 }}
+                        >
+                          {selectedTrip?.busName} • {selectedTrip?.tripId}
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary">
+                          Ngày khởi hành
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 1.5 }}>
+                          {searchData.departureDate}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Số ghế
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 0.5,
+                            mb: 1.5,
+                          }}
+                        >
+                          {selectedSeats.map((seat) => (
+                            <Chip
+                              key={seat.id}
+                              label={seat.id}
+                              size="small"
+                              sx={{
+                                bgcolor: "#ffebee",
+                                color: "#f44336",
+                                fontWeight: "bold",
+                              }}
+                            />
+                          ))}
+                        </Box>
+
+                        <Typography variant="body2" color="text.secondary">
+                          Số tiền không được thanh toán
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "bold", color: "#f44336" }}
+                        >
+                          {formatPrice(calculateTotalPrice().total)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Failure Notice */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      mt: 3,
+                      pt: 3,
+                      borderTop: "1px dashed #f44336",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ color: "#f44336", fontWeight: "bold", mb: 1 }}>
+                        ❌ Giao dịch không được xử lý
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        Không có khoản tiền nào được trừ từ tài khoản của bạn.
+                        <br />
+                        Bạn có thể thử lại hoặc chọn phương thức thanh toán khác.
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setPaymentStatus(null);
+                        setPaymentError("");
+                        setActiveStep(1); // Quay lại bước chọn ghế
+                      }}
+                      sx={{
+                        color: "#f44336",
+                        borderColor: "#f44336",
+                        "&:hover": {
+                          borderColor: "#d32f2f",
+                          bgcolor: "#ffebee",
+                        },
+                      }}
+                    >
+                      Thử lại
+                    </Button>
+                    
+                    <Button
+                      variant="contained"
+                      onClick={() => router.push("/")}
+                      sx={{
+                        bgcolor: "#f44336",
+                        "&:hover": {
+                          bgcolor: "#d32f2f",
+                        },
+                      }}
+                    >
+                      Về trang chủ
+                    </Button>
+                  </Box>
+                </Paper>
+
+                {/* Ticket holes decoration for failed ticket */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: -10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: { xs: "none", md: "block" },
+                  }}
+                >
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        bgcolor: "white",
+                        mb: 3,
+                        boxShadow: "inset 0 0 5px rgba(244, 67, 54, 0.2)",
+                      }}
+                    />
+                  ))}
+                </Box>
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    right: -10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: { xs: "none", md: "block" },
+                  }}
+                >
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        bgcolor: "white",
+                        mb: 3,
+                        boxShadow: "inset 0 0 5px rgba(244, 67, 54, 0.2)",
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Common Navigation Button for Success */}
+        {isSuccess && (
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <Button
+              variant="contained"
+              onClick={() => router.push("/")}
+              sx={{
+                bgcolor: "#4caf50",
+                "&:hover": {
+                  bgcolor: "#388e3c",
+                },
+                py: 1.5,
+                px: 4,
+                fontWeight: "bold",
+                boxShadow: "0 8px 25px rgba(76, 175, 80, 0.4)",
+              }}
+            >
+              Trở về trang chủ
+            </Button>
+          </motion.div>
+        )}
       </Box>
     );
   };
@@ -5039,6 +5846,17 @@ export default function BookingPage() {
     );
   }
 
+  // Show loading state during server-side rendering to prevent hydration mismatch
+  if (!isClient) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <motion.div
@@ -5098,7 +5916,7 @@ export default function BookingPage() {
       </motion.div>
 
       {completed ? (
-        renderBookingSuccess()
+        renderBookingResult()
       ) : (
         <>
           <Box sx={{ width: "100%", mb: 4 }}>
