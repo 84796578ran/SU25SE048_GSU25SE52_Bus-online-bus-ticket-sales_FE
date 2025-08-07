@@ -465,6 +465,12 @@ export default function BusTicketHomePage() {
   };
 
   const handleSwapLocations = () => {
+    // Validate: prevent swapping if both locations are the same
+    if (searchData.from && searchData.to && searchData.from.id === searchData.to.id) {
+      showNotification('Không thể hoán đổi vị trí khi điểm đi và điểm đến giống nhau', 'error');
+      return;
+    }
+    
     setSearchData(prev => ({
       ...prev,
       from: prev.to,
@@ -1372,6 +1378,12 @@ export default function BusTicketHomePage() {
                             getOptionLabel={(option) => option.name}
                             value={searchData.from}
                             onChange={(event, newValue) => {
+                              // Validate: prevent selecting same location for both from and to
+                              if (newValue && searchData.to && newValue.id === searchData.to.id) {
+                                showNotification('Không thể chọn cùng một địa điểm cho điểm đi và điểm đến', 'error');
+                                return;
+                              }
+                              
                               setSearchData(prev => ({
                                 ...prev,
                                 from: newValue
@@ -1519,6 +1531,12 @@ export default function BusTicketHomePage() {
                             getOptionLabel={(option) => option.name}
                             value={searchData.to}
                             onChange={(event, newValue) => {
+                              // Validate: prevent selecting same location for both from and to
+                              if (newValue && searchData.from && newValue.id === searchData.from.id) {
+                                showNotification('Không thể chọn cùng một địa điểm cho điểm đi và điểm đến', 'error');
+                                return;
+                              }
+                              
                               setSearchData(prev => ({
                                 ...prev,
                                 to: newValue

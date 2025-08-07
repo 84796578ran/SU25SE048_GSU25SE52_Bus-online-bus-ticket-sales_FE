@@ -64,43 +64,144 @@ export default function RegisterTemplatePage() {
       [name]: type === 'checkbox' ? checked : value
     }));
 
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+    // Real-time validation
+    const newErrors = { ...errors };
+    
+    if (name === 'fullName') {
+      if (!value.trim()) {
+        newErrors.fullName = 'Vui lòng nhập họ tên';
+      } else if (value.trim().length < 2) {
+        newErrors.fullName = 'Họ tên phải có ít nhất 2 ký tự';
+      } else if (value.trim().length > 50) {
+        newErrors.fullName = 'Họ tên không được vượt quá 50 ký tự';
+      } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value.trim())) {
+        newErrors.fullName = 'Họ tên chỉ được chứa chữ cái và khoảng trắng';
+      } else {
+        delete newErrors.fullName;
+      }
+    } else if (name === 'gmail') {
+      if (!value.trim()) {
+        newErrors.gmail = 'Vui lòng nhập email';
+      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value.trim())) {
+        newErrors.gmail = 'Email không hợp lệ';
+      } else if (value.trim().length > 100) {
+        newErrors.gmail = 'Email không được vượt quá 100 ký tự';
+      } else {
+        delete newErrors.gmail;
+      }
+    } else if (name === 'phone') {
+      if (!value.trim()) {
+        newErrors.phone = 'Vui lòng nhập số điện thoại';
+      } else if (!/^[0-9]{10,11}$/.test(value.trim())) {
+        newErrors.phone = 'Số điện thoại phải có 10-11 chữ số';
+      } else if (!/^(03|05|07|08|09)[0-9]{8}$/.test(value.trim())) {
+        newErrors.phone = 'Số điện thoại không hợp lệ (phải bắt đầu bằng 03, 05, 07, 08, 09)';
+      } else {
+        delete newErrors.phone;
+      }
+    } else if (name === 'gender') {
+      if (!value) {
+        newErrors.gender = 'Vui lòng chọn giới tính';
+      } else {
+        delete newErrors.gender;
+      }
+    } else if (name === 'password') {
+      if (!value) {
+        newErrors.password = 'Vui lòng nhập mật khẩu';
+      } else if (value.length < 8) {
+        newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+      } else if (value.length > 50) {
+        newErrors.password = 'Mật khẩu không được vượt quá 50 ký tự';
+      } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(value)) {
+        newErrors.password = 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt';
+      } else {
+        delete newErrors.password;
+      }
+      
+      // Also validate confirm password when password changes
+      if (registerData.confirmPassword && value !== registerData.confirmPassword) {
+        newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      } else if (registerData.confirmPassword) {
+        delete newErrors.confirmPassword;
+      }
+    } else if (name === 'confirmPassword') {
+      if (!value) {
+        newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
+      } else if (registerData.password !== value) {
+        newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      } else {
+        delete newErrors.confirmPassword;
+      }
+    } else if (name === 'agreeTerms') {
+      if (!checked) {
+        newErrors.agreeTerms = 'Vui lòng đồng ý với điều khoản sử dụng';
+      } else {
+        delete newErrors.agreeTerms;
+      }
+    } else {
+      // Clear error for other fields
+      delete newErrors[name];
     }
+
+    setErrors(newErrors);
   };
 
   const validateForm = () => {
     const newErrors: any = {};
 
+    // Validate full name
     if (!registerData.fullName.trim()) {
       newErrors.fullName = 'Vui lòng nhập họ tên';
+    } else if (registerData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Họ tên phải có ít nhất 2 ký tự';
+    } else if (registerData.fullName.trim().length > 50) {
+      newErrors.fullName = 'Họ tên không được vượt quá 50 ký tự';
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(registerData.fullName.trim())) {
+      newErrors.fullName = 'Họ tên chỉ được chứa chữ cái và khoảng trắng';
     }
 
+    // Validate email
     if (!registerData.gmail.trim()) {
       newErrors.gmail = 'Vui lòng nhập email';
-    } else if (!/\S+@\S+\.\S+/.test(registerData.gmail)) {
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(registerData.gmail.trim())) {
       newErrors.gmail = 'Email không hợp lệ';
+    } else if (registerData.gmail.trim().length > 100) {
+      newErrors.gmail = 'Email không được vượt quá 100 ký tự';
     }
 
+    // Validate phone number
     if (!registerData.phone.trim()) {
       newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10,11}$/.test(registerData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
+    } else if (!/^[0-9]{10,11}$/.test(registerData.phone.trim())) {
+      newErrors.phone = 'Số điện thoại phải có 10-11 chữ số';
+    } else if (!/^(03|05|07|08|09)[0-9]{8}$/.test(registerData.phone.trim())) {
+      newErrors.phone = 'Số điện thoại không hợp lệ (phải bắt đầu bằng 03, 05, 07, 08, 09)';
     }
 
+    // Validate gender
+    if (!registerData.gender) {
+      newErrors.gender = 'Vui lòng chọn giới tính';
+    }
+
+    // Validate password
     if (!registerData.password) {
       newErrors.password = 'Vui lòng nhập mật khẩu';
-    } else if (registerData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    } else if (registerData.password.length < 8) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+    } else if (registerData.password.length > 50) {
+      newErrors.password = 'Mật khẩu không được vượt quá 50 ký tự';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(registerData.password)) {
+      newErrors.password = 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt';
     }
 
+    // Validate confirm password
     if (!registerData.confirmPassword) {
       newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
     } else if (registerData.password !== registerData.confirmPassword) {
       newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
     }
 
+    // Validate terms agreement
     if (!registerData.agreeTerms) {
       newErrors.agreeTerms = 'Vui lòng đồng ý với điều khoản sử dụng';
     }
@@ -525,6 +626,9 @@ export default function RegisterTemplatePage() {
                         name="gender"
                         value={registerData.gender}
                         onChange={handleInputChange}
+                        required
+                        error={!!errors.gender}
+                        helperText={errors.gender}
                         sx={{
                           flex: 1,
                           '& .MuiOutlinedInput-root': {
@@ -547,6 +651,7 @@ export default function RegisterTemplatePage() {
                           }
                         }}
                       >
+                        <MenuItem value="">Chọn giới tính</MenuItem>
                         <MenuItem value="male">Nam</MenuItem>
                         <MenuItem value="female">Nữ</MenuItem>
                         <MenuItem value="other">Khác</MenuItem>
@@ -583,56 +688,95 @@ export default function RegisterTemplatePage() {
                   /> */}
                     </Box>
 
-                    <TextField
-                      fullWidth
-                      label="Mật khẩu"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={registerData.password}
-                      onChange={handleInputChange}
-                      required
-                      error={!!errors.password}
-                      helperText={errors.password}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Lock sx={{ color: '#e91e63' }} />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                              sx={{ color: '#e91e63' }}
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      }}
-                      placeholder="Ít nhất 6 ký tự"
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 3,
-                          backgroundColor: 'rgba(56, 142, 60, 0.02)',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            backgroundColor: 'rgba(56, 142, 60, 0.04)',
-                            '& .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#388e3c',
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Mật khẩu"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={registerData.password}
+                        onChange={handleInputChange}
+                        required
+                        error={!!errors.password}
+                        helperText={errors.password}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Lock sx={{ color: '#e91e63' }} />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                                sx={{ color: '#e91e63' }}
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
+                        placeholder="Ít nhất 8 ký tự (chữ hoa, chữ thường, số, ký tự đặc biệt)"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
+                            backgroundColor: 'rgba(56, 142, 60, 0.02)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              backgroundColor: 'rgba(56, 142, 60, 0.04)',
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: '#388e3c',
+                              }
+                            },
+                            '&.Mui-focused': {
+                              backgroundColor: 'rgba(56, 142, 60, 0.06)',
+                              boxShadow: '0 0 0 3px rgba(56, 142, 60, 0.1)',
                             }
                           },
-                          '&.Mui-focused': {
-                            backgroundColor: 'rgba(56, 142, 60, 0.06)',
-                            boxShadow: '0 0 0 3px rgba(56, 142, 60, 0.1)',
+                          '& .MuiInputLabel-root': {
+                            fontWeight: 600,
                           }
-                        },
-                        '& .MuiInputLabel-root': {
-                          fontWeight: 600,
-                        }
-                      }}
-                    />
+                        }}
+                      />
+                      
+                      {/* Password strength indicator */}
+                      {registerData.password && (
+                        <Box sx={{ mt: 1, mb: 1 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>
+                            Độ mạnh mật khẩu:
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                            {[
+                              { label: '8+ ký tự', valid: registerData.password.length >= 8 },
+                              { label: 'Chữ hoa', valid: /[A-Z]/.test(registerData.password) },
+                              { label: 'Chữ thường', valid: /[a-z]/.test(registerData.password) },
+                              { label: 'Số', valid: /\d/.test(registerData.password) },
+                              { label: 'Ký tự đặc biệt', valid: /[@$!%*?&]/.test(registerData.password) }
+                            ].map((requirement, index) => (
+                              <Box
+                                key={index}
+                                sx={{
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  fontSize: '0.75rem',
+                                  fontWeight: 500,
+                                  backgroundColor: requirement.valid ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                  color: requirement.valid ? '#4caf50' : '#f44336',
+                                  border: `1px solid ${requirement.valid ? '#4caf50' : '#f44336'}`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
+                                }}
+                              >
+                                {requirement.valid ? '✓' : '✗'} {requirement.label}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
 
                     <TextField
                       fullWidth
