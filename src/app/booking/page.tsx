@@ -155,37 +155,7 @@ const generateMockSeats = (): SeatType[] => {
   return seats;
 };
 
-// Mock shuttle points
-const mockShuttlePoints = [
-  {
-    id: 1,
-    name: "Quận 1",
-    address: "123 Nguyễn Huệ, Quận 1",
-    time: "06:00",
-    extraFee: 0,
-  },
-  {
-    id: 2,
-    name: "Quận 2",
-    address: "456 Trần Não, Quận 2",
-    time: "06:15",
-    extraFee: 20000,
-  },
-  {
-    id: 3,
-    name: "Quận 7",
-    address: "789 Nguyễn Thị Thập, Quận 7",
-    time: "06:30",
-    extraFee: 30000,
-  },
-  {
-    id: 4,
-    name: "Quận 9",
-    address: "101 Lê Văn Việt, Quận 9",
-    time: "06:15",
-    extraFee: 40000,
-  },
-];
+  // Removed pickup point hardcode
 
 // Payment methods
 const paymentMethods = [
@@ -236,9 +206,8 @@ export default function BookingPage() {
   const [selectedReturnSeats, setSelectedReturnSeats] = useState<SeatType[]>([]);
   const [seats, setSeats] = useState<SeatType[]>([]); // Keep for one-way compatibility
   const [selectedSeats, setSelectedSeats] = useState<SeatType[]>([]); // Keep for one-way compatibility
-  const [shuttlePoint, setShuttlePoint] = useState<ShuttlePointType | null>(
-    null
-  );
+  // Removed pickup point selection per request
+  const [shuttlePoint, setShuttlePoint] = useState<ShuttlePointType | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [completed, setCompleted] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<"success" | "failed" | null>(null);
@@ -255,6 +224,8 @@ export default function BookingPage() {
 
   // Dialog specific seat data - separate from main seats state to avoid conflicts
   const [dialogSeats, setDialogSeats] = useState<SeatType[]>([]);
+  const [dialogFirstSeats, setDialogFirstSeats] = useState<SeatType[]>([]);
+  const [dialogSecondSeats, setDialogSecondSeats] = useState<SeatType[]>([]);
   const [dialogSeatLoading, setDialogSeatLoading] = useState<boolean>(false);
   const [dialogSeatError, setDialogSeatError] = useState<string>("");
 
@@ -654,7 +625,7 @@ export default function BookingPage() {
         paymentError: paymentErrorParam,
       });
 
-              // Try to restore booking data from localStorage
+    // Try to restore booking data from localStorage (without pickup requirement)
         try {
           if (typeof window !== 'undefined') {
             const savedBookingData = localStorage.getItem('bookingData');
@@ -666,7 +637,7 @@ export default function BookingPage() {
               setSearchData(bookingData.searchData);
               setSelectedTrip(bookingData.selectedTrip);
               setSelectedSeats(bookingData.selectedSeats);
-              setShuttlePoint(bookingData.shuttlePoint);
+              setShuttlePoint(null);
               setCustomerPhoneNumber(bookingData.customerPhoneNumber);
               
               // Clear localStorage after restoring
@@ -860,10 +831,7 @@ export default function BookingPage() {
 
     // Step 3: Payment validation
     if (activeStep === 2) {
-      if (!shuttlePoint) {
-        alert("Vui lòng chọn điểm đón");
-        return;
-      }
+      // Pickup point no longer required
       if (!paymentMethod) {
         alert("Vui lòng chọn phương thức thanh toán");
         return;
@@ -1189,9 +1157,7 @@ export default function BookingPage() {
   };
 
   // Handle shuttle point selection
-  const handleSelectShuttlePoint = (point: ShuttlePointType) => {
-    setShuttlePoint(point);
-  };
+  // Pickup selection removed
 
   // Handle phone number save/update
   const handleSavePhoneNumber = async () => {
@@ -1750,7 +1716,7 @@ export default function BookingPage() {
     });
 
     try {
-      // Handle transfer trips differently - only show first trip's seats
+      // Handle transfer trips differently - show both first and second trip seats
       if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
         console.log("🔄 Transfer trip detected in handleOpenSeatDialog:", {
           "firstTrip.id": trip.firstTrip.id,
@@ -1759,84 +1725,60 @@ export default function BookingPage() {
           "secondTrip.busName": trip.secondTrip.busName,
         });
 
-        // For transfer trips, only show seats for the first trip
-        console.log("🎫 Transfer trip seat selection - showing only first trip seats");
-        
-        // Use the first trip's ID for seat fetching
+        // Use both trip IDs for fetching
         const firstTripId = trip.firstTrip.id;
-        
-        console.log("🎫 Using first trip ID for transfer trip seat dialog:", {
-          "firstTrip.id": firstTripId,
-          "original trip.id": trip.id,
-        });
+        const secondTripId = trip.secondTrip.id;
 
-        // For return trips, we need to swap fromStationId and toStationId
+        // For return trips, swap stations; use same for both legs (assuming segment split stations handled server side)
         let fromStationIdToUse = searchData.fromStationId;
         let toStationIdToUse = searchData.toStationId;
-        
         if (trip.direction === "return") {
           fromStationIdToUse = searchData.toStationId;
           toStationIdToUse = searchData.fromStationId;
-          console.log("🔄 Return trip detected in handleOpenSeatDialog - swapping station IDs:", {
-            "original fromStationId": searchData.fromStationId,
-            "original toStationId": searchData.toStationId,
-            "swapped fromStationId": fromStationIdToUse,
-            "swapped toStationId": toStationIdToUse
+        }
+
+        // Fetch both legs in parallel
+        const [firstTripSeats, secondTripSeats] = await Promise.all([
+          apiClient.getSeatAvailability(firstTripId, fromStationIdToUse, toStationIdToUse),
+          apiClient.getSeatAvailability(secondTripId, fromStationIdToUse, toStationIdToUse),
+        ]);
+
+        // Transformers
+        const transformSeats = (
+          apiSeats: ApiSeatResponse[],
+          price: number,
+          legTripId: number
+        ): SeatType[] =>
+          (apiSeats || []).map((apiSeat: ApiSeatResponse, index: number) => {
+            const seatsPerRow = 4;
+            const rowIndex = Math.floor(index / seatsPerRow);
+            const columnIndex = (index % seatsPerRow) + 1;
+            return {
+              id: apiSeat.id.toString(),
+              row: String.fromCharCode(65 + rowIndex),
+              column: columnIndex,
+              isBooked: !apiSeat.isAvailable,
+              price,
+              seatNumber: apiSeat.seatId,
+              seatType: "standard",
+              isSelected: false,
+              tripId: legTripId,
+            };
           });
-        }
 
-        console.log("🎫 Final station IDs for transfer trip first leg API call:", {
-          fromStationId: fromStationIdToUse,
-          toStationId: toStationIdToUse,
-          isReturnTrip: trip.direction === "return"
-        });
+        const firstSeats = Array.isArray(firstTripSeats)
+          ? transformSeats(firstTripSeats, trip.firstTrip!.price, firstTripId)
+          : [];
+        const secondSeats = Array.isArray(secondTripSeats)
+          ? transformSeats(secondTripSeats, trip.secondTrip!.price, secondTripId)
+          : [];
 
-        // Fetch seats for the first trip only
-        const firstTripSeats = await apiClient.getSeatAvailability(
-          firstTripId,
-          fromStationIdToUse,
-          toStationIdToUse
-        );
-
-        console.log("🔍 Raw API response for first trip seats:", {
-          dataType: typeof firstTripSeats,
-          isArray: Array.isArray(firstTripSeats),
-          length: Array.isArray(firstTripSeats) ? firstTripSeats.length : "N/A",
-          sample: Array.isArray(firstTripSeats) ? firstTripSeats.slice(0, 5) : "N/A",
-        });
-
-        // Transform API response to SeatType[]
-        if (Array.isArray(firstTripSeats) && firstTripSeats.length > 0) {
-          const transformedSeats: SeatType[] = firstTripSeats.map(
-            (apiSeat: ApiSeatResponse, index: number) => {
-              const seatsPerRow = 4;
-              const rowIndex = Math.floor(index / seatsPerRow);
-              const columnIndex = (index % seatsPerRow) + 1;
-              
-              return {
-                id: apiSeat.seatId,
-                row: String.fromCharCode(65 + rowIndex), // A, B, C, etc.
-                column: columnIndex,
-                isBooked: !apiSeat.isAvailable,
-                price: trip.firstTrip!.price, // Use first trip's price
-                seatNumber: apiSeat.seatId,
-                seatType: "standard",
-                isSelected: false,
-                tripId: firstTripId, // Use first trip's ID
-              };
-            }
-          );
-
-          console.log("🎫 First trip seats loaded successfully:", transformedSeats.length, "seats");
-          setDialogSeats(transformedSeats);
-          setDialogSeatLoading(false);
-          return;
-        } else {
-          console.log("❌ No seats found for first trip");
-          setDialogSeatError("Không tìm thấy ghế cho chuyến đầu tiên");
-          setDialogSeatLoading(false);
-          return;
-        }
+        setDialogFirstSeats(firstSeats);
+        setDialogSecondSeats(secondSeats);
+        // Keep a combined array for any existing consumers
+        setDialogSeats([...firstSeats, ...secondSeats]);
+        setDialogSeatLoading(false);
+        return;
       }
 
       // For direct trips, use the original logic
@@ -1976,6 +1918,8 @@ export default function BookingPage() {
     setSeatDialogOpen(false);
     setSeatDialogTrip(null);
     setDialogSeats([]);
+    setDialogFirstSeats([]);
+    setDialogSecondSeats([]);
     setDialogSeatError("");
   };
 
@@ -2160,9 +2104,7 @@ export default function BookingPage() {
     }
 
     let shuttleFee = 0;
-    if (shuttlePoint) {
-      shuttleFee = shuttlePoint.extraFee;
-    }
+    // Pickup fee removed
 
     const serviceFee = 10000; // Fixed service fee
 
@@ -3493,90 +3435,19 @@ export default function BookingPage() {
                 </Box>
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 700, color: "#f48fb1", mb: 0.5 }}>
-                    🚌 Chọn điểm đón
+                    Thông tin đặt chỗ
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Chọn địa điểm thuận tiện để được đón
+                    Kiểm tra chi tiết chuyến đi và tiếp tục thanh toán
                   </Typography>
                 </Box>
               </Box>
 
-              <Box sx={{ display: "grid", gap: 2 }}>
-                {mockShuttlePoints.map((point) => (
-                  <Card
-                    key={point.id}
-                    sx={{
-                      cursor: "pointer",
-                      border: shuttlePoint?.id === point.id
-                        ? "3px solid #f48fb1"
-                        : "2px solid transparent",
-                      borderRadius: 3,
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      background: shuttlePoint?.id === point.id
-                        ? "linear-gradient(135deg, rgba(244, 143, 177, 0.1) 0%, rgba(244, 143, 177, 0.05) 100%)"
-                        : "white",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 8px 25px rgba(244, 143, 177, 0.25)",
-                        borderColor: "#f48fb1",
-                      },
-                    }}
-                    onClick={() => handleSelectShuttlePoint(point)}
-                  >
-                    <CardContent sx={{ p: 3 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: "#2c3e50" }}>
-                            {point.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            📍 {point.address}
-                          </Typography>
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <AccessTime sx={{ fontSize: 18, mr: 1, color: "#f48fb1" }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              Giờ đón: {point.time}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Box sx={{ textAlign: "right", ml: 2 }}>
-                          {point.extraFee > 0 ? (
-                            <Typography variant="h6" sx={{ color: "#f48fb1", fontWeight: 700, mb: 1 }}>
-                              {formatPrice(point.extraFee)}
-                            </Typography>
-                          ) : (
-                            <Chip 
-                              size="medium" 
-                              label="🆓 Miễn phí" 
-                              sx={{ 
-                                bgcolor: "#4caf50", 
-                                color: "white", 
-                                fontWeight: 600,
-                                mb: 1
-                              }} 
-                            />
-                          )}
-                          {shuttlePoint?.id === point.id && (
-                            <Box 
-                              sx={{ 
-                                width: 32, 
-                                height: 32, 
-                                borderRadius: "50%", 
-                                bgcolor: "#f48fb1", 
-                                display: "flex", 
-                                alignItems: "center", 
-                                justifyContent: "center",
-                                mx: "auto"
-                              }}
-                            >
-                              <Check sx={{ color: "white", fontSize: 20 }} />
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Pickup selection removed */}
+              <Box sx={{ p: 3, borderRadius: 2, bgcolor: "rgba(0,0,0,0.02)", border: "1px dashed rgba(0,0,0,0.12)" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Mẹo: Hãy kiểm tra kỹ thời gian, điểm đi/đến trước khi thanh toán.
+                </Typography>
               </Box>
             </Paper>
 
@@ -4103,6 +3974,16 @@ export default function BookingPage() {
       router.push("/");
     };
 
+    // Compute robust display data for the ticket
+    const tripForDisplay = selectedTrip || selectedDepartureTrip || null;
+    const seatsForDisplay = (selectedSeats && selectedSeats.length > 0)
+      ? selectedSeats
+      : (selectedDepartureSeats || []);
+    const originDisplay = searchData.from || tripForDisplay?.fromLocation || "-";
+    const destinationDisplay = searchData.to || tripForDisplay?.endLocation || "-";
+    const busNameDisplay = tripForDisplay?.busName || "-";
+    const departDateDisplay = searchData.departureDate || (tripForDisplay ? new Date(tripForDisplay.timeStart).toLocaleDateString("vi-VN") : "-");
+
     return (
       <Box sx={{ my: 8, textAlign: "center" }}>
         <motion.div
@@ -4268,15 +4149,15 @@ export default function BookingPage() {
                       mb: 3,
                     }}
                   >
-                    <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
+                     <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
                       <Typography variant="body2" color="text.secondary">
-                        Điểm đi
+                        Điểm đón
                       </Typography>
                       <Typography
                         variant="h6"
                         sx={{ fontWeight: "bold", mt: 0.5 }}
                       >
-                        {shuttlePoint?.name}
+                         {originDisplay}
                       </Typography>
                       <Typography variant="body2">
                         {selectedTrip &&
@@ -4343,7 +4224,7 @@ export default function BookingPage() {
                       </Typography>
                     </Box>
 
-                    <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
+                     <Box sx={{ textAlign: "center", flex: "1 1 auto" }}>
                       <Typography variant="body2" color="text.secondary">
                         Điểm đến
                       </Typography>
@@ -4351,7 +4232,7 @@ export default function BookingPage() {
                         variant="h6"
                         sx={{ fontWeight: "bold", mt: 0.5 }}
                       >
-                        {selectedTrip?.endLocation}
+                         {destinationDisplay}
                       </Typography>
                       <Typography variant="body2">
                         {selectedTrip &&
@@ -4376,28 +4257,28 @@ export default function BookingPage() {
                   }}
                 >
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Nhà xe
-                    </Typography>
+                     <Typography variant="body2" color="text.secondary">
+                       Nhà xe
+                     </Typography>
                     <Typography
                       variant="body1"
                       sx={{ fontWeight: "bold", mb: 1.5 }}
                     >
-                      {selectedTrip?.busName} • {selectedTrip?.tripId}
+                       {busNameDisplay} {tripForDisplay?.tripId ? `• ${tripForDisplay.tripId}` : ""}
                     </Typography>
 
-                    <Typography variant="body2" color="text.secondary">
-                      Ngày khởi hành
-                    </Typography>
+                     <Typography variant="body2" color="text.secondary">
+                       Ngày khởi hành
+                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1.5 }}>
-                      {searchData.departureDate}
+                       {departDateDisplay}
                     </Typography>
                   </Box>
 
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Số ghế
-                    </Typography>
+                     <Typography variant="body2" color="text.secondary">
+                       Số ghế
+                     </Typography>
                     <Box
                       sx={{
                         display: "flex",
@@ -4406,10 +4287,10 @@ export default function BookingPage() {
                         mb: 1.5,
                       }}
                     >
-                      {selectedSeats.map((seat) => (
+                      {(seatsForDisplay && seatsForDisplay.length > 0) ? seatsForDisplay.map((seat) => (
                         <Chip
                           key={seat.id}
-                          label={seat.id}
+                          label={seat.seatNumber || seat.id}
                           size="small"
                           sx={{
                             bgcolor: "#fce4ec",
@@ -4417,7 +4298,9 @@ export default function BookingPage() {
                             fontWeight: "bold",
                           }}
                         />
-                      ))}
+                      )) : (
+                        <Typography variant="body2" color="text.secondary">-</Typography>
+                      )}
                     </Box>
 
                     <Typography variant="body2" color="text.secondary">
@@ -4433,41 +4316,7 @@ export default function BookingPage() {
                 </Box>
               </Box>
 
-              {/* QR Code Placeholder */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  mt: 3,
-                  pt: 3,
-                  borderTop: "1px dashed #f48fb1",
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    bgcolor: "#000",
-                    position: "relative",
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundImage:
-                        "linear-gradient(to right, #000 30%, transparent 30%), linear-gradient(to right, #000 30%, transparent 30%), linear-gradient(to bottom, #000 30%, transparent 30%), linear-gradient(to bottom, #000 30%, transparent 30%)",
-                      backgroundSize: "15px 3px, 15px 3px, 3px 15px, 3px 15px",
-                      backgroundPosition:
-                        "top left, bottom left, top left, top right",
-                      backgroundRepeat:
-                        "repeat-x, repeat-x, repeat-y, repeat-y",
-                    },
-                  }}
-                />
-              </Box>
+              {/* QR removed per request */}
 
               {/* Ticket Footer */}
               <Typography
@@ -4662,12 +4511,12 @@ export default function BookingPage() {
                           <Typography variant="body2" color="text.secondary">
                             Điểm đi
                           </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: "bold", mt: 0.5 }}
-                          >
-                            {shuttlePoint?.name}
-                          </Typography>
+                           <Typography
+                             variant="h6"
+                             sx={{ fontWeight: "bold", mt: 0.5 }}
+                           >
+                             {searchData.from}
+                           </Typography>
                           <Typography variant="body2">
                             {selectedTrip &&
                               new Date(selectedTrip.timeStart).toLocaleTimeString(
@@ -4737,12 +4586,12 @@ export default function BookingPage() {
                           <Typography variant="body2" color="text.secondary">
                             Điểm đến
                           </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{ fontWeight: "bold", mt: 0.5 }}
-                          >
-                            {selectedTrip?.endLocation}
-                          </Typography>
+                           <Typography
+                             variant="h6"
+                             sx={{ fontWeight: "bold", mt: 0.5 }}
+                           >
+                             {searchData.to}
+                           </Typography>
                           <Typography variant="body2">
                             {selectedTrip &&
                               new Date(selectedTrip.timeEnd).toLocaleTimeString(
@@ -4796,10 +4645,10 @@ export default function BookingPage() {
                             mb: 1.5,
                           }}
                         >
-                          {selectedSeats.map((seat) => (
+                           {selectedSeats.map((seat) => (
                             <Chip
                               key={seat.id}
-                              label={seat.id}
+                               label={seat.seatNumber || seat.id}
                               size="small"
                               sx={{
                                 bgcolor: "#ffebee",
@@ -5231,7 +5080,7 @@ export default function BookingPage() {
                     }
 
                     return (
-                      <Box key={seat.id} sx={{ position: "relative" }}>
+                      <Box key={`${rowKey}-${seat.id}-${seat.seatNumber || ''}-${index}`} sx={{ position: "relative" }}>
                         <Button
                           variant="contained"
                           disabled={isBooked} // Chỉ disable ghế đã đặt, không disable vì isInteractive
@@ -5519,15 +5368,32 @@ export default function BookingPage() {
             </Box>
 
             {/* Use dialog-specific seat data and loading states */}
-            {dialogSeatLoading
-              ? renderSimpleLoading("Đang tải sơ đồ ghế...")
-              : dialogSeatError
-              ? renderErrorState(
-                  dialogSeatError,
-                  () => seatDialogTrip && handleOpenSeatDialog(seatDialogTrip)
-                )
-              : /* Non-interactive seat diagram for preview using dialog seats */
-                renderSeatDiagram(dialogSeats, false)}
+            {dialogSeatLoading ? (
+              renderSimpleLoading("Đang tải sơ đồ ghế...")
+            ) : dialogSeatError ? (
+              renderErrorState(
+                dialogSeatError,
+                () => seatDialogTrip && handleOpenSeatDialog(seatDialogTrip)
+              )
+            ) : seatDialogTrip.tripType === "transfer" && dialogFirstSeats.length + dialogSecondSeats.length > 0 ? (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                    Chặng 1: {seatDialogTrip.firstTrip?.fromLocation} → {seatDialogTrip.firstTrip?.endLocation}
+                  </Typography>
+                  {renderSeatDiagram(dialogFirstSeats, false)}
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                    Chặng 2: {seatDialogTrip.secondTrip?.fromLocation} → {seatDialogTrip.secondTrip?.endLocation}
+                  </Typography>
+                  {renderSeatDiagram(dialogSecondSeats, false)}
+                </Box>
+              </Box>
+            ) : (
+              // Fallback for direct trips
+              renderSeatDiagram(dialogSeats, false)
+            )}
           </Box>
         )}
       </DialogContent>

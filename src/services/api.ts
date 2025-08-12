@@ -21,6 +21,19 @@ axiosInstance.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Add explicit customer identifier header (backend may require this even if JWT lacks claim)
+    try {
+      const userDataRaw = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null;
+      if (userDataRaw && config.headers) {
+        const userData = JSON.parse(userDataRaw);
+        if (userData?.customerId) {
+          (config.headers as any)['X-Customer-Id'] = userData.customerId;
+        }
+        if (userData?.id) {
+          (config.headers as any)['X-User-Id'] = userData.id;
+        }
+      }
+    } catch {}
     
     // Log detailed request information for debugging
     console.log('📤 API Request Details:', {
@@ -278,11 +291,11 @@ class ApiClient {
       params.append('TripleTripsPagination.All', (triplePagination.all !== undefined ? triplePagination.all : true).toString());
 
       console.log('🌐 Making one-way trip search API call:', {
-        url: `/api/Trip/search?${params.toString()}`,
+        url: `/api/Trip/mobile-search?${params.toString()}`,
         searchParams
       });
       
-      const response = await this.instance.get(`/api/Trip/search?${params.toString()}`);
+      const response = await this.instance.get(`/api/Trip/mobile-search?${params.toString()}`);
       
       console.log('🌐 One-way trip search response:', response.data);
       
@@ -345,11 +358,11 @@ class ApiClient {
       params.append('TripleTripsPagination.All', (triplePagination.all !== undefined ? triplePagination.all : true).toString());
 
       console.log('🌐 Making round-trip search API call:', {
-        url: `/api/Trip/search-return?${params.toString()}`,
+        url: `/api/Trip/mobile-search-return?${params.toString()}`,
         searchParams
       });
       
-      const response = await this.instance.get(`/api/Trip/search-return?${params.toString()}`);
+      const response = await this.instance.get(`/api/Trip/mobile-search-return?${params.toString()}`);
       
       console.log('🌐 Round-trip search response:', response.data);
       

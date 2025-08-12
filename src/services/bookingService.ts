@@ -31,6 +31,19 @@ export const bookingService = {
       throw error;
     }
   },
+
+  // Fetch customer's ticket history
+  getCustomerTickets: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get<any>(
+        `/api/Ticket/customer/tickets`
+      );
+      return response;
+    } catch (error) {
+      console.error('Error fetching customer tickets:', error);
+      throw error;
+    }
+  },
   // Create a new booking
   createBooking: async (bookingData: BookingRequest): Promise<Booking> => {
     const response = await apiClient.post<ApiResponse<Booking>>(
