@@ -82,10 +82,8 @@ export const authService = {
         gender: response.gender
       });
       
-      // Save token to localStorage
       if (response.token) {
         localStorage.setItem('auth_token', response.token);
-        // Persist both numeric id and string customerId for downstream APIs
         localStorage.setItem('user_data', JSON.stringify({
           id: response.id,
           customerId: response.customerId,
