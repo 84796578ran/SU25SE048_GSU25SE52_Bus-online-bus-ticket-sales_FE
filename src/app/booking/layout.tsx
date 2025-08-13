@@ -1,14 +1,10 @@
-'use client';
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 interface BookingLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
+// Server Component layout to avoid hydration mismatch.
 export default function BookingLayout({ children }: BookingLayoutProps) {
-  return (
-    <div className="booking-layout">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

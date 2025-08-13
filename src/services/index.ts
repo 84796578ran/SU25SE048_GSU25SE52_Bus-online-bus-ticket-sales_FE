@@ -3,7 +3,7 @@ export { apiClient } from './api';
 export { default as tripService } from './tripService';
 export { default as bookingService } from './bookingService';
 export { default as dataService } from './dataService';
-export { default as authService } from './authService';
+export { authService } from './authService';
 
 // Re-export commonly used types
 export type { 
@@ -21,5 +21,7 @@ export type {
   LoginRequest, 
   RegisterRequest, 
   User, 
-  AuthResponse 
+  AuthResponse,
+  UpdateProfileRequest,
+  CustomerProfile
 } from './authService';

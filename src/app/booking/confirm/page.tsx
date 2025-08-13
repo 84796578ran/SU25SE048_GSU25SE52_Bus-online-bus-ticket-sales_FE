@@ -1,6 +1,7 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Box, Typography } from "@mui/material";
 
 export default function BookingConfirmPage() {
   const searchParams = useSearchParams();
@@ -29,17 +30,78 @@ export default function BookingConfirmPage() {
   }, [searchParams, router]);
 
   return (
-    <div className="confirm-wrapper">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
+        background: "linear-gradient(120deg, #f8fafc 0%, #fce4ec 100%)",
+      }}
+    >
       {status === "loading" && (
-        <div className="confirm-content">
-          <div className="spinner"></div>
-          <p className="desc">Đang xác nhận kết quả thanh toán...</p>
-        </div>
+        <Box
+          sx={{
+            background: "#fff",
+            borderRadius: "1.5rem",
+            boxShadow: "0 4px 28px 0 rgba(0, 0, 0, 0.09), 0 1.5px 4px rgba(120, 120, 120, 0.07)",
+            padding: "2.5rem 2rem 2rem 2rem",
+            minWidth: "320px",
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1.4rem",
+          }}
+        >
+          <Box
+            sx={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              border: "6px solid #f3f3f3",
+              borderTop: "6px solid #f48fb1",
+              boxShadow: "0 2px 8px rgba(244, 143, 177, 0.08)",
+              animation: "spin 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite",
+              marginBottom: "10px",
+              "@keyframes spin": {
+                "100%": {
+                  transform: "rotate(360deg)",
+                },
+              },
+            }}
+          />
+          <Typography sx={{ fontSize: "1.12rem", color: "#555", textAlign: "center" }}>
+            Đang xác nhận kết quả thanh toán...
+          </Typography>
+        </Box>
       )}
       {status === "success" && (
-        <div className="confirm-content">
-          <div className="icon success">
-            {/* SVG check */}
+        <Box
+          sx={{
+            background: "#fff",
+            borderRadius: "1.5rem",
+            boxShadow: "0 4px 28px 0 rgba(0, 0, 0, 0.09), 0 1.5px 4px rgba(120, 120, 120, 0.07)",
+            padding: "2.5rem 2rem 2rem 2rem",
+            minWidth: "320px",
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1.4rem",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(120deg, #e8f5e9 60%, #fff)",
+              borderRadius: "50%",
+              boxShadow: "0 1px 8px rgba(67, 160, 71, 0.08)",
+            }}
+          >
             <svg width="64" height="64" fill="none" viewBox="0 0 64 64">
               <circle cx="32" cy="32" r="32" fill="#E8F5E9" />
               <path
@@ -50,14 +112,37 @@ export default function BookingConfirmPage() {
                 strokeLinejoin="round"
               />
             </svg>
-          </div>
-          <p className="desc success-text">Thanh toán thành công!</p>
-        </div>
+          </Box>
+          <Typography sx={{ fontSize: "1.12rem", color: "#2e7d32", fontWeight: 600, letterSpacing: "0.01em", textAlign: "center" }}>
+            Thanh toán thành công!
+          </Typography>
+        </Box>
       )}
       {status === "fail" && (
-        <div className="confirm-content">
-          <div className="icon fail">
-            {/* SVG cross */}
+        <Box
+          sx={{
+            background: "#fff",
+            borderRadius: "1.5rem",
+            boxShadow: "0 4px 28px 0 rgba(0, 0, 0, 0.09), 0 1.5px 4px rgba(120, 120, 120, 0.07)",
+            padding: "2.5rem 2rem 2rem 2rem",
+            minWidth: "320px",
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1.4rem",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(120deg, #ffebee 60%, #fff)",
+              borderRadius: "50%",
+              boxShadow: "0 1px 8px rgba(229, 57, 53, 0.07)",
+            }}
+          >
             <svg width="64" height="64" fill="none" viewBox="0 0 64 64">
               <circle cx="32" cy="32" r="32" fill="#FFEBEE" />
               <path
@@ -67,91 +152,15 @@ export default function BookingConfirmPage() {
                 strokeLinecap="round"
               />
             </svg>
-          </div>
-          <p className="desc fail-text">Thanh toán thất bại hoặc bị hủy.</p>
-          <p className="desc-sub">Đang chuyển hướng để xem chi tiết vé...</p>
-        </div>
+          </Box>
+          <Typography sx={{ fontSize: "1.12rem", color: "#b71c1c", fontWeight: 600, letterSpacing: "0.01em", textAlign: "center" }}>
+            Thanh toán thất bại hoặc bị hủy.
+          </Typography>
+          <Typography sx={{ fontSize: "0.9rem", color: "#777", textAlign: "center" }}>
+            Đang chuyển hướng để xem chi tiết vé...
+          </Typography>
+        </Box>
       )}
-      <style jsx>{`
-        .confirm-wrapper {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: "Inter", "Segoe UI", Arial, sans-serif;
-          background: linear-gradient(120deg, #f8fafc 0%, #fce4ec 100%);
-        }
-        .confirm-content {
-          background: #fff;
-          border-radius: 1.5rem;
-          box-shadow: 0 4px 28px 0 rgba(0, 0, 0, 0.09),
-            0 1.5px 4px rgba(120, 120, 120, 0.07);
-          padding: 2.5rem 2rem 2rem 2rem;
-          min-width: 320px;
-          max-width: 90vw;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.4rem;
-        }
-        .spinner {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          border: 6px solid #f3f3f3;
-          border-top: 6px solid #f48fb1;
-          box-shadow: 0 2px 8px rgba(244, 143, 177, 0.08);
-          animation: spin 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
-          margin-bottom: 10px;
-        }
-        @keyframes spin {
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-        .icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .icon.success {
-          background: linear-gradient(120deg, #e8f5e9 60%, #fff);
-          border-radius: 50%;
-          box-shadow: 0 1px 8px rgba(67, 160, 71, 0.08);
-        }
-        .icon.fail {
-          background: linear-gradient(120deg, #ffebee 60%, #fff);
-          border-radius: 50%;
-          box-shadow: 0 1px 8px rgba(229, 57, 53, 0.07);
-        }
-        .desc {
-          font-size: 1.12rem;
-          color: #555;
-          margin-top: 0.6rem;
-          text-align: center;
-        }
-        .success-text {
-          color: #2e7d32;
-          font-weight: 600;
-          letter-spacing: 0.01em;
-        }
-        .fail-text {
-          color: #b71c1c;
-          font-weight: 600;
-          letter-spacing: 0.01em;
-        }
-        .desc-sub {
-          font-size: 0.9rem;
-          color: #777;
-          margin-top: 0.5rem;
-        }
-        @media (max-width: 480px) {
-          .confirm-content {
-            padding: 1.5rem 0.5rem;
-            min-width: unset;
-          }
-        }
-      `}</style>
-    </div>
+    </Box>
   );
 }

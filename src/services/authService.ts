@@ -45,6 +45,11 @@ export interface CustomerProfile {
   gender: string ;
 }
 
+export interface UpdateProfileRequest {
+  fullName: string;
+  phone: string;
+}
+
 export interface User {
   id: string;
   fullName: string;
@@ -113,10 +118,12 @@ export const authService = {
   // Get customer profile by ID
   getCustomerProfile: async (customerId: number): Promise<CustomerProfile> => {
     try {
-      const response = await apiClient.get<CustomerProfile>(`/api/Customers/${customerId}`);
-      return response;
+      console.log('📤 Getting customer profile for ID:', customerId);
+      const response = await apiClient.get<ApiResponse<CustomerProfile>>(`/api/Customers/${customerId}`);
+      console.log('📥 Customer profile response:', response);
+      return response.data;
     } catch (error: any) {
-      console.error('Get profile failed:', error);
+      console.error('❌ Get profile failed:', error);
       throw new Error(error?.message || 'Failed to load profile information.');
     }
   },
@@ -328,6 +335,49 @@ export const authService = {
   updateProfile: async (userData: Partial<User>): Promise<User> => {
     const response = await apiClient.put<ApiResponse<User>>('/auth/profile', userData);
     return response.data;
+  },
+
+  // Update customer profile (new API) - uses user ID, not customerId
+  updateCustomerProfile: async (userId: number, profileData: UpdateProfileRequest): Promise<CustomerProfile> => {
+    try {
+      console.log('📤 Updating customer profile:', { userId, profileData });
+      const response = await apiClient.put<ApiResponse<CustomerProfile>>(`/api/Customers/${userId}/profile`, profileData);
+      console.log('📥 Customer profile API response:', response);
+      console.log('📥 Customer profile response.data:', response.data);
+      
+      // Handle case where API returns success but no data
+      if (!response.data) {
+        console.warn('⚠️ API returned success but no data, creating fallback response');
+        return {
+          customerId: String(userId),
+          fullName: profileData.fullName,
+          gmail: '', // We don't have this from the update
+          phone: profileData.phone,
+          gender: '' // We don't have this from the update
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error updating customer profile:', error);
+      throw error;
+    }
+  },
+
+  // Update customer phone number only
+  updateCustomerPhoneNumber: async (userId: number, phoneNumber: string): Promise<void> => {
+    try {
+      console.log('📱 Updating customer phone number:', { userId, phoneNumber });
+      const response = await apiClient.put<ApiResponse<void>>(`/api/Customers/${userId}/phone-number`, phoneNumber, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('📥 Phone number updated successfully:', response);
+    } catch (error) {
+      console.error('❌ Error updating customer phone number:', error);
+      throw error;
+    }
   },
 
   // Request password reset

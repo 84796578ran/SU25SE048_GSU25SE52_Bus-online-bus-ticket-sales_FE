@@ -19,6 +19,12 @@ import {
   useTheme,
   useMediaQuery,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
 } from '@mui/material';
 import {
   Person,
@@ -31,6 +37,8 @@ import {
   Settings,
   ArrowBack,
   AccountCircle,
+  Save,
+  Close,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -68,6 +76,15 @@ export default function ProfilePage() {
   const [tickets, setTickets] = useState<CustomerTicket[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState<boolean>(false);
   const [ticketsError, setTicketsError] = useState<string>('');
+  
+  // Edit profile states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [editError, setEditError] = useState('');
+  
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -138,24 +155,41 @@ export default function ProfilePage() {
 
       // Get user data from localStorage
       const userData = authService.getCurrentUser();
+      console.log('🔍 Auth user data from localStorage:', userData);
+      
       if (!userData || !userData.id) {
+        console.error('❌ No valid user data found in localStorage');
         router.push('/login-template');
         return;
       }
 
-      console.log('🔍 Loading profile for user ID:', userData.id);
+      console.log('🔍 Loading profile for user ID:', userData.id, typeof userData.id);
 
       // Load profile from API
-      const profileData = await authService.getCustomerProfile(userData.id);
-      console.log('📥 Profile data received:', profileData);
+      let profileData;
+      try {
+        profileData = await authService.getCustomerProfile(userData.id);
+        console.log('📥 Profile data received:', profileData);
+        console.log('📥 Profile customerId type:', typeof profileData?.customerId, 'value:', profileData?.customerId);
+      } catch (apiError) {
+        console.warn('⚠️ Failed to load profile from API, using fallback data:', apiError);
+        // Fallback to userData if API fails
+        profileData = {
+          customerId: userData.customerId || userData.id,
+          fullName: userData.fullName || '',
+          gmail: userData.gmail || userData.email || '',
+          phone: userData.phone || '',
+          gender: userData.gender || ''
+        };
+      }
       
       // Convert API response to local interface
       const localProfile: CustomerProfile = {
-        customerId: profileData.customerId,
-        fullName: profileData.fullName,
-        gmail: profileData.gmail,
-        phone: profileData.phone || undefined,
-        gender: profileData.gender || undefined
+        customerId: String(profileData?.customerId || userData.id), // Ensure it's a string with safe access
+        fullName: profileData?.fullName || '',
+        gmail: profileData?.gmail || userData.gmail || '',
+        phone: profileData?.phone || undefined,
+        gender: profileData?.gender || undefined
       };
       
       setProfile(localProfile);
@@ -224,6 +258,130 @@ export default function ProfilePage() {
       case 'female': return 'Nữ';
       case 'other': return 'Khác';
       default: return profile.gender;
+    }
+  };
+
+  const handleEditProfile = () => {
+    if (profile) {
+      console.log('🔍 Opening edit dialog with profile:', profile);
+      console.log('🔍 Profile customerId debug:', {
+        value: profile.customerId,
+        type: typeof profile.customerId,
+        stringValue: String(profile.customerId),
+        parseInt: parseInt(String(profile.customerId), 10),
+        isNaN: isNaN(parseInt(String(profile.customerId), 10))
+      });
+      
+      setEditFullName(profile.fullName);
+      setEditPhone(profile.phone || '');
+      setEditError('');
+      setEditDialogOpen(true);
+    } else {
+      console.error('❌ No profile data available for editing');
+    }
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditFullName('');
+    setEditPhone('');
+    setEditError('');
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    
+    // Validation
+    if (!editFullName.trim()) {
+      setEditError('Vui lòng nhập họ tên');
+      return;
+    }
+    
+    if (!editPhone.trim()) {
+      setEditError('Vui lòng nhập số điện thoại');
+      return;
+    }
+
+    // Phone validation (basic)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(editPhone.trim())) {
+      setEditError('Số điện thoại không hợp lệ (10-11 số)');
+      return;
+    }
+
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      console.log('🔍 === DEBUG UPDATE PROFILE ===');
+      console.log('🔍 Profile object:', profile);
+      
+      // Check localStorage directly for user ID
+      const userDataForUpdate = authService.getCurrentUser();
+      console.log('🔍 localStorage userData:', userDataForUpdate);
+      
+      // Use user ID instead of customerId for the API call
+      let userId: number;
+      if (userDataForUpdate?.id) {
+        userId = parseInt(userDataForUpdate.id, 10);
+        console.log('🔍 Using userId from localStorage:', userId);
+      } else {
+        console.error('❌ No valid user ID found in localStorage');
+        setEditError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+        setEditLoading(false);
+        return;
+      }
+      
+      console.log('🔍 Final userId:', userId, typeof userId);
+      
+      if (isNaN(userId) || userId <= 0) {
+        console.error('❌ Invalid userId, stopping update');
+        setEditError('ID người dùng không hợp lệ. Vui lòng đăng nhập lại.');
+        setEditLoading(false);
+        return;
+      }
+      
+      console.log('✅ UserId is valid, proceeding with API call');
+
+      const updatedProfile = await authService.updateCustomerProfile(userId, {
+        fullName: editFullName.trim(),
+        phone: editPhone.trim()
+      });
+
+      console.log('📥 Updated profile response:', updatedProfile);
+
+      // Update local profile state with safe access
+      const newProfileData = {
+        ...profile,
+        fullName: updatedProfile?.fullName || editFullName.trim(),
+        phone: updatedProfile?.phone || editPhone.trim()
+      };
+      
+      setProfile(newProfileData);
+
+      // Update localStorage to persist the changes
+      const currentUserData = authService.getCurrentUser();
+      if (currentUserData) {
+        const updatedUserData = {
+          ...currentUserData,
+          fullName: newProfileData.fullName,
+          phone: newProfileData.phone
+        };
+        
+        // Update localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_data', JSON.stringify(updatedUserData));
+          console.log('💾 Updated localStorage with new profile data:', updatedUserData);
+        }
+      }
+
+      setSuccessMessage('Cập nhật thông tin thành công!');
+      handleCloseEditDialog();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setEditError('Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -498,6 +656,7 @@ export default function ProfilePage() {
                                 variant="contained"
                                 startIcon={<Edit />}
                                 fullWidth
+                                onClick={handleEditProfile}
                                 sx={{
                                   background: 'linear-gradient(135deg, #f48fb1, #e91e63)',
                                   color: 'white',
@@ -876,6 +1035,151 @@ export default function ProfilePage() {
           </Box>
         )}
       </Container>
+
+      {/* Edit Profile Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%)',
+            backdropFilter: 'blur(20px)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 1, 
+          background: 'linear-gradient(45deg, #f48fb1 30%, #e91e63 90%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          fontWeight: 700,
+          fontSize: '1.5rem'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Edit />
+            Chỉnh sửa thông tin
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 3 }}>
+          {editError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {editError}
+            </Alert>
+          )}
+          
+          <Stack spacing={3}>
+            <TextField
+              label="Họ và tên"
+              value={editFullName}
+              onChange={(e) => setEditFullName(e.target.value)}
+              fullWidth
+              variant="outlined"
+              InputProps={{
+                startAdornment: <Person sx={{ color: '#f48fb1', mr: 1 }} />
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#f48fb1',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#e91e63',
+                  }
+                }
+              }}
+            />
+            
+            <TextField
+              label="Số điện thoại"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              fullWidth
+              variant="outlined"
+              InputProps={{
+                startAdornment: <Phone sx={{ color: '#f48fb1', mr: 1 }} />
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#f48fb1',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#e91e63',
+                  }
+                }
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button
+            onClick={handleCloseEditDialog}
+            variant="outlined"
+            startIcon={<Close />}
+            sx={{
+              borderColor: '#f48fb1',
+              color: '#f48fb1',
+              borderRadius: 2,
+              '&:hover': {
+                borderColor: '#e91e63',
+                bgcolor: 'rgba(244, 143, 177, 0.08)',
+                color: '#e91e63'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          
+          <Button
+            onClick={handleSaveProfile}
+            variant="contained"
+            startIcon={editLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+            disabled={editLoading}
+            sx={{
+              background: 'linear-gradient(135deg, #f48fb1, #e91e63)',
+              color: 'white',
+              borderRadius: 2,
+              minWidth: '120px',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #e87ca1, #d81b60)',
+              },
+              '&:disabled': {
+                background: 'rgba(244, 143, 177, 0.3)',
+              }
+            }}
+          >
+            {editLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSuccessMessage('')} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            borderRadius: 2,
+            fontWeight: 600
+          }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

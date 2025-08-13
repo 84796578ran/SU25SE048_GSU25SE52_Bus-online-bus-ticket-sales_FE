@@ -78,6 +78,9 @@ interface Station {
 }
 
 export default function BusTicketHomePage() {
+  // Client-side hydration check to prevent Material-UI hydration issues
+  const [isClient, setIsClient] = useState(false);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tripType, setTripType] = useState('oneWay'); // 'oneWay' or 'roundTrip'
   const [searchData, setSearchData] = useState<{
@@ -521,6 +524,46 @@ export default function BusTicketHomePage() {
     // Navigate to search results page with query params
     window.location.href = `/booking?${params.toString()}`;
   };
+
+  // Initialize client-side state
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Show loading state during server-side rendering to prevent hydration mismatch
+  if (!isClient) {
+    return (
+      <>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          backgroundColor: '#fafafa'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              border: '6px solid #f3f3f3',
+              borderTop: '6px solid #f48fb1',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 20px'
+            }} />
+            <p style={{ color: '#f48fb1', fontSize: '18px' }}>Đang tải...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <Box>
       {/* Header */}
