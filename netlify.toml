@@ -8,6 +8,8 @@
   DISABLE_ESLINT_PLUGIN = "true"
   SKIP_LINT = "true"
   NODE_VERSION = "18"
+  # Frontend should use the production API URL
+  NEXT_PUBLIC_API_URL = "https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
