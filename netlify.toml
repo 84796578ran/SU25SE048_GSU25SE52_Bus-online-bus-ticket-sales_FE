@@ -1,27 +1,13 @@
 [build]
-  # Ensure the build sets environment vars so Next's ESLint/TS checks are skipped during CI
-  command = "cross-env SKIP_LINT=true DISABLE_ESLINT_PLUGIN=true npm run build"
+  # Use package.json build script. package.json already sets SKIP_LINT/DISABLE_ESLINT_PLUGIN for CI.
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
-  # Also provide env vars explicitly for Netlify's environment
+  # Ensure Netlify environment also has these variables
+  DISABLE_ESLINT_PLUGIN = "true"
   SKIP_LINT = "true"
-  DISABLE_ESLINT_PLUGIN = "true"
   NODE_VERSION = "18"
-[build]
-  command = "npm run build:prod"
-  publish = ".next"
-
-[build.environment]
-  DISABLE_ESLINT_PLUGIN = "true"
-  SKIP_ESLINT = "true"
-  NODE_VERSION = "18"
-  ESLINT_NO_DEV_ERRORS = "true"
-  SKIP_ESLINT = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[context.production.environment]
-  DISABLE_ESLINT_PLUGIN = "true"
-  ESLINT_NO_DEV_ERRORS = "true"
