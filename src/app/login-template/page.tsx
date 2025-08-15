@@ -69,7 +69,7 @@ function LoginTemplateContent() {
     
     // Check if we're in production (Netlify)
     if (currentHost.includes('netlify.app') || currentHost === 'saleonlinebusticketsalefe.netlify.app') {
-      return 'https://saleonlinebusticketsalefe.netlify.app/login-template';
+      return 'https://xetiic.netlify.app/login-template';
     }
 
     // Check if we're in production (Azure)
@@ -183,7 +183,7 @@ function LoginTemplateContent() {
           // Validate redirect URL against allowed URLs
           const allowedUrls = [
             'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
-            'https://saleonlinebusticketsalefe.netlify.app/login-template',
+            'https://xetiic.netlify.app/login-template',
             'http://localhost:3000/login-template',
             'http://localhost:3001/login-template'
           ];
@@ -357,7 +357,7 @@ function LoginTemplateContent() {
         // Validate redirect URL against allowed URLs
         const allowedUrls = [
           'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
-          'https://saleonlinebusticketsalefe.netlify.app/login-template',
+          'https://xetiic.netlify.app/login-template',
           'http://localhost:3000/login-template',
           'http://localhost:3001/login-template'
         ];
