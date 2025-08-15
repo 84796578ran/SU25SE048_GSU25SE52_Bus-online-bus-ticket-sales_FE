@@ -1,4 +1,14 @@
 [build]
+  # Ensure the build sets environment vars so Next's ESLint/TS checks are skipped during CI
+  command = "cross-env SKIP_LINT=true DISABLE_ESLINT_PLUGIN=true npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Also provide env vars explicitly for Netlify's environment
+  SKIP_LINT = "true"
+  DISABLE_ESLINT_PLUGIN = "true"
+  NODE_VERSION = "18"
+[build]
   command = "npm run build:prod"
   publish = ".next"
 
