@@ -4,6 +4,8 @@
 
 [build.environment]
   DISABLE_ESLINT_PLUGIN = "true"
+  SKIP_ESLINT = "true"
+  NODE_VERSION = "18"
   ESLINT_NO_DEV_ERRORS = "true"
   SKIP_ESLINT = "true"
 
