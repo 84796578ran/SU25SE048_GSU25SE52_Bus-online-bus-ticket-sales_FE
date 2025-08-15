@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 import {
   Container,
   Typography,
   Button,
   Box,
   Card,
+  CardContent,
   Paper,
   AppBar,
   Toolbar,
@@ -25,17 +25,22 @@ import {
   DirectionsBus,
   Menu as MenuIcon,
   Close as CloseIcon,
+  Schedule,
   Security,
   Payment,
   Support,
   LocalOffer,
   CheckCircle,
+  Phone,
+  Email,
+  LocationOn,
 } from '@mui/icons-material';
 import Link from 'next/link';
 
 export default function ServicesPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const menuItems = [
     { label: 'Trang chủ', href: '/' },
@@ -356,7 +361,7 @@ export default function ServicesPage() {
           <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
           
           <List sx={{ pt: 2 }}>
-            {menuItems.map((item) => (
+            {menuItems.map((item, index) => (
               <Link key={item.label} href={item.href} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <ListItem 
                   onClick={handleMobileMenuClose}
@@ -538,9 +543,9 @@ export default function ServicesPage() {
             gap: 4,
           }}
         >
-          {services.map((service) => (
+          {services.map((service, index) => (
             <Card 
-              key={service.title} 
+              key={index} 
               sx={{ 
                 p: 4, 
                 height: '100%', 
@@ -578,9 +583,9 @@ export default function ServicesPage() {
               </Box>
               
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                {service.features.map((feature) => (
+                {service.features.map((feature, featureIndex) => (
                   <Chip
-                    key={feature}
+                    key={featureIndex}
                     label={feature}
                     size="small"
                     sx={{

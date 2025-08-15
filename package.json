@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "cross-env SKIP_LINT=true DISABLE_ESLINT_PLUGIN=true next build",
-    "build:prod": "cross-env DISABLE_ESLINT_PLUGIN=true next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -29,7 +28,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
-    "cross-env": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "typescript": "^5"

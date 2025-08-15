@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 'use client';
 
 import {
@@ -6,18 +5,25 @@ import {
   Container,
   Typography,
   Card,
+  CardContent,
   Avatar,
   Chip,
+  LinearProgress,
+  Divider,
   Button,
   AppBar,
   Toolbar,
 } from '@mui/material';
 import {
+  DirectionsBus,
   Security,
   Schedule,
   Star,
   People,
+  TrendingUp,
   EmojiEvents,
+  VerifiedUser,
+  Speed,
   Support,
   LocationOn,
 } from '@mui/icons-material';
@@ -357,9 +363,9 @@ export default function AboutPage() {
               gap: 3,
             }}
           >
-            {stats.map((stat) => (
+            {stats.map((stat, index) => (
               <Card
-                key={stat.label}
+                key={index}
                 sx={{
                   p: 3,
                   textAlign: 'center',
