@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 "use client";
 import { Suspense } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";

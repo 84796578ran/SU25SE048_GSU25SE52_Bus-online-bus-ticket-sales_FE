@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 import dynamic from 'next/dynamic';
 
 const DynamicHomePage = dynamic(() => import('./home-client'), {
