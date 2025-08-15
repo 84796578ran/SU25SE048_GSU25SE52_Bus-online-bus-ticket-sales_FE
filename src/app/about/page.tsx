@@ -5,25 +5,18 @@ import {
   Container,
   Typography,
   Card,
-  CardContent,
   Avatar,
   Chip,
-  LinearProgress,
-  Divider,
   Button,
   AppBar,
   Toolbar,
 } from '@mui/material';
 import {
-  DirectionsBus,
   Security,
   Schedule,
   Star,
   People,
-  TrendingUp,
   EmojiEvents,
-  VerifiedUser,
-  Speed,
   Support,
   LocationOn,
 } from '@mui/icons-material';
@@ -363,9 +356,9 @@ export default function AboutPage() {
               gap: 3,
             }}
           >
-            {stats.map((stat, index) => (
+            {stats.map((stat) => (
               <Card
-                key={index}
+                key={stat.label}
                 sx={{
                   p: 3,
                   textAlign: 'center',

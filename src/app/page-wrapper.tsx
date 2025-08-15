@@ -1,4 +1,3 @@
-'use client';
 import dynamic from 'next/dynamic';
 
 const DynamicHomePage = dynamic(() => import('./home-client'), {
