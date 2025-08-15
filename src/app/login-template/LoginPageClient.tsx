@@ -66,8 +66,14 @@ export default function LoginTemplatePage() {
       return 'http://localhost:3000/login-template';
     }
 
-    // Check if we're in production (Azure)
     const currentHost = window.location.host;
+    
+    // Check if we're in production (Netlify)
+    if (currentHost.includes('netlify.app') || currentHost === 'saleonlinebusticketsalefe.netlify.app') {
+      return 'https://saleonlinebusticketsalefe.netlify.app/login-template';
+    }
+
+    // Check if we're in production (Azure)
     if (currentHost.includes('azurewebsites.net')) {
       return 'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template';
     }
@@ -178,11 +184,15 @@ export default function LoginTemplatePage() {
           // Validate redirect URL against allowed URLs
           const allowedUrls = [
             'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
+            'https://saleonlinebusticketsalefe.netlify.app/login-template',
             'http://localhost:3000/login-template',
             'http://localhost:3001/login-template'
           ];
           
-          if (!allowedUrls.includes(redirectURL)) {
+          // Allow any netlify.app domain
+          const isNetlifyDomain = redirectURL.includes('netlify.app') && redirectURL.endsWith('/login-template');
+          
+          if (!allowedUrls.includes(redirectURL) && !isNetlifyDomain) {
             console.error('❌ Callback redirect URL is not in allowed list!');
             console.error('  - Selected:', redirectURL);
             console.error('  - Allowed URLs:', allowedUrls);
@@ -348,11 +358,15 @@ export default function LoginTemplatePage() {
         // Validate redirect URL against allowed URLs
         const allowedUrls = [
           'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
+          'https://saleonlinebusticketsalefe.netlify.app/login-template',
           'http://localhost:3000/login-template',
           'http://localhost:3001/login-template'
         ];
         
-        if (!allowedUrls.includes(redirectURL)) {
+        // Allow any netlify.app domain
+        const isNetlifyDomain = redirectURL.includes('netlify.app') && redirectURL.endsWith('/login-template');
+        
+        if (!allowedUrls.includes(redirectURL) && !isNetlifyDomain) {
           console.error('❌ Selected redirect URL is not in allowed list!');
           console.error('  - Selected:', redirectURL);
           console.error('  - Allowed URLs:', allowedUrls);
