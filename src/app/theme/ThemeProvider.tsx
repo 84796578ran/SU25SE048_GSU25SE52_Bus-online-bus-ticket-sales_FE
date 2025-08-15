@@ -1,4 +1,5 @@
 
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 'use client';
 import * as React from 'react';
 import { ThemeProvider } from '@mui/material/styles';

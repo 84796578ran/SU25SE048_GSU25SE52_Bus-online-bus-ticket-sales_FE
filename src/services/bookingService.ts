@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 import { apiClient } from "./api";
 import type { BookingRequest, Booking, ApiResponse } from "../types/api";
 

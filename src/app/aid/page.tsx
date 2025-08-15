@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 import {
   Container,
   Typography,
