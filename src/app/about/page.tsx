@@ -5,25 +5,18 @@ import {
   Container,
   Typography,
   Card,
-  CardContent,
   Avatar,
   Chip,
-  LinearProgress,
-  Divider,
   Button,
   AppBar,
   Toolbar,
 } from '@mui/material';
 import {
-  DirectionsBus,
   Security,
   Schedule,
   Star,
   People,
-  TrendingUp,
   EmojiEvents,
-  VerifiedUser,
-  Speed,
   Support,
   LocationOn,
 } from '@mui/icons-material';
@@ -603,9 +596,9 @@ export default function AboutPage() {
               gap: 3,
             }}
           >
-            {team.map((member, index) => (
+            {team.map((member) => (
               <Card
-                key={index}
+                key={member.name}
                 sx={{
                   p: 3,
                   textAlign: 'center',

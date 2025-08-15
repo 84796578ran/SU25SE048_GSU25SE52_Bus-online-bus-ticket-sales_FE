@@ -28,13 +28,13 @@ import {
   Lock,
   ArrowBack,
 } from '@mui/icons-material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { authService, LoginRequest } from '@/services/authService';
 
-export default function LoginTemplatePage() {
+function LoginTemplateContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
     gmail: '',
@@ -1153,5 +1153,17 @@ export default function LoginTemplatePage() {
         </Box>
       </Box>
     </motion.div>
+  );
+}
+
+export default function LoginTemplatePage() {
+  return (
+    <Suspense fallback={
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography>Loading...</Typography>
+      </Box>
+    }>
+      <LoginTemplateContent />
+    </Suspense>
   );
 }

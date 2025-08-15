@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -78,6 +78,18 @@ interface Station {
 }
 
 export default function BusTicketHomePage() {
+  return (
+    <Suspense fallback={
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography>Loading...</Typography>
+      </Box>
+    }>
+      <BusTicketHomePageContent />
+    </Suspense>
+  );
+}
+
+function BusTicketHomePageContent() {
   // Client-side hydration check to prevent Material-UI hydration issues
   const [isClient, setIsClient] = useState(false);
   

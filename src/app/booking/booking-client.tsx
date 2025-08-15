@@ -2506,7 +2506,7 @@ export default function BookingPage() {
       }
     }
 
-    let shuttleFee = 0;
+    const shuttleFee = 0;
     // Pickup fee removed
 
     return {
@@ -3885,37 +3885,45 @@ export default function BookingPage() {
                     isDepartureSelection ? departureSeats : returnSeats
                   ) : selectedSeats;
                   
-                  return currentSeats.length > 0 ? (
-                    <Box
-                      sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
-                    >
-                      {currentSeats.map((seat) => (
-                        <Chip
-                          key={seat.id}
-                          label={seat.id}
-                          color="primary"
-                          onDelete={() => {
-                            if (isRoundTrip) {
-                              isDepartureSelection ? handleSelectDepartureSeat(seat) : handleSelectReturnSeat(seat);
-                            } else {
-                              handleSelectSeat(seat);
-                            }
-                          }}
-                          sx={{ 
-                            bgcolor: isDepartureSelection || !isRoundTrip ? "#1976d2" : "#7b1fa2" 
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ py: 2 }}
-                    >
-                      Chưa chọn ghế nào
-                    </Typography>
-                  );
+                  if (currentSeats.length > 0) {
+                    return (
+                      <Box
+                        sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
+                      >
+                        {currentSeats.map((seat) => (
+                          <Chip
+                            key={seat.id}
+                            label={seat.id}
+                            color="primary"
+                            onDelete={() => {
+                              if (isRoundTrip) {
+                                if (isDepartureSelection) {
+                                  handleSelectDepartureSeat(seat);
+                                } else {
+                                  handleSelectReturnSeat(seat);
+                                }
+                              } else {
+                                handleSelectSeat(seat);
+                              }
+                            }}
+                            sx={{ 
+                              bgcolor: isDepartureSelection || !isRoundTrip ? "#1976d2" : "#7b1fa2" 
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    );
+                  } else {
+                    return (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ py: 2 }}
+                      >
+                        Chưa chọn ghế nào
+                      </Typography>
+                    );
+                  }
                 })()}
               </Box>
 

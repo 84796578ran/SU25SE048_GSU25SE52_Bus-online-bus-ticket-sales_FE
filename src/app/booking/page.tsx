@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Box,
@@ -156,14 +156,12 @@ const generateMockSeats = (): SeatType[] => {
   return seats;
 };
 
-  // Removed pickup point hardcode
-
 // Payment methods
 const paymentMethods = [
   { id: "vnpay", name: "VNPay", icon: <CreditCard /> },
 ];
 
-export default function BookingPage() {
+function BookingContent() {
   // VNPayPayloadType được import từ bookingService.ts
 
   // Client-side hydration check to prevent Material-UI hydration issues
@@ -259,7 +257,7 @@ export default function BookingPage() {
   const [loadingSeatsByTrip, setLoadingSeatsByTrip] = useState<
     Record<string, boolean>
   >({});
-
+  
   // Responsive design - use client-side only to prevent hydration mismatch
   const theme = useTheme();
   const [isMobile, setIsMobile] = useState(false);
@@ -6855,5 +6853,17 @@ export default function BookingPage() {
       {/* Seat Dialog */}
       {renderSeatDialog()}
     </Box>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    }>
+      <BookingContent />
+    </Suspense>
   );
 }

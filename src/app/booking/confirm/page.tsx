@@ -1,9 +1,9 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { useEffect, useState, Suspense } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
 
-export default function BookingConfirmPage() {
+function BookingConfirmContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "fail">(
@@ -162,5 +162,17 @@ export default function BookingConfirmPage() {
         </Box>
       )}
     </Box>
+  );
+}
+
+export default function BookingConfirmPage() {
+  return (
+    <Suspense fallback={
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    }>
+      <BookingConfirmContent />
+    </Suspense>
   );
 }

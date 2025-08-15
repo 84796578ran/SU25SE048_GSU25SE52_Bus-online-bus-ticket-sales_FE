@@ -5,7 +5,6 @@ import {
   Container,
   Typography,
   Card,
-  CardContent,
   TextField,
   Button,
   Alert,
@@ -32,7 +31,6 @@ import {
   Twitter,
   Instagram,
   LinkedIn,
-  DirectionsBus,
   Menu as MenuIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
@@ -42,7 +40,6 @@ import Link from 'next/link';
 export default function ContactPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const menuItems = [
     { label: 'Trang chủ', href: '/' },
@@ -384,7 +381,7 @@ export default function ContactPage() {
           <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
           
           <List sx={{ pt: 2 }}>
-            {menuItems.map((item, index) => (
+            {menuItems.map((item) => (
               <Link key={item.label} href={item.href} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <ListItem 
                   onClick={handleMobileMenuClose}
@@ -578,9 +575,9 @@ export default function ContactPage() {
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {contactInfo.map((info, index) => (
+              {contactInfo.map((info) => (
                 <Card
-                  key={index}
+                  key={info.title}
                   sx={{
                     p: 3,
                     borderRadius: 3,
@@ -631,13 +628,13 @@ export default function ContactPage() {
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 {[
-                  { icon: <Facebook />, color: '#1877f2' },
-                  { icon: <Twitter />, color: '#1da1f2' },
-                  { icon: <Instagram />, color: '#e4405f' },
-                  { icon: <LinkedIn />, color: '#0077b5' },
-                ].map((social, index) => (
+                  { icon: <Facebook />, color: '#1877f2', name: 'facebook' },
+                  { icon: <Twitter />, color: '#1da1f2', name: 'twitter' },
+                  { icon: <Instagram />, color: '#e4405f', name: 'instagram' },
+                  { icon: <LinkedIn />, color: '#0077b5', name: 'linkedin' },
+                ].map((social) => (
                   <IconButton
-                    key={index}
+                    key={social.name}
                     sx={{
                       bgcolor: social.color,
                       color: 'white',
@@ -823,9 +820,9 @@ export default function ContactPage() {
                 question: 'Có chính sách đổi vé không?',
                 answer: 'Có, bạn có thể đổi vé miễn phí một lần trong vòng 24h sau khi đặt (tùy tình trạng chỗ trống).'
               },
-            ].map((faq, index) => (
+            ].map((faq) => (
               <Card
-                key={index}
+                key={faq.question}
                 sx={{
                   p: 3,
                   borderRadius: 2,
