@@ -11,6 +11,7 @@ import {
   Avatar,
   Button,
   Stack,
+  Divider,
   Chip,
   Alert,
   IconButton,

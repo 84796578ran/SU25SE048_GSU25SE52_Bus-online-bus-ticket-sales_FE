@@ -34,17 +34,24 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
+  Search,
   DirectionsBus,
   EventSeat,
   LocationOn,
+  Payment,
   ArrowBack,
   ArrowForward,
   Check,
   CheckCircle,
   Close,
   Info,
+  AccessTime,
+  LocalShipping,
   ShoppingCart,
   CreditCard,
+  Star,
+  StarBorder,
+  Visibility,
   Person,
 } from "@mui/icons-material";
 import Link from "next/link";
