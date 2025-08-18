@@ -116,14 +116,30 @@ export const authService = {
   },
 
   // Get customer profile by ID
-  getCustomerProfile: async (customerId: number): Promise<CustomerProfile> => {
+  getCustomerProfile: async (customerId: number): Promise<CustomerProfile | null> => {
     try {
-      console.log('📤 Getting customer profile for ID:', customerId);
+      console.log('📤 Getting customer profile for ID:', customerId, typeof customerId);
+      console.log('📤 Full API endpoint:', `/api/Customers/${customerId}`);
+      
       const response = await apiClient.get<ApiResponse<CustomerProfile>>(`/api/Customers/${customerId}`);
-      console.log('📥 Customer profile response:', response);
+      
+      console.log('📥 Customer profile RAW response:', response);
+      console.log('📥 Customer profile data only:', response.data);
+      console.log('📥 Profile fullName:', response.data?.fullName);
+      console.log('📥 Profile phone:', response.data?.phone);
+      
+      // Check if response.data is null/undefined
+      if (!response.data) {
+        console.warn('⚠️ API returned successful response but data is null/undefined');
+        console.log('⚠️ Full response object:', JSON.stringify(response, null, 2));
+        return null; // Return null explicitly so caller can handle fallback
+      }
+      
       return response.data;
     } catch (error: any) {
       console.error('❌ Get profile failed:', error);
+      console.error('❌ Error status:', error?.status);
+      console.error('❌ Error response:', error?.response?.data);
       throw new Error(error?.message || 'Failed to load profile information.');
     }
   },
@@ -280,6 +296,9 @@ export const authService = {
   // Logout
   logout: async (): Promise<void> => {
     try {
+      // Get current user data before clearing to clean user-specific cache
+      const userData = authService.getCurrentUser();
+      
       // Call logout API endpoint
       await apiClient.post<void>('/api/Customers/logout', {});
       console.log('✅ Logout API call successful');
@@ -289,13 +308,38 @@ export const authService = {
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_data');
       
+      // Clear user-specific profile cache and any other user-related data
+      if (userData && userData.id) {
+        const userSpecificKey = `user_profile_${userData.id}`;
+        localStorage.removeItem(userSpecificKey);
+        console.log('🗑️ Cleared user-specific cache:', userSpecificKey);
+        
+        // Clear any other user-specific data if exists
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith(`user_profile_${userData.id}`)) {
+            localStorage.removeItem(key);
+            console.log('🗑️ Cleared additional user cache:', key);
+          }
+        });
+      }
+      
       console.log('✅ Logout successful, tokens cleared');
     } catch (error: any) {
       console.error('Logout API error:', error);
       // Still clear local tokens even if API call fails
+      const userData = authService.getCurrentUser();
+      
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_data');
+      
+      // Clear user-specific profile cache
+      if (userData && userData.id) {
+        const userSpecificKey = `user_profile_${userData.id}`;
+        localStorage.removeItem(userSpecificKey);
+        console.log('🗑️ Cleared user-specific cache:', userSpecificKey);
+      }
+      
       console.log('✅ Local tokens cleared despite API error');
     }
   },

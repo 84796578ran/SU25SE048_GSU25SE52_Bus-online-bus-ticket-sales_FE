@@ -25,6 +25,7 @@ import {
   DialogActions,
   TextField,
   Snackbar,
+  Rating,
 } from '@mui/material';
 import {
   Person,
@@ -39,11 +40,14 @@ import {
   AccountCircle,
   Save,
   Close,
+  Star,
+  StarBorder,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { authService, CustomerProfile as ApiCustomerProfile } from '@/services/authService';
 import { bookingService } from '@/services/bookingService';
+import ratingService from '@/services/ratingService';
 import { DirectionsBus, EventSeat, Schedule, MonetizationOn } from '@mui/icons-material';
 
 // Temporary interfaces for testing
@@ -85,6 +89,14 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [editError, setEditError] = useState('');
   
+  // Rating states
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
+  const [ratingScore, setRatingScore] = useState<number | null>(5);
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingError, setRatingError] = useState('');
+  
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -93,9 +105,11 @@ export default function ProfilePage() {
   const getStatusInfo = (status: number) => {
     switch (status) {
       case 0:
-        return { label: 'Hoạt động', color: '#4caf50', bgColor: '#e8f5e8' };
-      case 3:
-        return { label: 'Đã hoàn thành', color: '#ff9800', bgColor: '#fff3e0' };
+        return { label: 'Paid', color: '#4caf50', bgColor: '#e8f5e8' };
+      case 2:
+        return { label: 'Canceled', color: '#f44336', bgColor: '#ffebee' };
+      case 5:
+        return { label: 'Completed', color: '#ff9800', bgColor: '#fff3e0' };
       default:
         return { label: 'Không xác định', color: '#757575', bgColor: '#f5f5f5' };
     }
@@ -165,33 +179,80 @@ export default function ProfilePage() {
 
       console.log('🔍 Loading profile for user ID:', userData.id, typeof userData.id);
 
-      // Load profile from API
+      // FORCE RELOAD: Always load fresh profile from API, especially for Google login
+      console.log('📡 === FORCE LOADING FRESH PROFILE FROM API ===');
+      console.log('📡 User ID:', userData.id, 'Type:', typeof userData.id);
+      console.log('📡 User data source:', userData);
+      
       let profileData;
+      
       try {
-        profileData = await authService.getCustomerProfile(userData.id);
-        console.log('📥 Profile data received:', profileData);
-        console.log('📥 Profile customerId type:', typeof profileData?.customerId, 'value:', profileData?.customerId);
-      } catch (apiError) {
-        console.warn('⚠️ Failed to load profile from API, using fallback data:', apiError);
-        // Fallback to userData if API fails
+        // Clear any existing cache first to prevent conflicts
+        const userSpecificKey = `user_profile_${userData.id}`;
+        localStorage.removeItem(userSpecificKey);
+        console.log('🗑️ Cleared existing cache before fresh load');
+        
+        const apiProfile = await authService.getCustomerProfile(userData.id);
+        console.log('📥 === FRESH API PROFILE RESPONSE ===');
+        console.log('📥 Full API response:', apiProfile);
+        console.log('📥 API fullName:', apiProfile?.fullName);
+        console.log('📥 API phone:', apiProfile?.phone);
+        console.log('📥 API gmail:', apiProfile?.gmail);
+        
+        if (!apiProfile) {
+          console.warn('⚠️ API returned null/undefined profile, trying fallback to userData');
+          // Fallback to userData if API returns null
+          profileData = {
+            customerId: String(userData.customerId || userData.id),
+            fullName: userData.fullName || '',
+            gmail: userData.gmail || userData.email || '',
+            phone: userData.phone || '',
+            gender: userData.gender || ''
+          };
+          console.log('📱 Using userData fallback:', profileData);
+        } else {
+          profileData = apiProfile;
+        }
+        
+        // Save fresh data to cache
+        localStorage.setItem(userSpecificKey, JSON.stringify(profileData));
+        console.log('💾 Saved FRESH profile to cache:', userSpecificKey);
+        
+      } catch (apiError: any) {
+        console.error('❌ CRITICAL: Failed to load profile from API:', apiError);
+        console.error('❌ API Error details:', {
+          status: apiError?.status,
+          message: apiError?.message,
+          response: apiError?.response
+        });
+        
+        console.warn('⚠️ API failed, using userData as last resort fallback');
+        // Use userData as last resort fallback
         profileData = {
-          customerId: userData.customerId || userData.id,
+          customerId: String(userData.customerId || userData.id),
           fullName: userData.fullName || '',
           gmail: userData.gmail || userData.email || '',
           phone: userData.phone || '',
           gender: userData.gender || ''
         };
+        console.log('📱 Using userData emergency fallback:', profileData);
       }
       
-      // Convert API response to local interface
+      // Convert to local interface with detailed logging
+      console.log('🔄 Converting API profile data to local interface...');
+      console.log('📝 profileData.fullName:', profileData?.fullName);
+      console.log('📝 profileData.phone:', profileData?.phone);
+      console.log('📝 profileData.gmail:', profileData?.gmail);
+      
       const localProfile: CustomerProfile = {
-        customerId: String(profileData?.customerId || userData.id), // Ensure it's a string with safe access
+        customerId: String(profileData?.customerId || userData.id),
         fullName: profileData?.fullName || '',
         gmail: profileData?.gmail || userData.gmail || '',
-        phone: profileData?.phone || undefined,
-        gender: profileData?.gender || undefined
+        phone: profileData?.phone || '',  // Changed from undefined to empty string
+        gender: profileData?.gender || ''
       };
       
+      console.log('✅ Final local profile:', localProfile);
       setProfile(localProfile);
       
       // Load ticket history after profile
@@ -234,6 +295,62 @@ export default function ProfilePage() {
       setTicketsLoading(false);
     }
   };
+
+  const forceRefreshProfile = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const userData = authService.getCurrentUser();
+      if (!userData || !userData.id) {
+        setError('User not authenticated');
+        return;
+      }
+
+      console.log('🔄 Force refreshing profile and tickets...');
+      
+      // Clear user-specific cache first
+      const userSpecificKey = `user_profile_${userData.id}`;
+      localStorage.removeItem(userSpecificKey);
+      console.log('🗑️ Cleared cache before refresh:', userSpecificKey);
+
+      // Force reload profile from API
+      try {
+        const apiProfile = await authService.getCustomerProfile(userData.id);
+        console.log('📥 Fresh profile data:', apiProfile);
+        
+        // Convert to local interface
+        const localProfile: CustomerProfile = {
+          customerId: String(apiProfile?.customerId || userData.id),
+          fullName: apiProfile?.fullName || '',
+          gmail: apiProfile?.gmail || userData.gmail || '',
+          phone: apiProfile?.phone || undefined,
+          gender: apiProfile?.gender || undefined
+        };
+        
+        setProfile(localProfile);
+        
+        // Save fresh data to cache
+        localStorage.setItem(userSpecificKey, JSON.stringify(apiProfile));
+        console.log('💾 Saved fresh data to cache');
+        
+        // Also refresh tickets
+        await loadTickets();
+        
+        console.log('✅ Profile and tickets refreshed successfully');
+      } catch (apiError) {
+        console.error('❌ Failed to refresh profile:', apiError);
+        setError('Không thể làm mới thông tin profile');
+      }
+    } catch (err: any) {
+      console.error('Error in forceRefreshProfile:', err);
+      setError('Có lỗi xảy ra khi làm mới thông tin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   const handleLogout = async () => {
     try {
@@ -286,6 +403,59 @@ export default function ProfilePage() {
     setEditFullName('');
     setEditPhone('');
     setEditError('');
+  };
+
+  // Rating functions
+  const handleOpenRatingDialog = (ticket: CustomerTicket) => {
+    setSelectedTicket(ticket);
+    setRatingScore(5);
+    setRatingComment('');
+    setRatingError('');
+    setRatingDialogOpen(true);
+  };
+
+  const handleCloseRatingDialog = () => {
+    setRatingDialogOpen(false);
+    setSelectedTicket(null);
+    setRatingScore(5);
+    setRatingComment('');
+    setRatingError('');
+  };
+
+  const handleSubmitRating = async () => {
+    if (!selectedTicket || !ratingScore) {
+      setRatingError('Vui lòng chọn số sao đánh giá');
+      return;
+    }
+
+    setRatingLoading(true);
+    setRatingError('');
+
+    try {
+      // Create rating data
+      const ratingData = {
+        ticketId: selectedTicket.id,
+        score: ratingScore,
+        comment: ratingComment.trim() || 'Không có bình luận'
+      };
+
+      console.log('📤 Submitting rating:', ratingData);
+
+      // Submit rating via ratingService
+      await ratingService.createRating(ratingData);
+
+      console.log('✅ Rating submitted successfully');
+      setSuccessMessage('Đánh giá đã được gửi thành công!');
+      handleCloseRatingDialog();
+      
+      // Optionally reload tickets to reflect any changes
+      await loadTickets();
+    } catch (error) {
+      console.error('❌ Error submitting rating:', error);
+      setRatingError('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setRatingLoading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -343,45 +513,115 @@ export default function ProfilePage() {
       
       console.log('✅ UserId is valid, proceeding with API call');
 
+      console.log('🚀 === CALLING UPDATE API ===');
+      console.log('🚀 userId:', userId);
+      console.log('🚀 Payload:', {
+        fullName: editFullName.trim(),
+        phone: editPhone.trim()
+      });
+
       const updatedProfile = await authService.updateCustomerProfile(userId, {
         fullName: editFullName.trim(),
         phone: editPhone.trim()
       });
 
+      console.log('📥 === UPDATE API RESPONSE ===');
       console.log('📥 Updated profile response:', updatedProfile);
+      console.log('📥 Response type:', typeof updatedProfile);
+      console.log('📥 Response is null/undefined?', updatedProfile === null || updatedProfile === undefined);
 
-      // Update local profile state with safe access
-      const newProfileData = {
-        ...profile,
-        fullName: updatedProfile?.fullName || editFullName.trim(),
-        phone: updatedProfile?.phone || editPhone.trim()
-      };
+      // Since update API might return empty response, let's reload fresh data from get API
+      console.log('🔄 Reloading fresh profile data after update...');
       
-      setProfile(newProfileData);
-
-      // Update localStorage to persist the changes
-      const currentUserData = authService.getCurrentUser();
-      if (currentUserData) {
-        const updatedUserData = {
-          ...currentUserData,
-          fullName: newProfileData.fullName,
-          phone: newProfileData.phone
+      try {
+        // Force reload profile from API to get latest data
+        console.log('🔄 === RELOADING PROFILE FROM API ===');
+        console.log('🔄 Calling getCustomerProfile with userId:', userId);
+        
+        const freshProfile = await authService.getCustomerProfile(userId);
+        
+        console.log('📥 === FRESH PROFILE RESPONSE ===');
+        console.log('📥 Full fresh profile response:', freshProfile);
+        console.log('📥 Fresh fullName:', freshProfile?.fullName);
+        console.log('📥 Fresh phone:', freshProfile?.phone);
+        console.log('📥 Fresh gmail:', freshProfile?.gmail);
+        
+        // Convert to local interface
+        const newProfileData: CustomerProfile = {
+          customerId: String(freshProfile?.customerId || userDataForUpdate.id),
+          fullName: freshProfile?.fullName || editFullName.trim(),
+          gmail: freshProfile?.gmail || profile.gmail || '',
+          phone: freshProfile?.phone || editPhone.trim(),
+          gender: freshProfile?.gender || profile.gender || ''
         };
         
-        // Update localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_data', JSON.stringify(updatedUserData));
-          console.log('💾 Updated localStorage with new profile data:', updatedUserData);
+        console.log('✅ === FINAL PROFILE UPDATE ===');
+        console.log('✅ Final updated profile data:', newProfileData);
+        console.log('✅ Setting profile state to:', newProfileData);
+        console.log('✅ Previous profile state was:', profile);
+        
+        setProfile(newProfileData);
+        
+        console.log('✅ Profile state should now be updated!');
+
+        // Update localStorage with fresh data
+        const currentUserData = authService.getCurrentUser();
+        if (currentUserData) {
+          // Update general user_data
+          const updatedUserData = {
+            ...currentUserData,
+            fullName: newProfileData.fullName,
+            phone: newProfileData.phone
+          };
+          
+          // Update user-specific profile cache
+          const userSpecificKey = `user_profile_${currentUserData.id}`;
+          
+          if (typeof window !== 'undefined') {
+            console.log('💾 === UPDATING LOCALSTORAGE ===');
+            console.log('💾 Updating user_data with:', updatedUserData);
+            console.log('💾 Updating', userSpecificKey, 'with:', newProfileData);
+            
+            localStorage.setItem('user_data', JSON.stringify(updatedUserData));
+            localStorage.setItem(userSpecificKey, JSON.stringify(newProfileData));
+            
+            // Verify what was actually saved
+            const savedUserData = localStorage.getItem('user_data');
+            const savedUserProfile = localStorage.getItem(userSpecificKey);
+            
+            console.log('💾 ✅ Verified saved user_data:', savedUserData);
+            console.log('💾 ✅ Verified saved user profile:', savedUserProfile);
+          }
         }
+        
+      } catch (reloadError) {
+        console.warn('⚠️ Failed to reload fresh profile, using fallback data:', reloadError);
+        
+        // Fallback to using form data if reload fails
+        const newProfileData = {
+          ...profile,
+          fullName: editFullName.trim(),
+          phone: editPhone.trim()
+        };
+        setProfile(newProfileData);
       }
 
+      console.log('🎉 === UPDATE COMPLETED ===');
+      console.log('🎉 Setting success message');
+      console.log('🎉 Closing edit dialog');
+      
       setSuccessMessage('Cập nhật thông tin thành công!');
       handleCloseEditDialog();
+      
+      console.log('🎉 ✅ All states updated, dialog should close!');
     } catch (error) {
       console.error('Error updating profile:', error);
       setEditError('Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.');
     } finally {
+      console.log('🔧 === FINALLY BLOCK ===');
+      console.log('🔧 Setting editLoading to false');
       setEditLoading(false);
+      console.log('🔧 ✅ Finally block completed');
     }
   };
 
@@ -679,6 +919,7 @@ export default function ProfilePage() {
                                 variant="outlined"
                                 startIcon={<Settings />}
                                 fullWidth
+                                onClick={handleEditProfile}
                                 sx={{
                                   borderColor: '#f48fb1',
                                   color: '#f48fb1',
@@ -694,6 +935,8 @@ export default function ProfilePage() {
                               >
                                 Cài đặt tài khoản
                               </Button>
+                              
+
                             </motion.div>
                           </Stack>
                         </motion.div>
@@ -840,8 +1083,8 @@ export default function ProfilePage() {
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={loadTickets}
-                          disabled={ticketsLoading}
+                          onClick={forceRefreshProfile}
+                          disabled={loading || ticketsLoading}
                           sx={{
                             borderColor: '#f48fb1',
                             color: '#f48fb1',
@@ -854,7 +1097,7 @@ export default function ProfilePage() {
                             }
                           }}
                         >
-                          Làm mới
+                          {loading ? 'Đang tải...' : 'Làm mới'}
                         </Button>
                       </Typography>
               
@@ -883,7 +1126,7 @@ export default function ProfilePage() {
                       ) : (
                         <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
                           <Stack spacing={2}>
-                            {groupTicketsByReservation(tickets).map((reservation, idx) => (
+                            {groupTicketsByReservation(tickets.filter(ticket => [0, 2, 5].includes(ticket.status))).map((reservation, idx) => (
                               <motion.div
                                 key={reservation.reservationId}
                                 initial={{ y: 20, opacity: 0 }}
@@ -994,6 +1237,30 @@ export default function ProfilePage() {
                                               </Typography>
                                             </Stack>
                                           </Box>
+                                          
+                                          {/* Rating button for completed tickets */}
+                                          {ticket.status === 5 && (
+                                            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                              <Button
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<Star />}
+                                                onClick={() => handleOpenRatingDialog(ticket)}
+                                                sx={{
+                                                  borderColor: '#ff9800',
+                                                  color: '#ff9800',
+                                                  fontSize: '0.75rem',
+                                                  borderRadius: 2,
+                                                  '&:hover': {
+                                                    borderColor: '#f57c00',
+                                                    bgcolor: 'rgba(255, 152, 0, 0.04)'
+                                                  }
+                                                }}
+                                              >
+                                                Đánh giá chuyến đi
+                                              </Button>
+                                            </Box>
+                                          )}
                                         </Box>
                                       </Box>
                                     ))}
@@ -1157,6 +1424,144 @@ export default function ProfilePage() {
             }}
           >
             {editLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Rating Dialog */}
+      <Dialog
+        open={ratingDialogOpen}
+        onClose={handleCloseRatingDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%)',
+            backdropFilter: 'blur(20px)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 1, 
+          background: 'linear-gradient(45deg, #ff9800 30%, #f57c00 90%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          fontWeight: 700,
+          fontSize: '1.5rem'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Star />
+            Đánh giá chuyến đi
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 3 }}>
+          {ratingError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {ratingError}
+            </Alert>
+          )}
+          
+          {selectedTicket && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Thông tin vé
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedTicket.fromTripStation} → {selectedTicket.toTripStation}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Ghế {selectedTicket.seatId} • {formatPrice(selectedTicket.price)}
+              </Typography>
+            </Box>
+          )}
+          
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                Đánh giá tổng thể
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Rating
+                  name="trip-rating"
+                  value={ratingScore}
+                  onChange={(event, newValue) => {
+                    setRatingScore(newValue);
+                  }}
+                  precision={1}
+                  size="large"
+                  sx={{
+                    '& .MuiRating-iconFilled': {
+                      color: '#ff9800',
+                    },
+                    '& .MuiRating-iconHover': {
+                      color: '#f57c00',
+                    },
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  ({ratingScore}/5 sao)
+                </Typography>
+              </Box>
+            </Box>
+            
+            <TextField
+              label="Nhận xét (tùy chọn)"
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              multiline
+              rows={4}
+              fullWidth
+              placeholder="Chia sẻ trải nghiệm của bạn về chuyến đi này..."
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ff9800',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ff9800',
+                  },
+                }
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button
+            onClick={handleCloseRatingDialog}
+            sx={{ 
+              color: 'text.secondary',
+              borderRadius: 2,
+              px: 3
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmitRating}
+            variant="contained"
+            disabled={ratingLoading || !ratingScore}
+            startIcon={ratingLoading ? <CircularProgress size={16} /> : <Save />}
+            sx={{
+              background: 'linear-gradient(45deg, #ff9800 30%, #f57c00 90%)',
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 600,
+              '&:hover': {
+                background: 'linear-gradient(45deg, #f57c00 30%, #ef6c00 90%)',
+              },
+              '&:disabled': {
+                background: '#e0e0e0',
+                color: '#9e9e9e',
+              }
+            }}
+          >
+            {ratingLoading ? 'Đang gửi...' : 'Gửi đánh giá'}
           </Button>
         </DialogActions>
       </Dialog>

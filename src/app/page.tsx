@@ -28,6 +28,7 @@ import {
   Snackbar,
   Alert,
   Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -56,6 +57,8 @@ import {
   Logout,
 } from '@mui/icons-material';
 import { authService } from '@/services/authService';
+import ratingService from '@/services/ratingService';
+import companyService from '@/services/companyService';
 
 // Types
 interface Location {
@@ -75,6 +78,27 @@ interface Station {
   locationName: string;
   status: number;
   isDeleted: boolean;
+}
+
+// Rating interface defined locally to avoid import issues
+interface Rating {
+  id: number;
+  ticketId: number;
+  companyId: number;
+  customerName: string;
+  score: number;
+  comment: string;
+  createdAt: string;
+}
+
+// Company interface defined locally to avoid import issues
+interface Company {
+  id: number;
+  companyId: string;
+  name: string;
+  numberOfRatings: number;
+  averageRating: number;
+  numberOfTrips: number;
 }
 
 export default function BusTicketHomePage() {
@@ -137,6 +161,14 @@ function BusTicketHomePageContent() {
   // State for slideshow
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // State for ratings
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
+
+  // State for companies
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
 
   // Framer Motion Variants
   const fadeInUp = {
@@ -234,6 +266,42 @@ function BusTicketHomePageContent() {
     }
   };
 
+  // Fetch ratings from API
+  const fetchRatings = async () => {
+    setRatingsLoading(true);
+    try {
+      console.log('🌟 Fetching ratings for homepage...');
+      const ratingsData = await ratingService.getRecentRatings(6); // Get 6 most recent ratings
+      
+      console.log('🌟 Ratings fetched successfully:', ratingsData);
+      setRatings(ratingsData);
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+      // Don't show error notification for ratings as it's not critical
+      // Use fallback empty array (already set in state)
+    } finally {
+      setRatingsLoading(false);
+    }
+  };
+
+  // Fetch companies from API
+  const fetchCompanies = async () => {
+    setCompaniesLoading(true);
+    try {
+      console.log('🏢 Fetching companies for homepage...');
+      const companiesData = await companyService.getTopRatedCompanies(4); // Get 4 top rated companies
+      
+      console.log('🏢 Companies fetched successfully:', companiesData);
+      setCompanies(companiesData);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      // Don't show error notification for companies as it's not critical
+      // Use fallback empty array (already set in state)
+    } finally {
+      setCompaniesLoading(false);
+    }
+  };
+
   // Fetch stations from API based on location
   const fetchStations = async (locationId: number, isFromStation: boolean = true) => {
     if (isFromStation) {
@@ -294,6 +362,8 @@ function BusTicketHomePageContent() {
   useEffect(() => {
     checkAuthStatus();
     fetchLocations();
+    fetchRatings(); // Fetch ratings for customer reviews section
+    fetchCompanies(); // Fetch companies for top rated bus companies section
     
     // Listen for storage changes (when user logs in/out in another tab)
     const handleStorageChange = () => {
@@ -453,6 +523,50 @@ function BusTicketHomePageContent() {
       message,
       type
     });
+  };
+
+  // Helper function to format rating data for display
+  const formatRatingForDisplay = (rating: Rating, index: number) => {
+    // Use actual customer name from API
+    const name = rating.customerName || 'Khách hàng';
+    
+    // Generate avatar letter from actual customer name
+    const avatar = name.charAt(0).toUpperCase();
+    
+    // Format the date
+    const createdDate = new Date(rating.createdAt);
+    const timeAgo = formatTimeAgo(createdDate);
+    
+    return {
+      id: rating.id,
+      name,
+      rating: rating.score,
+      comment: rating.comment || 'Dịch vụ tốt, rất hài lòng!',
+      avatar,
+      timeAgo,
+      originalRating: rating
+    };
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return 'Hôm nay';
+    } else if (diffInDays === 1) {
+      return 'Hôm qua';
+    } else if (diffInDays < 7) {
+      return `${diffInDays} ngày trước`;
+    } else if (diffInDays < 30) {
+      const weeks = Math.floor(diffInDays / 7);
+      return `${weeks} tuần trước`;
+    } else {
+      const months = Math.floor(diffInDays / 30);
+      return `${months} tháng trước`;
+    }
   };
 
   const theme = useTheme();
@@ -1859,13 +1973,13 @@ function BusTicketHomePageContent() {
                         Nhà xe đánh giá cao nhất:
                       </Typography>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {[
-                          { name: 'Phương Trang', rating: 4.8 },
-                          { name: 'Kumho', rating: 4.9 },
-                          { name: 'Hà Sơn', rating: 4.7 },
-                          { name: 'Hoàng Long', rating: 4.6 },
-                          { name: 'Sao Việt', rating: 4.5 }
-                        ].map((company, index) => (
+                        {(companies.length > 0 ? companies.slice(0, 5) : [
+                          { name: 'Phương Trang', averageRating: 4.8 },
+                          { name: 'Kumho', averageRating: 4.9 },
+                          { name: 'Hà Sơn', averageRating: 4.7 },
+                          { name: 'Hoàng Long', averageRating: 4.6 },
+                          { name: 'Sao Việt', averageRating: 4.5 }
+                        ]).map((company, index) => (
                           <motion.div
                             key={company.name}
                             initial={{ opacity: 0, scale: 0.8 }}
@@ -1876,7 +1990,7 @@ function BusTicketHomePageContent() {
                           >
                             <Chip
                               icon={<DirectionsBus sx={{ fontSize: '0.9rem' }} />}
-                              label={`${company.name} (${company.rating}★)`}
+                              label={`${company.name} (${company.averageRating || 0}★)`}
                               variant="outlined"
                               clickable
                               size="small"
@@ -2063,48 +2177,132 @@ function BusTicketHomePageContent() {
             mb: 8,
           }}
         >
-          {[
-            { name: 'Phương Trang', routes: '50+ tuyến', description: 'Phục vụ chuyên nghiệp, đội xe mới', rating: 4.8 },
-            { name: 'Hà Sơn', routes: '30+ tuyến', description: 'An toàn và đúng giờ', rating: 4.7 },
-            { name: 'Kumho', routes: '45+ tuyến', description: 'Dịch vụ 5 sao, xe giường nằm cao cấp', rating: 4.9 },
-            { name: 'Hoàng Long', routes: '25+ tuyến', description: 'Chất lượng vượt trội, giá cả hợp lý', rating: 4.6 },
-          ].map((company, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.05, y: -10 }}
-            >
-              <Card sx={{
-                p: 3,
-                cursor: 'pointer',
-                height: '100%',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  boxShadow: 6,
-                  transform: 'translateY(-5px)',
-                }
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DirectionsBus color="primary" sx={{ mr: 1, fontSize: 28 }} />
-                  <Typography variant="h6" fontWeight="bold">
-                    {company.name}
+          {companiesLoading ? (
+            // Loading state - show 4 skeleton cards
+            Array.from({ length: 4 }).map((_, index) => (
+              <motion.div
+                key={`loading-${index}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card sx={{
+                  p: 3,
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <DirectionsBus color="primary" sx={{ mr: 1, fontSize: 28 }} />
+                    <Box sx={{ bgcolor: '#e0e0e0', height: 24, borderRadius: 1, width: '60%' }} />
+                  </Box>
+                  <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, mb: 1 }} />
+                  <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, width: '80%', mb: 2 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, width: '40%' }} />
+                    <Box sx={{ bgcolor: '#e0e0e0', height: 20, borderRadius: 1, width: '30%' }} />
+                  </Box>
+                </Card>
+              </motion.div>
+            ))
+          ) : companies.length > 0 ? (
+            // Show actual companies from API
+            companies.map((company, index) => (
+              <motion.div
+                key={company.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.05, y: -10 }}
+              >
+                <Card sx={{
+                  p: 3,
+                  cursor: 'pointer',
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: 6,
+                    transform: 'translateY(-5px)',
+                  }
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <DirectionsBus color="primary" sx={{ mr: 1, fontSize: 28 }} />
+                    <Typography variant="h6" fontWeight="bold">
+                      {company.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {company.numberOfRatings > 0 
+                      ? `Được đánh giá bởi ${company.numberOfRatings} khách hàng`
+                      : `${company.numberOfTrips} chuyến xe hoạt động`
+                    }
                   </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {company.description}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#f48fb1' }}>
-                    {company.routes}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#f48fb1' }}>
+                      {company.numberOfTrips}+ tuyến
+                    </Typography>
+                    {company.numberOfRatings > 0 ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={company.averageRating} precision={0.1} size="small" readOnly />
+                        <Typography variant="caption" color="text.secondary">
+                          ({company.averageRating.toFixed(1)})
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        Chưa có đánh giá
+                      </Typography>
+                    )}
+                  </Box>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            // Fallback when no companies available - show default companies
+            [
+              { name: 'Phương Trang', routes: '50+ tuyến', description: 'Phục vụ chuyên nghiệp, đội xe mới', rating: 4.8 },
+              { name: 'Hà Sơn', routes: '30+ tuyến', description: 'An toàn và đúng giờ', rating: 4.7 },
+              { name: 'Kumho', routes: '45+ tuyến', description: 'Dịch vụ 5 sao, xe giường nằm cao cấp', rating: 4.9 },
+              { name: 'Hoàng Long', routes: '25+ tuyến', description: 'Chất lượng vượt trội, giá cả hợp lý', rating: 4.6 },
+            ].map((company, index) => (
+              <motion.div
+                key={`fallback-${index}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.05, y: -10 }}
+              >
+                <Card sx={{
+                  p: 3,
+                  cursor: 'pointer',
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: 6,
+                    transform: 'translateY(-5px)',
+                  }
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <DirectionsBus color="primary" sx={{ mr: 1, fontSize: 28 }} />
+                    <Typography variant="h6" fontWeight="bold">
+                      {company.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {company.description}
                   </Typography>
-                  <Rating value={company.rating} precision={0.1} size="medium" readOnly />
-                </Box>
-              </Card>
-            </motion.div>
-          ))}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#f48fb1' }}>
+                      {company.routes}
+                    </Typography>
+                    <Rating value={company.rating} precision={0.1} size="medium" readOnly />
+                  </Box>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </Box>
 
         {/* Statistics */}
@@ -2172,48 +2370,128 @@ function BusTicketHomePageContent() {
             gap: 3,
           }}
         >
-          {[
-            { name: 'Nguyễn Văn A', rating: 5, comment: 'Dịch vụ tuyệt vời, đặt vé dễ dàng và xe đúng giờ.', avatar: 'A' },
-            { name: 'Trần Thị B', rating: 5, comment: 'Giá cả hợp lý, hỗ trợ khách hàng nhiệt tình.', avatar: 'B' },
-            { name: 'Lê Văn C', rating: 4, comment: 'App dễ sử dụng, thanh toán nhanh chóng.', avatar: 'C' },
-          ].map((review, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.05, y: -10 }}
-            >
-              <Card sx={{
-                p: 3,
-                height: '100%',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  boxShadow: 6,
-                  transform: 'translateY(-5px)',
-                }
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <Avatar sx={{ mr: 2, bgcolor: '#388e3c' }}>{review.avatar}</Avatar>
-                  </motion.div>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">{review.name}</Typography>
-                    <Rating value={review.rating} size="small" readOnly />
+          {ratingsLoading ? (
+            // Loading state - show 3 skeleton cards
+            Array.from({ length: 3 }).map((_, index) => (
+              <motion.div
+                key={`loading-${index}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card sx={{
+                  p: 3,
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ mr: 2, bgcolor: '#e0e0e0' }}>
+                      <CircularProgress size={24} />
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ bgcolor: '#e0e0e0', height: 20, borderRadius: 1, mb: 1 }} />
+                      <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, width: '60%' }} />
+                    </Box>
                   </Box>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  "{review.comment}"
-                </Typography>
-              </Card>
-            </motion.div>
-          ))}
+                  <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, mb: 1 }} />
+                  <Box sx={{ bgcolor: '#e0e0e0', height: 16, borderRadius: 1, width: '80%' }} />
+                </Card>
+              </motion.div>
+            ))
+          ) : ratings.length > 0 ? (
+            // Show actual ratings from API
+            ratings.slice(0, 6).map((rating, index) => {
+              const formattedReview = formatRatingForDisplay(rating, index);
+              return (
+                <motion.div
+                  key={formattedReview.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  whileHover={{ scale: 1.05, y: -10 }}
+                >
+                  <Card sx={{
+                    p: 3,
+                    height: '100%',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: 6,
+                      transform: 'translateY(-5px)',
+                    }
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        viewport={{ once: true }}
+                      >
+                        <Avatar sx={{ mr: 2, bgcolor: '#f48fb1' }}>{formattedReview.avatar}</Avatar>
+                      </motion.div>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" fontWeight="bold">{formattedReview.name}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Rating value={formattedReview.rating} size="small" readOnly />
+                          <Typography variant="caption" color="text.secondary">
+                            {formattedReview.timeAgo}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      "{formattedReview.comment}"
+                    </Typography>
+                  </Card>
+                </motion.div>
+              );
+            })
+          ) : (
+            // Fallback when no ratings available - show default reviews
+            [
+              { name: 'Nguyễn Văn A', rating: 5, comment: 'Dịch vụ tuyệt vời, đặt vé dễ dàng và xe đúng giờ.', avatar: 'A' },
+              { name: 'Trần Thị B', rating: 5, comment: 'Giá cả hợp lý, hỗ trợ khách hàng nhiệt tình.', avatar: 'B' },
+              { name: 'Lê Văn C', rating: 4, comment: 'App dễ sử dụng, thanh toán nhanh chóng.', avatar: 'C' },
+            ].map((review, index) => (
+              <motion.div
+                key={`fallback-${index}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.05, y: -10 }}
+              >
+                <Card sx={{
+                  p: 3,
+                  height: '100%',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: 6,
+                    transform: 'translateY(-5px)',
+                  }
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <Avatar sx={{ mr: 2, bgcolor: '#388e3c' }}>{review.avatar}</Avatar>
+                    </motion.div>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold">{review.name}</Typography>
+                      <Rating value={review.rating} size="small" readOnly />
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    "{review.comment}"
+                  </Typography>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </Box>
       </Container>
 

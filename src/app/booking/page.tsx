@@ -3901,7 +3901,7 @@ function BookingContent() {
                       {currentSeats.map((seat) => (
                         <Chip
                           key={seat.id}
-                          label={seat.id}
+                          label={seat.seatNumber || seat.id}
                           color="primary"
                           onDelete={() => {
                             if (isRoundTrip) {
