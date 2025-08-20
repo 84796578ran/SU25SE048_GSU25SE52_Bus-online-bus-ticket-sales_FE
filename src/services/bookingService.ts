@@ -17,14 +17,20 @@ export interface VNPayPayloadType {
     toStationId: number;
     seatIds: number[];
   }[];
+  // Optional return URL for payment gateway callbacks (frontend-provided)
+  returnUrl?: string;
 }
 
 // Booking related API calls
 export const bookingService = {
   // Gọi API đặt vé qua VNPay
-  createReservation: async (payload: VNPayPayloadType): Promise<any> => {
+  createReservation: async (payload: VNPayPayloadType, options?: { returnUrl?: string }): Promise<any> => {
     try {
-      const response = await apiClient.post<any>("/api/Reservations", payload);
+      // Attach optional return URL via header as well (in case backend prefers header over body)
+      const config = options?.returnUrl
+        ? { headers: { "X-Return-Url": options.returnUrl } as Record<string, string> }
+        : undefined;
+      const response = await apiClient.post<any>("/api/Reservations", payload, config);
       return response;
     } catch (error) {
       console.error("Error creating reservation:", error);

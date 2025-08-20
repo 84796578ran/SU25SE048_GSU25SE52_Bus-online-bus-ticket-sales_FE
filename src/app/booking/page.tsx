@@ -2460,6 +2460,14 @@ function BookingContent() {
                 </Box>
               )}
             </Box>
+            {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) && (
+              <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                <Typography variant="caption" color="text.secondary">
+                  {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) as string} • Có thể đi một phần của chuyến
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -2779,6 +2787,14 @@ function BookingContent() {
                                   </Box>
                                 )}
                               </Box>
+                              {trip.routeDescription && (
+                                <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {trip.routeDescription} • Có thể đi một phần của chuyến
+                                  </Typography>
+                                </Box>
+                              )}
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -2950,6 +2966,14 @@ function BookingContent() {
                                     </Box>
                                   )}
                                 </Box>
+                                {trip.routeDescription && (
+                                  <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                                    <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {trip.routeDescription} • Có thể đi một phần của chuyến
+                                    </Typography>
+                                  </Box>
+                                )}
                               </CardContent>
                             </Card>
                           </motion.div>
@@ -3115,6 +3139,14 @@ function BookingContent() {
                               </Box>
                             )}
                           </Box>
+                          {trip.routeDescription && (
+                            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                              <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                              <Typography variant="caption" color="text.secondary">
+                                {trip.routeDescription} • Có thể đi một phần của chuyến
+                              </Typography>
+                            </Box>
+                          )}
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -4860,9 +4892,7 @@ function BookingContent() {
   // Render booking result (success or failure)
   const renderBookingResult = () => {
     const isSuccess = paymentStatus === "success";
-    const bookingCode = `XTB${Math.floor(Math.random() * 1000000)
-      .toString()
-      .padStart(6, "0")}`;
+    // booking code removed per request
 
     const handleBackToHome = () => {
       router.push("/");
@@ -4916,8 +4946,10 @@ function BookingContent() {
       console.log("➡️ One-way trip - seatsForDisplay:", seatsForDisplay);
     }
     
-    const originDisplay = searchData.from || tripForDisplay?.fromLocation || "-";
-    const destinationDisplay = searchData.to || tripForDisplay?.endLocation || "-";
+    const originDisplay =
+      searchData.fromStation || searchData.from || tripForDisplay?.fromLocation || "-";
+    const destinationDisplay =
+      searchData.toStation || searchData.to || tripForDisplay?.endLocation || "-";
     const busNameDisplay = tripForDisplay?.busName || "-";
     const departDateDisplay = searchData.departureDate || (tripForDisplay ? new Date(tripForDisplay.timeStart).toLocaleDateString("vi-VN") : "-");
 
@@ -4965,22 +4997,9 @@ function BookingContent() {
         </Typography>
 
         <Typography variant="subtitle1" sx={{ mb: 4, color: "text.secondary" }}>
-          {isSuccess ? (
-            <>
-              Cảm ơn bạn đã đặt vé. Mã đặt vé của bạn là{" "}
-              <Box component="span" sx={{ fontWeight: "bold", color: "#4caf50" }}>
-                {bookingCode}
-              </Box>
-            </>
-          ) : (
-            <>
-              {paymentError || "Có lỗi xảy ra trong quá trình thanh toán"}
-              <br />
-              <Box component="span" sx={{ fontSize: "0.9rem", color: "text.disabled" }}>
-                Vui lòng thử lại hoặc liên hệ hỗ trợ khách hàng
-              </Box>
-            </>
-          )}
+          {isSuccess
+            ? "Cảm ơn bạn đã đặt vé."
+            : (paymentError || "Có lỗi xảy ra trong quá trình thanh toán\nVui lòng thử lại hoặc liên hệ hỗ trợ khách hàng")}
         </Typography>
 
         {isSuccess && (
@@ -5059,17 +5078,7 @@ function BookingContent() {
                     Vé Xe BusTicket
                   </Typography>
                 </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Mã đặt vé
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#e91e63" }}
-                  >
-                    {bookingCode}
-                  </Typography>
-                </Box>
+                <Box />
               </Box>
 
               {/* Ticket Content */}
@@ -5097,7 +5106,7 @@ function BookingContent() {
                          {originDisplay}
                       </Typography>
                       <Typography variant="body2">
-                        {selectedTrip && formatTimeSafe(selectedTrip.timeStart)}
+                        {tripForDisplay && formatTimeSafe(tripForDisplay.timeStart)}
                       </Typography>
                     </Box>
 
@@ -5165,7 +5174,7 @@ function BookingContent() {
                          {destinationDisplay}
                       </Typography>
                       <Typography variant="body2">
-                        {selectedTrip && formatTimeSafe(selectedTrip.timeEnd)}
+                        {tripForDisplay && formatTimeSafe(tripForDisplay.timeEnd)}
                       </Typography>
                     </Box>
                   </Box>
@@ -5539,7 +5548,7 @@ function BookingContent() {
                              {searchData.from}
                            </Typography>
                           <Typography variant="body2">
-                            {selectedTrip && formatTimeSafe(selectedTrip.timeStart)}
+                            {tripForDisplay && formatTimeSafe(tripForDisplay.timeStart)}
                           </Typography>
                         </Box>
 
@@ -5607,7 +5616,7 @@ function BookingContent() {
                              {searchData.to}
                            </Typography>
                           <Typography variant="body2">
-                            {selectedTrip && formatTimeSafe(selectedTrip.timeEnd)}
+                            {tripForDisplay && formatTimeSafe(tripForDisplay.timeEnd)}
                           </Typography>
                         </Box>
                       </Box>
@@ -6060,7 +6069,7 @@ function BookingContent() {
                 {/* Seats */}
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   {rowSeats.map((seat, index) => {
-                    const isSelected = selectedSeats.find(
+                    const isSelected = (seat as any).isSelected || selectedSeats.some(
                       (s) => s.id === seat.id
                     );
                     const isBooked = seat.isBooked;
@@ -6126,8 +6135,8 @@ function BookingContent() {
                             color: isSelected
                               ? "white" // Chữ trắng cho ghế đã chọn
                               : isBooked
-                              ? "white" // Chữ trắng cho ghế đã đặt
-                              : "#424242", // Chữ xám đậm cho ghế trống
+                              ? "#000" // Chữ đen cho ghế đã đặt
+                              : "white", // Chữ trắng cho ghế trống (theo yêu cầu)
                             border: isSelected
                               ? "2px solid #e91e63"
                               : isBooked
@@ -6156,8 +6165,8 @@ function BookingContent() {
                                 }
                               : {},
                             "&:disabled": {
-                              bgcolor: "#9e9e9e", // Màu xám cho ghế disabled (chỉ ghế đã đặt)
-                              color: "white",
+                              bgcolor: "#9e9e9e", // Màu xám cho ghế đã đặt
+                              color: "#000", // Chữ đen cho ghế đã đặt
                               cursor: "not-allowed",
                               "&::after": {
                                 content: '"✖"',
@@ -6167,7 +6176,7 @@ function BookingContent() {
                                 transform: "translate(-50%, -50%)",
                                 fontSize: "1rem",
                                 zIndex: 1,
-                                color: "white",
+                                color: "#000", // Dấu X màu đen
                                 fontWeight: "bold",
                               },
                             },

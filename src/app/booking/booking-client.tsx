@@ -151,9 +151,7 @@ const paymentMethods = [
 ];
 
 export default function BookingPage() {
-  // VNPayPayloadType được import từ bookingService.ts
 
-  // Client-side hydration check to prevent Material-UI hydration issues
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -688,7 +686,6 @@ export default function BookingPage() {
         vnpTransactionStatus,
       });
 
-      // Redirect to unified confirmation page
       console.log("🔄 Redirecting to confirmation page");
       if (typeof window !== 'undefined') {
         window.location.href =
@@ -698,7 +695,7 @@ export default function BookingPage() {
     }
   }, [searchParams]);
 
-  // Effect to handle payment status from confirm page
+// Effect to handle payment status from confirm page
   useEffect(() => {
     if (!searchParams) return;
     
@@ -735,7 +732,6 @@ export default function BookingPage() {
               setShuttlePoint(null);
               setCustomerPhoneNumber(bookingData.customerPhoneNumber);
               
-              // Clear localStorage after restoring
               localStorage.removeItem('bookingData');
             }
           }
@@ -1152,8 +1148,13 @@ export default function BookingPage() {
               vnpayPayload
             );
 
+            // Build a safe return URL based on current origin (avoid forcing https in localhost)
+            const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+            const returnUrl = `${currentOrigin}/booking/confirm`;
+
             const response = await bookingService.createReservation(
-              vnpayPayload
+              vnpayPayload,
+              { returnUrl }
             );
 
             console.log(
@@ -2451,6 +2452,14 @@ export default function BookingPage() {
                 </Box>
               )}
             </Box>
+            {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) && (
+              <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                <Typography variant="caption" color="text.secondary">
+                  {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) as string} • Có thể đi một phần của chuyến
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -2770,6 +2779,14 @@ export default function BookingPage() {
                                   </Box>
                                 )}
                               </Box>
+                              {trip.routeDescription && (
+                                <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Info sx={{ fontSize: 16, color: "text.secondary" }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {trip.routeDescription} • Có thể đi một phần của chuyến
+                                  </Typography>
+                                </Box>
+                              )}
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -4859,9 +4876,7 @@ export default function BookingPage() {
   // Render booking result (success or failure)
   const renderBookingResult = () => {
     const isSuccess = paymentStatus === "success";
-    const bookingCode = `XTB${Math.floor(Math.random() * 1000000)
-      .toString()
-      .padStart(6, "0")}`;
+    // booking code removed per request
 
     const handleBackToHome = () => {
       router.push("/");
@@ -4915,8 +4930,10 @@ export default function BookingPage() {
       console.log("➡️ One-way trip - seatsForDisplay:", seatsForDisplay);
     }
     
-    const originDisplay = searchData.from || tripForDisplay?.fromLocation || "-";
-    const destinationDisplay = searchData.to || tripForDisplay?.endLocation || "-";
+    const originDisplay =
+      searchData.fromStation || searchData.from || tripForDisplay?.fromLocation || "-";
+    const destinationDisplay =
+      searchData.toStation || searchData.to || tripForDisplay?.endLocation || "-";
     const busNameDisplay = tripForDisplay?.busName || "-";
     const departDateDisplay = searchData.departureDate || (tripForDisplay ? new Date(tripForDisplay.timeStart).toLocaleDateString("vi-VN") : "-");
 
@@ -4964,22 +4981,9 @@ export default function BookingPage() {
         </Typography>
 
         <Typography variant="subtitle1" sx={{ mb: 4, color: "text.secondary" }}>
-          {isSuccess ? (
-            <>
-              Cảm ơn bạn đã đặt vé. Mã đặt vé của bạn là{" "}
-              <Box component="span" sx={{ fontWeight: "bold", color: "#4caf50" }}>
-                {bookingCode}
-              </Box>
-            </>
-          ) : (
-            <>
-              {paymentError || "Có lỗi xảy ra trong quá trình thanh toán"}
-              <br />
-              <Box component="span" sx={{ fontSize: "0.9rem", color: "text.disabled" }}>
-                Vui lòng thử lại hoặc liên hệ hỗ trợ khách hàng
-              </Box>
-            </>
-          )}
+          {isSuccess
+            ? "Cảm ơn bạn đã đặt vé."
+            : (paymentError || "Có lỗi xảy ra trong quá trình thanh toán\nVui lòng thử lại hoặc liên hệ hỗ trợ khách hàng")}
         </Typography>
 
         {isSuccess && (
@@ -5058,17 +5062,7 @@ export default function BookingPage() {
                     Vé Xe BusTicket
                   </Typography>
                 </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Mã đặt vé
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#e91e63" }}
-                  >
-                    {bookingCode}
-                  </Typography>
-                </Box>
+                <Box />
               </Box>
 
               {/* Ticket Content */}
@@ -5096,7 +5090,7 @@ export default function BookingPage() {
                          {originDisplay}
                       </Typography>
                       <Typography variant="body2">
-                        {selectedTrip && formatTimeSafe(selectedTrip.timeStart)}
+                        {tripForDisplay && formatTimeSafe(tripForDisplay.timeStart)}
                       </Typography>
                     </Box>
 
@@ -5164,7 +5158,7 @@ export default function BookingPage() {
                          {destinationDisplay}
                       </Typography>
                       <Typography variant="body2">
-                        {selectedTrip && formatTimeSafe(selectedTrip.timeEnd)}
+                        {tripForDisplay && formatTimeSafe(tripForDisplay.timeEnd)}
                       </Typography>
                     </Box>
                   </Box>
@@ -5538,7 +5532,7 @@ export default function BookingPage() {
                              {searchData.from}
                            </Typography>
                           <Typography variant="body2">
-                            {selectedTrip && formatTimeSafe(selectedTrip.timeStart)}
+                            {tripForDisplay && formatTimeSafe(tripForDisplay.timeStart)}
                           </Typography>
                         </Box>
 
@@ -5606,7 +5600,7 @@ export default function BookingPage() {
                              {searchData.to}
                            </Typography>
                           <Typography variant="body2">
-                            {selectedTrip && formatTimeSafe(selectedTrip.timeEnd)}
+                            {tripForDisplay && formatTimeSafe(tripForDisplay.timeEnd)}
                           </Typography>
                         </Box>
                       </Box>
@@ -6059,7 +6053,7 @@ export default function BookingPage() {
                 {/* Seats */}
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   {rowSeats.map((seat, index) => {
-                    const isSelected = selectedSeats.find(
+                    const isSelected = (seat as any).isSelected || selectedSeats.some(
                       (s) => s.id === seat.id
                     );
                     const isBooked = seat.isBooked;
@@ -6125,8 +6119,8 @@ export default function BookingPage() {
                             color: isSelected
                               ? "white" // Chữ trắng cho ghế đã chọn
                               : isBooked
-                              ? "white" // Chữ trắng cho ghế đã đặt
-                              : "#424242", // Chữ xám đậm cho ghế trống
+                              ? "#000" // Chữ đen cho ghế đã đặt
+                              : "white", // Chữ trắng cho ghế trống (theo yêu cầu)
                             border: isSelected
                               ? "2px solid #e91e63"
                               : isBooked
@@ -6155,8 +6149,8 @@ export default function BookingPage() {
                                 }
                               : {},
                             "&:disabled": {
-                              bgcolor: "#9e9e9e", // Màu xám cho ghế disabled (chỉ ghế đã đặt)
-                              color: "white",
+                              bgcolor: "#9e9e9e", // Màu xám cho ghế đã đặt
+                              color: "#000", // Chữ đen cho ghế đã đặt
                               cursor: "not-allowed",
                               "&::after": {
                                 content: '"✖"',
@@ -6166,7 +6160,7 @@ export default function BookingPage() {
                                 transform: "translate(-50%, -50%)",
                                 fontSize: "1rem",
                                 zIndex: 1,
-                                color: "white",
+                                color: "#000", // Dấu X màu đen
                                 fontWeight: "bold",
                               },
                             },

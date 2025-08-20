@@ -6,22 +6,19 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://bobts-server-e7
 // Create axios instance with default configuration
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000, 
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-// Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Add auth token if available
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Add explicit customer identifier header (backend may require this even if JWT lacks claim)
     try {
       const userDataRaw = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null;
       if (userDataRaw && config.headers) {
@@ -35,7 +32,6 @@ axiosInstance.interceptors.request.use(
       }
     } catch {}
     
-    // Log detailed request information for debugging
     console.log('📤 API Request Details:', {
       method: config.method?.toUpperCase(),
       url: config.url,
