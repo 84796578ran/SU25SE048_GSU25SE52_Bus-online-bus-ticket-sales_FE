@@ -237,6 +237,66 @@ class ApiClient {
     }
   }
 
+  // New seat-available API for seat map display
+  async getSeatAvailable(tripId: string | number, fromStationId: string | number, toStationId: string | number): Promise<any> {
+    try {
+      // Validate required parameters
+      console.log('🔍 getSeatAvailable called with params:', {
+        tripId,
+        fromStationId,
+        toStationId,
+        'tripId type': typeof tripId,
+        'fromStationId type': typeof fromStationId,
+        'toStationId type': typeof toStationId
+      });
+
+      if (tripId === null || tripId === undefined || tripId === '') {
+        throw new Error(`tripId is required, received: ${tripId} (type: ${typeof tripId})`);
+      }
+      if (fromStationId === null || fromStationId === undefined || fromStationId === '') {
+        throw new Error(`fromStationId is required, received: ${fromStationId} (type: ${typeof fromStationId})`);
+      }
+      if (toStationId === null || toStationId === undefined || toStationId === '') {
+        throw new Error(`toStationId is required, received: ${toStationId} (type: ${typeof toStationId})`);
+      }
+
+      const params = new URLSearchParams({
+        fromStationId: fromStationId.toString(),
+        toStationId: toStationId.toString()
+      });
+      
+      const fullUrl = `/api/Trip/${tripId}/seat-available?${params.toString()}`;
+      
+      console.log('🌐 Making seat-available API call:', {
+        fullUrl,
+        baseURL: this.instance.defaults.baseURL,
+        completeURL: `${this.instance.defaults.baseURL}${fullUrl}`,
+        tripId: tripId,
+        'tripId type': typeof tripId,
+        fromStationId: fromStationId,
+        'fromStationId type': typeof fromStationId,
+        toStationId: toStationId,
+        'toStationId type': typeof toStationId,
+        params: params.toString()
+      });
+      
+      const response = await this.instance.get(fullUrl);
+      
+      console.log('🌐 Seat-available API response:', {
+        status: response.status,
+        data: response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error fetching seat-available for trip ${tripId}:`, error);
+      throw error;
+    }
+  }
+
   // One-way trip search API
   async searchTrips(searchParams: {
     fromLocationId: string | number,

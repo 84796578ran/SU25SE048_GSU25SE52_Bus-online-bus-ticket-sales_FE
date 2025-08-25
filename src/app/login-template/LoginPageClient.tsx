@@ -48,6 +48,7 @@ export default function LoginTemplatePage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
   const [isClearingGoogleSession, setIsClearingGoogleSession] = useState(false);
+  const [hasPendingSearch, setHasPendingSearch] = useState(false);
   
   // Debug option: Set to true to disable redirect and see API response
   const DEBUG_MODE = false; // Disabled for production
@@ -90,6 +91,23 @@ export default function LoginTemplatePage() {
   };
 
 
+
+  // Check for pending search data on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const pendingSearchData = localStorage.getItem('pendingSearchData');
+      if (pendingSearchData) {
+        try {
+          const searchData = JSON.parse(pendingSearchData);
+          setHasPendingSearch(true);
+          console.log('📋 Found pending search data:', searchData);
+        } catch (error) {
+          console.error('Error parsing pending search data:', error);
+          localStorage.removeItem('pendingSearchData');
+        }
+      }
+    }
+  }, []);
 
   // Handle Google OAuth callback
   useEffect(() => {
@@ -210,13 +228,65 @@ export default function LoginTemplatePage() {
             console.log('🚫 DEBUG MODE: Redirect disabled. Check API response below.');
             setError('✅ GOOGLE LOGIN SUCCESS! API Response hiển thị bên dưới. Redirect bị tắt để xem response.');
           } else {
-            // On success, redirect to home page with success message
-            console.log('🎉 Google login successful! Redirecting to home page...');
+            // Check for redirect parameter and pending search data
+            const redirectParam = searchParams?.get('redirect');
+            const pendingSearchData = typeof window !== 'undefined' ? localStorage.getItem('pendingSearchData') : null;
+            
+            console.log('🎉 Google login successful! Checking redirect options...');
+            console.log('📍 Redirect param:', redirectParam);
+            console.log('📋 Pending search data:', pendingSearchData);
+            
             const userName = response.fullName || 'bạn';
             const successMessage = `Xin chào ${userName}! Đăng nhập Google thành công.`;
             
             setTimeout(() => {
-              window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+              // If there's pending search data, redirect to booking page with that data
+              if (pendingSearchData) {
+                try {
+                  const searchData = JSON.parse(pendingSearchData);
+                  const params = new URLSearchParams();
+                  
+                  // Convert search data back to query params
+                  params.append('from', searchData.from?.name || '');
+                  params.append('fromId', searchData.from?.id?.toString() || '');
+                  params.append('to', searchData.to?.name || '');
+                  params.append('toId', searchData.to?.id?.toString() || '');
+                  params.append('fromStation', searchData.fromStation?.name || '');
+                  params.append('fromStationId', searchData.fromStation?.id?.toString() || '');
+                  params.append('toStation', searchData.toStation?.name || '');
+                  params.append('toStationId', searchData.toStation?.id?.toString() || '');
+                  
+                  if (searchData.departureDate) {
+                    const departureDate = new Date(searchData.departureDate);
+                    const isoDate = departureDate.toISOString().split('T')[0];
+                    params.append('departureDate', isoDate);
+                  }
+                  
+                  params.append('tripType', searchData.tripType);
+                  
+                  if (searchData.tripType === 'roundTrip' && searchData.returnDate) {
+                    const returnDate = new Date(searchData.returnDate);
+                    const isoReturnDate = returnDate.toISOString().split('T')[0];
+                    params.append('returnDate', isoReturnDate);
+                  }
+                  
+                  // Clear pending search data
+                  localStorage.removeItem('pendingSearchData');
+                  
+                  // Redirect to booking page with search data
+                  window.location.href = `/booking?${params.toString()}&loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+                } catch (error) {
+                  console.error('Error parsing pending search data:', error);
+                  // Fallback to home page if there's an error
+                  window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+                }
+              } else if (redirectParam) {
+                // If there's a redirect parameter, use it
+                window.location.href = `${redirectParam}?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+              } else {
+                // Default redirect to home page
+                window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+              }
             }, 500);
           }
           
@@ -302,13 +372,65 @@ export default function LoginTemplatePage() {
         console.log('🚫 DEBUG MODE: Redirect disabled. Check API response below.');
         setError('✅ LOGIN SUCCESS! API Response hiển thị bên dưới. Redirect bị tắt để xem response.');
       } else {
-        // On success, redirect to home page with success message
-        console.log('🎉 Login successful! Redirecting to home page...');
+        // Check for redirect parameter
+        const redirectParam = searchParams?.get('redirect');
+        const pendingSearchData = typeof window !== 'undefined' ? localStorage.getItem('pendingSearchData') : null;
+        
+        console.log('🎉 Login successful! Checking redirect options...');
+        console.log('📍 Redirect param:', redirectParam);
+        console.log('📋 Pending search data:', pendingSearchData);
+        
         const userName = response.fullName || 'bạn';
         const successMessage = `Xin chào ${userName}! Đăng nhập thành công.`;
         
         setTimeout(() => {
-          window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+          // If there's pending search data, redirect to booking page with that data
+          if (pendingSearchData) {
+            try {
+              const searchData = JSON.parse(pendingSearchData);
+              const params = new URLSearchParams();
+              
+              // Convert search data back to query params
+              params.append('from', searchData.from?.name || '');
+              params.append('fromId', searchData.from?.id?.toString() || '');
+              params.append('to', searchData.to?.name || '');
+              params.append('toId', searchData.to?.id?.toString() || '');
+              params.append('fromStation', searchData.fromStation?.name || '');
+              params.append('fromStationId', searchData.fromStation?.id?.toString() || '');
+              params.append('toStation', searchData.toStation?.name || '');
+              params.append('toStationId', searchData.toStation?.id?.toString() || '');
+              
+              if (searchData.departureDate) {
+                const departureDate = new Date(searchData.departureDate);
+                const isoDate = departureDate.toISOString().split('T')[0];
+                params.append('departureDate', isoDate);
+              }
+              
+              params.append('tripType', searchData.tripType);
+              
+              if (searchData.tripType === 'roundTrip' && searchData.returnDate) {
+                const returnDate = new Date(searchData.returnDate);
+                const isoReturnDate = returnDate.toISOString().split('T')[0];
+                params.append('returnDate', isoReturnDate);
+              }
+              
+              // Clear pending search data
+              localStorage.removeItem('pendingSearchData');
+              
+              // Redirect to booking page with search data
+              window.location.href = `/booking?${params.toString()}&loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+            } catch (error) {
+              console.error('Error parsing pending search data:', error);
+              // Fallback to home page if there's an error
+              window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+            }
+          } else if (redirectParam) {
+            // If there's a redirect parameter, use it
+            window.location.href = `${redirectParam}?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+          } else {
+            // Default redirect to home page
+            window.location.href = `/?loginSuccess=true&message=${encodeURIComponent(successMessage)}`;
+          }
         }, 500);
       }
       
@@ -590,7 +712,25 @@ export default function LoginTemplatePage() {
                 </Box>
               </motion.div>
 
-
+              {/* Pending Search Alert */}
+              {hasPendingSearch && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        🚌 Bạn có thông tin tìm kiếm chuyến xe đang chờ
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                        Sau khi đăng nhập thành công, bạn sẽ được chuyển đến trang đặt vé với thông tin đã chọn.
+                      </Typography>
+                    </Box>
+                  </Alert>
+                </motion.div>
+              )}
 
               {/* Loading Alert for Google */}
               {isGoogleLoading && (

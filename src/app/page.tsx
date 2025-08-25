@@ -615,6 +615,35 @@ function BusTicketHomePageContent() {
   const handleSearch = () => {
     console.log('Search data:', { tripType, ...searchData });
 
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Save search data to localStorage for later use after login
+      const searchDataToSave = {
+        tripType,
+        from: searchData.from,
+        to: searchData.to,
+        fromStation: searchData.fromStation,
+        toStation: searchData.toStation,
+        departureDate: searchData.departureDate,
+        returnDate: searchData.returnDate,
+        timestamp: Date.now()
+      };
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pendingSearchData', JSON.stringify(searchDataToSave));
+      }
+      
+      // Show notification to user
+      showNotification('Vui lòng đăng nhập để tiếp tục đặt vé', 'info');
+      
+      // Redirect to login page with return URL
+      setTimeout(() => {
+        window.location.href = '/login-template?redirect=/booking';
+      }, 1500);
+      
+      return;
+    }
+
     // Validate required fields before proceeding
     if (!searchData.from || !searchData.to || !searchData.fromStation || !searchData.toStation || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
       alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
