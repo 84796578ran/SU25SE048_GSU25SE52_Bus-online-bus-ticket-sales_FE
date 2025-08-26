@@ -20,6 +20,9 @@ interface SeatMapProps {
   showLegend?: boolean;
   compact?: boolean;
   disabled?: boolean;
+  floorDisplay?: 'all' | 'toggle';
+  initialFloor?: number;
+  floorLabels?: Record<number, string>; // e.g. {1: 'Chặng 1', 2: 'Chặng 2'}
 }
 
 const SeatMap: React.FC<SeatMapProps> = ({
@@ -29,10 +32,14 @@ const SeatMap: React.FC<SeatMapProps> = ({
   maxSeats = 4,
   showLegend = true,
   compact = false,
-  disabled = false
+  disabled = false,
+  floorDisplay = 'all',
+  initialFloor,
+  floorLabels
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [activeFloor, setActiveFloor] = React.useState<number | undefined>(initialFloor);
 
   // Group seats by floor
   const seatsByFloor = seats.reduce((acc, seat) => {
@@ -53,15 +60,41 @@ const SeatMap: React.FC<SeatMapProps> = ({
     });
   });
 
+  // Determine floors to render based on mode
+  const availableFloors = Object.keys(seatsByFloor)
+    .map(n => Number(n))
+    .sort((a, b) => a - b);
+  React.useEffect(() => {
+    if (floorDisplay === 'toggle' && activeFloor === undefined && availableFloors.length) {
+      setActiveFloor(availableFloors[0]);
+    }
+  }, [floorDisplay, activeFloor, availableFloors.join(',')]);
+
+  // Color logic (priority: selected > booked > available)
   const getSeatColor = (seat: SeatData) => {
     if (!seat.isSeat) return 'transparent';
     if (selectedSeats.includes(seat.seatId)) return theme.palette.primary.main;
-    if (!seat.isAvailable) return theme.palette.error.main;
-    return theme.palette.success.main;
+    if (!seat.isAvailable) return theme.palette.error.main; // Booked
+    return theme.palette.success.main; // Available
   };
 
   const getSeatIcon = (seat: SeatData) => {
-    if (!seat.isSeat) return <Remove sx={{ fontSize: compact ? 16 : 20, color: 'text.disabled' }} />;
+    if (!seat.isSeat) {
+      return (
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: compact ? 12 : 14,
+            lineHeight: 1,
+            color: 'text.disabled',
+            fontWeight: 600,
+            userSelect: 'none'
+          }}
+        >
+          -
+        </Typography>
+      );
+    }
     return <EventSeat sx={{ fontSize: compact ? 16 : 20 }} />;
   };
 
@@ -80,15 +113,57 @@ const SeatMap: React.FC<SeatMapProps> = ({
   const renderFloor = (floorIndex: number, floorSeats: SeatData[]) => {
     // Group seats by row
     const seatsByRow = floorSeats.reduce((acc, seat) => {
-      if (!acc[seat.rowIndex]) {
-        acc[seat.rowIndex] = [];
-      }
+      if (!acc[seat.rowIndex]) acc[seat.rowIndex] = [];
       acc[seat.rowIndex].push(seat);
       return acc;
     }, {} as Record<number, SeatData[]>);
 
-    // Sort rows
-    const sortedRows = Object.keys(seatsByRow).sort((a, b) => Number(a) - Number(b));
+    const sortedRows = Object.keys(seatsByRow)
+      .map(n => Number(n))
+      .sort((a, b) => a - b);
+
+    // Determine max column to build full grid including gaps/aisles
+    const maxColumn = floorSeats.reduce((m, s) => Math.max(m, s.columnIndex), 0);
+
+    // Detect row letter offset (some APIs start rowIndex=1 but seatId begins at B)
+    // Compute majority offset among rows that have seatId starting with letter
+    const offsets: number[] = [];
+    sortedRows.forEach(r => {
+      const seatWithId = seatsByRow[r].find(s => s.seatId && /^[A-Z]/i.test(s.seatId));
+      if (seatWithId) {
+        const letter = seatWithId.seatId.charAt(0).toUpperCase();
+        const letterPos = letter.charCodeAt(0) - 64; // A=1
+        const offset = letterPos - r; 
+        offsets.push(offset);
+      }
+    });
+    let inferredOffset = 0;
+    if (offsets.length) {
+      // Use mode
+      const freq: Record<number, number> = {};
+      offsets.forEach(o => { freq[o] = (freq[o] || 0) + 1; });
+      inferredOffset = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0] as unknown as number;
+      // Safeguard: if applying offset causes duplicate row labels (merge), revert to 0
+      const labels = sortedRows.map(r => String.fromCharCode(64 + r + inferredOffset));
+      const set = new Set(labels);
+      if (set.size !== labels.length) {
+        inferredOffset = 0;
+      }
+    }
+
+    // Debug logging (only in development) to trace seat grid construction
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      try {
+        console.log('🧩 SeatMap debug floor build:', {
+          floorIndex,
+          providedSeatCount: floorSeats.length,
+          distinctRows: sortedRows.length,
+          maxColumn,
+          inferredOffset,
+          sampleFirstRow: seatsByRow[sortedRows[0]]?.map(s=>({c:s.columnIndex,isSeat:s.isSeat,id:s.seatId}))
+        });
+      } catch {}
+    }
 
     return (
       <Box key={floorIndex} sx={{ mb: compact ? 1 : 2 }}>
@@ -113,8 +188,9 @@ const SeatMap: React.FC<SeatMapProps> = ({
           alignItems: 'center'
         }}>
           {sortedRows.map(rowIndex => {
-            const rowSeats = seatsByRow[Number(rowIndex)];
-            const rowLabel = String.fromCharCode(65 + Number(rowIndex) - 1); // A, B, C, etc.
+            const rowSeats = seatsByRow[rowIndex];
+            const numericRowIndex = rowIndex;
+            const rowLabel = String.fromCharCode(64 + numericRowIndex + inferredOffset); // apply offset
             
             return (
               <Box key={rowIndex} sx={{ display: 'flex', alignItems: 'center', gap: compact ? 0.5 : 1 }}>
@@ -131,32 +207,48 @@ const SeatMap: React.FC<SeatMapProps> = ({
                 </Typography>
                 
                 <Box sx={{ display: 'flex', gap: compact ? 0.5 : 1 }}>
-                  {rowSeats.map((seat, seatIndex) => (
-                    <Box
-                      key={`${floorIndex}-${seat.rowIndex}-${seat.columnIndex}-${seatIndex}`}
-                      onClick={() => handleSeatClick(seat)}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: compact ? 24 : 32,
-                        height: compact ? 24 : 32,
-                        borderRadius: 1,
-                        cursor: seat.isSeat && !disabled ? 'pointer' : 'default',
-                        bgcolor: getSeatColor(seat),
-                        color: seat.isSeat ? 'white' : 'text.disabled',
-                        border: seat.isSeat ? `1px solid ${theme.palette.divider}` : 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': seat.isSeat && !disabled ? {
-                          transform: 'scale(1.1)',
-                          boxShadow: theme.shadows[2],
-                        } : {},
-                        opacity: disabled ? 0.6 : 1,
-                      }}
-                    >
-                      {getSeatIcon(seat)}
-                    </Box>
-                  ))}
+                  {Array.from({ length: maxColumn }, (_, idx) => idx + 1).map(col => {
+                    const seat = rowSeats.find(s => s.columnIndex === col) || {
+                      seatId: `gap-${floorIndex}-${numericRowIndex}-${col}`,
+                      isAvailable: false,
+                      isSeat: false,
+                      floorIndex,
+                      rowIndex: numericRowIndex,
+                      columnIndex: col,
+                    } as SeatData;
+                    const key = seat.id !== undefined ? `${floorIndex}-${seat.id}` : `${floorIndex}-${numericRowIndex}-${col}`;
+                    const clickable = seat.isSeat && seat.isAvailable && !disabled;
+                    return (
+                      <Box
+                        key={key}
+                        onClick={() => clickable && handleSeatClick(seat)}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: compact ? 24 : 32,
+                          height: compact ? 24 : 32,
+                          borderRadius: 1,
+                          cursor: clickable ? 'pointer' : 'default',
+                          bgcolor: getSeatColor(seat),
+                          color: seat.isSeat ? 'white' : 'text.disabled',
+                          border: seat.isSeat ? `1px solid ${selectedSeats.includes(seat.seatId) ? theme.palette.primary.dark : theme.palette.divider}` : '1px dashed transparent',
+                          transition: 'all 0.15s ease',
+                          '&:hover': clickable ? {
+                            transform: 'scale(1.08)',
+                            boxShadow: theme.shadows[2],
+                          } : {},
+                          opacity: disabled ? 0.5 : 1,
+                          position: 'relative'
+                        }}
+                      >
+                        {getSeatIcon(seat)}
+                        {seat.isSeat && !seat.isAvailable && (
+                          <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 1, pointerEvents: 'none' }} />
+                        )}
+                      </Box>
+                    );
+                  })}
                 </Box>
               </Box>
             );
@@ -209,9 +301,26 @@ const SeatMap: React.FC<SeatMapProps> = ({
         gap: 2,
         alignItems: 'center'
       }}>
-        {Object.keys(seatsByFloor).sort((a, b) => Number(a) - Number(b)).map(floorIndex => 
-          renderFloor(Number(floorIndex), seatsByFloor[Number(floorIndex)])
+        {floorDisplay === 'toggle' && availableFloors.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            {availableFloors.map(floor => (
+              <Chip
+                key={floor}
+                label={floorLabels?.[floor] || `Tầng ${floor}`}
+                color={activeFloor === floor ? 'primary' : 'default'}
+                onClick={() => !disabled && setActiveFloor(floor)}
+                sx={{ cursor: disabled ? 'default' : 'pointer' }}
+              />
+            ))}
+          </Box>
         )}
+
+        {(floorDisplay === 'toggle' && activeFloor !== undefined
+          ? [activeFloor]
+          : availableFloors
+        ).map(floorIndex => (
+          renderFloor(Number(floorIndex), seatsByFloor[Number(floorIndex)])
+        ))}
       </Box>
 
       {maxSeats > 1 && (

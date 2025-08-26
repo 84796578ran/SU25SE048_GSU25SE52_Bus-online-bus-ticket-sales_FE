@@ -201,36 +201,38 @@ class ApiClient {
       }
 
       const params = new URLSearchParams({
+        tripId: tripId.toString(),
         fromStationId: fromStationId.toString(),
         toStationId: toStationId.toString()
       });
-      
-      const fullUrl = `/api/Trip/${tripId}/seat-availability?${params.toString()}`;
-      
-      console.log('🌐 Making seat availability API call:', {
+
+      const fullUrl = `/api/Trip/seat-availability?${params.toString()}`;
+
+      console.log('🌐 Making (NEW) seat availability API call:', {
         fullUrl,
-        baseURL: this.instance.defaults.baseURL,
         completeURL: `${this.instance.defaults.baseURL}${fullUrl}`,
-        tripId: tripId,
-        'tripId type': typeof tripId,
-        fromStationId: fromStationId,
-        'fromStationId type': typeof fromStationId,
-        toStationId: toStationId,
-        'toStationId type': typeof toStationId,
         params: params.toString()
       });
-      
+
       const response = await this.instance.get(fullUrl);
-      
-      console.log('🌐 Seat availability API response:', {
+
+      // Response may be array of floor objects or already flattened
+      let data = response.data;
+      if (Array.isArray(data) && data.length && data[0].seats) {
+        // Flatten floors
+        const flattened = data.flatMap((floor: any) =>
+          Array.isArray(floor.seats) ? floor.seats.map((s: any) => ({ ...s, floorIndex: floor.floorIndex })) : []
+        );
+        data = flattened;
+      }
+
+      console.log('🌐 Seat availability API response (normalized):', {
         status: response.status,
-        data: response.data,
-        dataType: typeof response.data,
-        isArray: Array.isArray(response.data),
-        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+        originalIsArray: Array.isArray(response.data),
+        normalizedCount: Array.isArray(data) ? data.length : 'N/A'
       });
-      
-      return response.data;
+
+      return data;
     } catch (error) {
       console.error(`❌ Error fetching seat availability for trip ${tripId}:`, error);
       throw error;
@@ -238,7 +240,7 @@ class ApiClient {
   }
 
   // New seat-available API for seat map display
-  async getSeatAvailable(tripId: string | number, fromStationId: string | number, toStationId: string | number): Promise<any> {
+  async getSeatAvailable(tripId: string | number, fromStationId: string | number, toStationId: string | number, options?: { raw?: boolean }): Promise<any> {
     try {
       // Validate required parameters
       console.log('🔍 getSeatAvailable called with params:', {
@@ -260,37 +262,41 @@ class ApiClient {
         throw new Error(`toStationId is required, received: ${toStationId} (type: ${typeof toStationId})`);
       }
 
+      // Reuse new unified endpoint for seat map display
       const params = new URLSearchParams({
+        tripId: tripId.toString(),
         fromStationId: fromStationId.toString(),
         toStationId: toStationId.toString()
       });
-      
-      const fullUrl = `/api/Trip/${tripId}/seat-available?${params.toString()}`;
-      
-      console.log('🌐 Making seat-available API call:', {
+
+      const fullUrl = `/api/Trip/seat-availability?${params.toString()}`;
+
+      console.log('🌐 Making (NEW) seat map API call:', {
         fullUrl,
-        baseURL: this.instance.defaults.baseURL,
         completeURL: `${this.instance.defaults.baseURL}${fullUrl}`,
-        tripId: tripId,
-        'tripId type': typeof tripId,
-        fromStationId: fromStationId,
-        'fromStationId type': typeof fromStationId,
-        toStationId: toStationId,
-        'toStationId type': typeof toStationId,
         params: params.toString()
       });
-      
+
       const response = await this.instance.get(fullUrl);
-      
-      console.log('🌐 Seat-available API response:', {
+
+      // If caller wants raw floors, return unmodified
+      if (options?.raw) {
+        return response.data;
+      }
+
+      let data = response.data;
+      if (Array.isArray(data) && data.length && data[0].seats) {
+        data = data.flatMap((floor: any) =>
+          Array.isArray(floor.seats) ? floor.seats.map((s: any) => ({ ...s, floorIndex: floor.floorIndex })) : []
+        );
+      }
+
+      console.log('🌐 Seat map API response (normalized):', {
         status: response.status,
-        data: response.data,
-        dataType: typeof response.data,
-        isArray: Array.isArray(response.data),
-        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+        normalizedCount: Array.isArray(data) ? data.length : 'N/A'
       });
-      
-      return response.data;
+
+  return data;
     } catch (error) {
       console.error(`❌ Error fetching seat-available for trip ${tripId}:`, error);
       throw error;

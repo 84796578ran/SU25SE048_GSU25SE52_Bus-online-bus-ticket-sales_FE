@@ -26,11 +26,17 @@ export const bookingService = {
   // Gọi API đặt vé qua VNPay
   createReservation: async (payload: VNPayPayloadType, options?: { returnUrl?: string }): Promise<any> => {
     try {
+      // If caller supplies returnUrl option but body lacks it, merge it in (some backends only read body)
+      const mergedPayload: VNPayPayloadType = options?.returnUrl && !payload.returnUrl
+        ? { ...payload, returnUrl: options.returnUrl }
+        : payload;
+
       // Attach optional return URL via header as well (in case backend prefers header over body)
       const config = options?.returnUrl
         ? { headers: { "X-Return-Url": options.returnUrl } as Record<string, string> }
         : undefined;
-      const response = await apiClient.post<any>("/api/Reservations", payload, config);
+
+      const response = await apiClient.post<any>("/api/Reservations", mergedPayload, config);
       return response;
     } catch (error) {
       console.error("Error creating reservation:", error);

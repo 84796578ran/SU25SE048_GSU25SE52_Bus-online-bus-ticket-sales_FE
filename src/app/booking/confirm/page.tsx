@@ -11,6 +11,22 @@ function BookingConfirmContent() {
   );
 
   useEffect(() => {
+    // Fix case: VNPay (hoặc redirect trung gian) trả về https://localhost gây ERR_SSL_PROTOCOL_ERROR
+    if (typeof window !== 'undefined') {
+      const isLocal = /^(https:\/\/)?(localhost|127\.0\.0\.1)/i.test(window.location.href);
+      if (isLocal && window.location.protocol === 'https:') {
+        try {
+          const httpUrl = window.location.href.replace('https://', 'http://');
+          // Dùng replaceState để tránh thêm history mới rồi reload nhẹ
+          window.history.replaceState({}, '', httpUrl);
+          // Không reload nếu không cần: trình duyệt đã chấp nhận hiển thị nội dung; nếu resource khác fail thì reload
+        } catch (e) {
+          // Fallback hard redirect
+          window.location.href = window.location.href.replace('https://', 'http://');
+        }
+      }
+    }
+
     const responseCode = searchParams?.get("vnp_ResponseCode");
     if (responseCode === "00") {
       setStatus("success");

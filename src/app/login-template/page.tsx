@@ -64,28 +64,7 @@ function LoginTemplateContent() {
     if (typeof window === 'undefined') {
       return 'http://localhost:3000/login-template';
     }
-
-    const currentHost = window.location.host;
-    
-    // Check if we're in production (Netlify)
-    if (currentHost.includes('netlify.app') || currentHost === 'saleonlinebusticketsalefe.netlify.app') {
-      return 'https://xetiic.netlify.app/login-template';
-    }
-
-    // Check if we're in production (Azure)
-    if (currentHost.includes('azurewebsites.net')) {
-      return 'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template';
-    }
-
-    // For development, use allowed localhost URLs
-    const currentPort = window.location.port;
-    if (currentPort === '3000' || currentPort === '3001') {
-      return `http://localhost:${currentPort}/login-template`;
-    }
-
-    // Fallback to default port if current port is not allowed
-    console.warn(`⚠️ Current port ${currentPort} not configured in Google Console. Using default localhost:3000`);
-    return 'http://localhost:3000/login-template';
+    return `${window.location.origin}/login-template`;
   };
 
 

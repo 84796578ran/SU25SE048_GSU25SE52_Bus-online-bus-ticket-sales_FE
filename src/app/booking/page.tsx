@@ -206,7 +206,6 @@ function BookingContent() {
   const [selectedDepartureSeats, setSelectedDepartureSeats] = useState<SeatType[]>([]);
   const [selectedReturnSeats, setSelectedReturnSeats] = useState<SeatType[]>([]);
   
-  // Separate seat management for transfer trip legs
   const [firstLegSeats, setFirstLegSeats] = useState<SeatType[]>([]);
   const [secondLegSeats, setSecondLegSeats] = useState<SeatType[]>([]);
   const [selectedFirstLegSeats, setSelectedFirstLegSeats] = useState<SeatType[]>([]);
@@ -228,6 +227,8 @@ function BookingContent() {
   const [vnpayPayload, setVnpayPayload] = useState<VNPayPayloadType | null>(
     null
   );
+  // Ensure we only show success ticket after restoration completes
+  const [bookingDataRestored, setBookingDataRestored] = useState<boolean>(false);
 
   // Seat diagram states
   const [seatLoading, setSeatLoading] = useState<boolean>(false);
@@ -241,6 +242,8 @@ function BookingContent() {
   const [dialogSecondSeats, setDialogSecondSeats] = useState<SeatType[]>([]);
   const [dialogSeatLoading, setDialogSeatLoading] = useState<boolean>(false);
   const [dialogSeatError, setDialogSeatError] = useState<string>("");
+  // Track composite seat ids (floor-seat) to avoid mirroring selection across floors
+  const [selectedCompositeSeatIds, setSelectedCompositeSeatIds] = useState<string[]>([]);
 
   // Authentication hook
   const { user, isAuthenticated } = useAuth();
@@ -673,18 +676,52 @@ function BookingContent() {
     seats: SeatType[],
     selectedSeats: SeatType[],
     onSelect: (seat: SeatType) => void,
-    color: string
+    color: string,
+    metaSeatsForMap?: any[]
   ) => {
-    // Convert SeatType to SeatMap format
-    const seatMapData = seats.map(seat => ({
-      id: typeof seat.id === 'string' ? parseInt(seat.id) || 0 : seat.id,
-      seatId: seat.seatNumber || seat.id,
-      isAvailable: !seat.isBooked,
-      isSeat: true,
-      floorIndex: 1, // Default to floor 1 for now
-      rowIndex: seat.row.charCodeAt(0) - 64, // Convert A=1, B=2, etc.
-      columnIndex: seat.column
-    }));
+    let seatMapData: any[] = [];
+    const metaArray = (metaSeatsForMap || []).filter(Boolean);
+    // Case 1: API returned array of floor objects {floorIndex, seats:[...]}
+    if (metaArray.length && metaArray[0] && Array.isArray(metaArray[0].seats)) {
+      seatMapData = metaArray.flatMap((floor: any) =>
+        (floor.seats || []).map((s: any, idx: number) => ({
+          id: s.id ?? idx,
+          seatId: s.seatId || `gap-${floor.floorIndex}-${s.rowIndex}-${s.columnIndex}`,
+          isAvailable: s.isSeat ? s.isAvailable : false,
+          isSeat: !!s.isSeat,
+          floorIndex: floor.floorIndex,
+          rowIndex: s.rowIndex,
+          columnIndex: s.columnIndex
+        }))
+      );
+    } else if (metaArray.some((m: any) => typeof m?.floorIndex !== 'undefined' && typeof m?.rowIndex !== 'undefined')) {
+      // Case 2: flat list already containing floorIndex/rowIndex/columnIndex
+      seatMapData = metaArray.map((m: any, idx: number) => ({
+        id: m.id ?? idx,
+        seatId: m.seatId || `gap-${m.floorIndex}-${m.rowIndex}-${m.columnIndex}`,
+        isAvailable: m.isSeat ? m.isAvailable : false,
+        isSeat: !!m.isSeat,
+        floorIndex: m.floorIndex,
+        rowIndex: m.rowIndex,
+        columnIndex: m.columnIndex,
+      }));
+    } else {
+      // Case 3: fallback merge from SeatType array
+      const metaBySeatId = new Map<string, any>(metaArray.map((m: any) => [m.seatId, m]));
+      seatMapData = seats.map((seat, index) => {
+        const sid = String(seat.seatNumber || seat.id);
+        const meta = metaBySeatId.get(sid);
+        return {
+          id: typeof seat.id === 'string' ? parseInt((seat.id as string).replace(/[^0-9]/g, '')) || index : (seat.id as number) || index,
+          seatId: sid,
+          isAvailable: !seat.isBooked,
+          isSeat: meta?.isSeat ?? true,
+          floorIndex: meta?.floorIndex ?? 1,
+          rowIndex: meta?.rowIndex ?? (seat.row ? seat.row.charCodeAt(0) - 64 : 1),
+          columnIndex: meta?.columnIndex ?? seat.column ?? 1,
+        };
+      });
+    }
 
     // Get selected seat IDs for the SeatMap component
     const selectedSeatIds = selectedSeats.map(seat => seat.seatNumber || seat.id);
@@ -713,6 +750,9 @@ function BookingContent() {
           showLegend={true}
           compact={false}
           disabled={false}
+          floorDisplay="toggle"
+          initialFloor={1}
+          floorLabels={{ 1: 'Tầng 1', 2: 'Tầng 2' }}
         />
         
         <Box sx={{ mt: 2 }}>
@@ -767,7 +807,7 @@ function BookingContent() {
     const paymentErrorParam = searchParams.get("paymentError");
 
     // Check if this is a redirect from confirm page with payment status
-    if (paymentStatusParam) {
+  if (paymentStatusParam) {
       console.log("🔍 Detected payment status from confirm page:", {
         paymentStatus: paymentStatusParam,
         paymentError: paymentErrorParam,
@@ -798,10 +838,15 @@ function BookingContent() {
               
               // Clear localStorage after restoring
               localStorage.removeItem('bookingData');
+              setBookingDataRestored(true);
+            }
+            else {
+              setBookingDataRestored(true);
             }
           }
         } catch (error) {
           console.error("❌ Error restoring booking data:", error);
+          setBookingDataRestored(true);
         }
 
       // Set payment status and completed state
@@ -809,7 +854,9 @@ function BookingContent() {
       if (paymentErrorParam) {
         setPaymentError(decodeURIComponent(paymentErrorParam));
       }
-      setCompleted(true);
+      if (bookingDataRestored) {
+        setCompleted(true);
+      }
       setActiveStep(2); // Set to payment step
 
               // Clean up URL parameters
@@ -821,6 +868,12 @@ function BookingContent() {
         }
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (paymentStatus && !completed && bookingDataRestored) {
+      setCompleted(true);
+    }
+  }, [bookingDataRestored, paymentStatus, completed]);
 
   // Effect to load data from URL parameters
   useEffect(() => {
@@ -1235,8 +1288,27 @@ function BookingContent() {
               vnpayPayload
             );
 
+            // Always pass a returnUrl that points to the current origin so sandbox returns to localhost
+            const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+            // Build safe return URL:
+            // - Nếu localhost: luôn dùng http để tránh lỗi HTTPS (không có cert)
+            // - Nếu có NEXT_PUBLIC_BASE_URL: ưu tiên biến môi trường (prod/staging)
+            // - Ngược lại: dùng origin hiện tại
+            const baseFromEnv = process.env.NEXT_PUBLIC_BASE_URL?.trim();
+            let returnBase = baseFromEnv || currentOrigin;
+            if (/localhost|127\.0\.0\.1/i.test(returnBase)) {
+              // Chuẩn hóa thành http://localhost:port
+              const port = typeof window !== 'undefined' ? window.location.port || '3000' : '3000';
+              returnBase = `http://localhost:${port}`; // ép http
+            }
+            const returnUrl = `${returnBase.replace(/\/$/, '')}/booking/confirm`;
+            // Đồng bộ vào payload (ghi đè nếu khác)
+            if (vnpayPayload && vnpayPayload.returnUrl !== returnUrl) {
+              vnpayPayload.returnUrl = returnUrl;
+            }
             const response = await bookingService.createReservation(
-              vnpayPayload
+              vnpayPayload,
+              { returnUrl }
             );
 
             console.log(
@@ -1772,11 +1844,22 @@ function BookingContent() {
         ? JSON.parse(localStorage.getItem("user_data") || "{}")?.id
         : null;
 
+      let dynamicReturnUrl: string | undefined = undefined;
+      if (typeof window !== 'undefined') {
+        const origin = window.location.origin;
+        if (/localhost|127\.0\.0\.1/i.test(origin)) {
+          const port = window.location.port || '3000';
+            dynamicReturnUrl = `http://localhost:${port}/booking/confirm`;
+        } else {
+          dynamicReturnUrl = `${origin.replace(/\/$/, '')}/booking/confirm`;
+        }
+      }
       const payload: VNPayPayloadType = {
         customerId: userId,
         isReturn: isRoundTrip,
         tripSeats: tripSeats,
         returnTripSeats: returnTripSeats,
+        returnUrl: dynamicReturnUrl,
       };
 
       console.log("VNPay API payload prepared:", payload);
@@ -1802,7 +1885,7 @@ function BookingContent() {
       });
 
       // Handle transfer trips differently - need to fetch seats for both firstTrip and secondTrip
-      if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
+  if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
         console.log("🔄 Transfer trip detected - fetching seats for both trips:", {
           "firstTrip.id": trip.firstTrip.id,
           "secondTrip.id": trip.secondTrip.id,
@@ -1810,18 +1893,19 @@ function BookingContent() {
           "secondTrip.busName": trip.secondTrip.busName,
         });
 
-        // Fetch seats for first trip (use leg-specific stations) - use new seat-available API
+        // Fetch seats for both legs WITH raw floors so we can render exactly like preview
         const firstTripSeats = await apiClient.getSeatAvailable(
           trip.firstTrip!.id,
           trip.firstTrip!.fromStationId,
-          trip.firstTrip!.toStationId
+          trip.firstTrip!.toStationId,
+          { raw: true }
         );
 
-        // Fetch seats for second trip (use leg-specific stations) - use new seat-available API
         const secondTripSeats = await apiClient.getSeatAvailable(
           trip.secondTrip!.id,
           trip.secondTrip!.fromStationId,
-          trip.secondTrip!.toStationId
+          trip.secondTrip!.toStationId,
+          { raw: true }
         );
 
         console.log("🎫 Transfer trip seat data:", {
@@ -1829,55 +1913,66 @@ function BookingContent() {
           "secondTrip seats count": Array.isArray(secondTripSeats) ? secondTripSeats.length : 0,
         });
 
-        // Transform first leg seats using new API format
-        let transformedFirstSeats: SeatType[] = [];
-        if (Array.isArray(firstTripSeats)) {
-          transformedFirstSeats = firstTripSeats.map((apiSeat: any, index: number) => {
-            // Use the new API response format with floorIndex, rowIndex, columnIndex
-            const rowLetter = String.fromCharCode(65 + (apiSeat.rowIndex - 1)); // Convert rowIndex to letter (1=A, 2=B, etc.)
-            const columnIndex = apiSeat.columnIndex;
-            
-            // Use the seatId from API or generate one
-            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
-
-            return {
-              id: `leg1-${apiSeat.id || index}`, // Prefix to avoid ID conflicts
-              row: rowLetter,
-              column: columnIndex,
-              isBooked: !apiSeat.isAvailable,
-              price: trip.firstTrip!.price,
-              seatNumber: displaySeatNumber,
-              seatType: "regular",
-              isSelected: false,
-              tripId: trip.firstTrip!.id,
-            };
-          });
+        // Persist raw floors for each leg if present so renderSeatDiagram can early-return with both floors
+        if (Array.isArray(firstTripSeats) && firstTripSeats[0]?.seats) {
+          setSeatMapDataByTrip(prev => ({ ...prev, [trip.firstTrip!.id.toString()]: firstTripSeats }));
+        }
+        if (Array.isArray(secondTripSeats) && secondTripSeats[0]?.seats) {
+          setSeatMapDataByTrip(prev => ({ ...prev, [trip.secondTrip!.id.toString()]: secondTripSeats }));
         }
 
-        // Transform second leg seats using new API format
-        let transformedSecondSeats: SeatType[] = [];
-        if (Array.isArray(secondTripSeats)) {
-          transformedSecondSeats = secondTripSeats.map((apiSeat: any, index: number) => {
-            // Use the new API response format with floorIndex, rowIndex, columnIndex
-            const rowLetter = String.fromCharCode(65 + (apiSeat.rowIndex - 1)); // Convert rowIndex to letter (1=A, 2=B, etc.)
-            const columnIndex = apiSeat.columnIndex;
-            
-            // Use the seatId from API or generate one
-            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+        // Flatten floors if needed
+        const flattenFloors = (data: any[]): any[] => {
+          if (data[0]?.seats) {
+            return data.flatMap((floor: any) =>
+              (floor.seats || []).map((s: any) => ({ ...s, floorIndex: s.floorIndex ?? floor.floorIndex }))
+            );
+          }
+          return data;
+        };
 
-            return {
-              id: `leg2-${apiSeat.id || index}`, // Prefix to avoid ID conflicts
-              row: rowLetter,
-              column: columnIndex,
-              isBooked: !apiSeat.isAvailable,
-              price: trip.secondTrip!.price,
-              seatNumber: displaySeatNumber,
-              seatType: "regular",
-              isSelected: false,
-              tripId: trip.secondTrip!.id,
-            };
-          });
-        }
+        const firstFlat = Array.isArray(firstTripSeats) ? flattenFloors(firstTripSeats) : [];
+        const secondFlat = Array.isArray(secondTripSeats) ? flattenFloors(secondTripSeats) : [];
+
+        const transformedFirstSeats: SeatType[] = firstFlat.map((apiSeat: any, index: number) => {
+          const rowLetter = String.fromCharCode(65 + ((apiSeat.rowIndex ?? 1) - 1));
+          const columnIndex = apiSeat.columnIndex;
+          const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+          return {
+            id: `leg1-${apiSeat.id || index}`,
+            row: rowLetter,
+            column: columnIndex,
+            isBooked: !apiSeat.isAvailable,
+            price: trip.firstTrip!.price,
+            seatNumber: displaySeatNumber,
+            seatType: "regular",
+            isSelected: false,
+            tripId: trip.firstTrip!.id,
+            floorIndex: apiSeat.floorIndex ?? 1,
+            rowIndex: apiSeat.rowIndex ?? 1,
+            columnIndex: apiSeat.columnIndex ?? columnIndex,
+          } as any;
+        });
+
+        const transformedSecondSeats: SeatType[] = secondFlat.map((apiSeat: any, index: number) => {
+          const rowLetter = String.fromCharCode(65 + ((apiSeat.rowIndex ?? 1) - 1));
+          const columnIndex = apiSeat.columnIndex;
+          const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+          return {
+            id: `leg2-${apiSeat.id || index}`,
+            row: rowLetter,
+            column: columnIndex,
+            isBooked: !apiSeat.isAvailable,
+            price: trip.secondTrip!.price,
+            seatNumber: displaySeatNumber,
+            seatType: "regular",
+            isSelected: false,
+            tripId: trip.secondTrip!.id,
+            floorIndex: apiSeat.floorIndex ?? 1,
+            rowIndex: apiSeat.rowIndex ?? 1,
+            columnIndex: apiSeat.columnIndex ?? columnIndex,
+          } as any;
+        });
 
         // Store seats separately for transfer trips
         setFirstLegSeats(transformedFirstSeats);
@@ -1928,16 +2023,35 @@ function BookingContent() {
       const seatData = await apiClient.getSeatAvailable(
         tripIdToUse,
         fromStationIdToUse,
-        toStationIdToUse
+        toStationIdToUse,
+        { raw: true } // ensure we keep floor structure
       );
 
-      console.log("🎫 Seat API response:", seatData);
+      console.log("🎫 Seat API response (raw mode):", {
+        isArray: Array.isArray(seatData),
+        floors: Array.isArray(seatData) && seatData[0]?.seats ? seatData.length : 0,
+        sample: Array.isArray(seatData) ? seatData.slice(0,2) : seatData
+      });
+
+      // If we received floor structure, persist raw floors for renderSeatDiagram early-return path
+      if (Array.isArray(seatData) && seatData.length && seatData[0]?.seats) {
+        setSeatMapDataByTrip(prev => ({ ...prev, [tripIdToUse.toString()]: seatData }));
+      }
 
       // Transform API response to our SeatType format
       if (Array.isArray(seatData) && seatData.length > 0) {
-        console.log("🎫 Raw API seat data sample:", seatData.slice(0, 3));
+        // Detect floor structure
+        let flatSeats: any[] = [];
+        if (seatData[0]?.seats) {
+          flatSeats = seatData.flatMap((floor: any) =>
+            (floor.seats || []).map((s: any) => ({ ...s, floorIndex: s.floorIndex ?? floor.floorIndex }))
+          );
+        } else {
+          flatSeats = seatData as any[];
+        }
+        console.log("🎫 Normalizing seats for state (flattened)", { count: flatSeats.length });
 
-        const transformedSeats: SeatType[] = seatData.map(
+        const transformedSeats: SeatType[] = flatSeats.map(
           (apiSeat: any, index: number) => {
             // Use the new API response format with floorIndex, rowIndex, columnIndex
             const rowLetter = String.fromCharCode(65 + (apiSeat.rowIndex - 1)); // Convert rowIndex to letter (1=A, 2=B, etc.)
@@ -1958,6 +2072,11 @@ function BookingContent() {
               seatNumber: displaySeatNumber,
               seatType: "regular", // Default seat type
               isSelected: false,
+              // Preserve meta for later floor separation
+              floorIndex: apiSeat.floorIndex ?? 1,
+              rowIndex: apiSeat.rowIndex ?? (apiSeat.rowIndex || 1),
+              columnIndex: apiSeat.columnIndex ?? columnIndex,
+              tripId: tripIdToUse,
             };
 
             // Debug logging for transformation
@@ -2068,6 +2187,97 @@ function BookingContent() {
           toStationId: (trip as any).toStationId || searchDataForSeats.toStationId,
         });
 
+        // SPECIAL HANDLING: transfer trip => NEVER call API with synthetic concatenated id
+        if (trip.tripType === "transfer" && trip.firstTrip && trip.secondTrip) {
+          console.log("🔄 Transfer trip detected in batch seat prefetch. Fetching each leg separately to avoid using synthetic id:", {
+            syntheticId: trip.id,
+            firstTripId: trip.firstTrip.id,
+            secondTripId: trip.secondTrip.id,
+          });
+
+          try {
+            const [firstSeatsRaw, secondSeatsRaw] = await Promise.all([
+              apiClient.getSeatAvailable(
+                trip.firstTrip.id,
+                trip.firstTrip.fromStationId,
+                trip.firstTrip.toStationId
+              ),
+              apiClient.getSeatAvailable(
+                trip.secondTrip.id,
+                trip.secondTrip.fromStationId,
+                trip.secondTrip.toStationId
+              ),
+            ]);
+
+            const firstSeats = Array.isArray(firstSeatsRaw) ? firstSeatsRaw : [];
+            const secondSeats = Array.isArray(secondSeatsRaw) ? secondSeatsRaw : [];
+
+            const firstTransformed = firstSeats.map((apiSeat: any, index: number) => {
+              const rowLetter = String.fromCharCode(65 + (apiSeat.rowIndex - 1));
+              const columnIndex = apiSeat.columnIndex;
+              const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+              return {
+                id: apiSeat.id ? apiSeat.id.toString() : `leg1-seat-${index}`,
+                row: rowLetter,
+                column: columnIndex,
+                isBooked: !apiSeat.isAvailable,
+                price: trip.firstTrip!.price,
+                seatNumber: displaySeatNumber,
+                seatType: "regular",
+                isSelected: false,
+              };
+            });
+
+            const secondTransformed = secondSeats.map((apiSeat: any, index: number) => {
+              const rowLetter = String.fromCharCode(65 + (apiSeat.rowIndex - 1));
+              const columnIndex = apiSeat.columnIndex;
+              const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+              return {
+                id: apiSeat.id ? apiSeat.id.toString() : `leg2-seat-${index}`,
+                row: rowLetter,
+                column: columnIndex,
+                isBooked: !apiSeat.isAvailable,
+                price: trip.secondTrip!.price,
+                seatNumber: displaySeatNumber,
+                seatType: "regular",
+                isSelected: false,
+              };
+            });
+
+            const availableFirst = firstTransformed.filter(s => !s.isBooked).length;
+            const availableSecond = secondTransformed.filter(s => !s.isBooked).length;
+            const totalFirst = firstTransformed.length;
+            const totalSecond = secondTransformed.length;
+
+            setSeatAvailabilityByTrip((prev) => ({
+              ...prev,
+              [trip.id.toString()]: {
+                available: availableFirst + availableSecond,
+                total: totalFirst + totalSecond,
+              },
+            }));
+
+            console.log("✅ Prefetched transfer trip seat availability (aggregated):", {
+              syntheticId: trip.id,
+              availableFirst,
+              availableSecond,
+              totalFirst,
+              totalSecond,
+              aggregatedAvailable: availableFirst + availableSecond,
+              aggregatedTotal: totalFirst + totalSecond,
+            });
+          } catch (legError) {
+            console.error("❌ Error prefetching transfer trip legs:", legError);
+          } finally {
+            setLoadingSeatsByTrip((prev) => ({
+              ...prev,
+              [trip.id.toString()]: false,
+            }));
+          }
+          // Move to next trip (skip generic path)
+          continue;
+        }
+
         // Use trip.id directly as it's the correct numeric ID for the API
         const tripIdToUse = trip.id;
 
@@ -2169,11 +2379,11 @@ function BookingContent() {
   };
 
   // Fetch seat map data for trip cards and step 2
-  const fetchSeatMapData = async (trip: TripType) => {
+  const fetchSeatMapData = async (trip: TripType, force: boolean = false) => {
     const tripKey = trip.id.toString();
     
-    // Check if already loading or loaded
-    if (loadingSeatMapsByTrip[tripKey] || seatMapDataByTrip[tripKey]) {
+    // Check if already loading or loaded (unless force reload)
+    if (!force && (loadingSeatMapsByTrip[tripKey] || seatMapDataByTrip[tripKey])) {
       return;
     }
 
@@ -2202,8 +2412,8 @@ function BookingContent() {
 
         // Fetch both legs in parallel
         const [firstTripSeats, secondTripSeats] = await Promise.all([
-          apiClient.getSeatAvailable(trip.firstTrip.id, trip.firstTrip.fromStationId, trip.firstTrip.toStationId),
-          apiClient.getSeatAvailable(trip.secondTrip.id, trip.secondTrip.fromStationId, trip.secondTrip.toStationId),
+          apiClient.getSeatAvailable(trip.firstTrip.id, trip.firstTrip.fromStationId, trip.firstTrip.toStationId, { raw: true }),
+          apiClient.getSeatAvailable(trip.secondTrip.id, trip.secondTrip.fromStationId, trip.secondTrip.toStationId, { raw: true }),
         ]);
 
         // Combine seat data from both legs
@@ -2225,7 +2435,8 @@ function BookingContent() {
         seatData = await apiClient.getSeatAvailable(
           trip.id,
           fromStationIdToUse,
-          toStationIdToUse
+          toStationIdToUse,
+          { raw: true }
         );
       }
 
@@ -2237,10 +2448,18 @@ function BookingContent() {
         sample: Array.isArray(seatData) ? seatData.slice(0, 3) : "N/A",
       });
 
-      // Store the seat data
+      // If response is in floor structure (has .seats arrays) keep ORIGINAL shape (array of floors)
+      let storedData: any[] = [];
+      if (Array.isArray(seatData) && seatData.length && seatData[0].seats) {
+        // Already floors from raw path
+        storedData = seatData as any[];
+      } else if (Array.isArray(seatData)) {
+        storedData = seatData;
+      }
+
       setSeatMapDataByTrip((prev) => ({
         ...prev,
-        [tripKey]: Array.isArray(seatData) ? seatData : [],
+        [tripKey]: storedData,
       }));
 
       // Small delay to avoid overwhelming the API
@@ -2642,12 +2861,13 @@ function BookingContent() {
                   <CircularProgress size={24} />
                 </Box>
               ) : seatMapDataByTrip[trip.id.toString()] ? (
-                <SeatMap
-                  seats={seatMapDataByTrip[trip.id.toString()]}
-                  compact={true}
-                  showLegend={false}
-                  disabled={true}
-                />
+                (() => {
+                  const raw = seatMapDataByTrip[trip.id.toString()];
+                  const flattened = Array.isArray(raw) && raw.length && raw[0]?.seats
+                    ? raw.flatMap((f: any) => (f.seats || []).map((s: any) => ({ ...s, floorIndex: f.floorIndex })))
+                    : (raw || []);
+                  return <SeatMap seats={flattened} compact={true} showLegend={false} disabled={true} />;
+                })()
               ) : (
                 <Button
                   variant="text"
@@ -3508,13 +3728,49 @@ function BookingContent() {
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1fr 1fr' }, gap: 4 }}>
             {/* Outbound Leg 1 */}
-            {renderSeatPanel('🧩 Chặng 1 - Chuyến đi', (selectedDepartureTrip as any)?.firstTrip?.busName, searchData.departureDate, firstLegSeats, selectedFirstLegSeats, handleSelectFirstLegSeat, '#1976d2')}
+            {renderSeatPanel(
+              '🧩 Chặng 1 - Chuyến đi',
+              (selectedDepartureTrip as any)?.firstTrip?.busName,
+              searchData.departureDate,
+              firstLegSeats,
+              selectedFirstLegSeats,
+              handleSelectFirstLegSeat,
+              '#1976d2',
+              seatMapDataByTrip[(selectedDepartureTrip as any)?.firstTrip?.id?.toString()] || []
+            )}
             {/* Outbound Leg 2 */}
-            {renderSeatPanel('🧩 Chặng 2 - Chuyến đi', (selectedDepartureTrip as any)?.secondTrip?.busName, searchData.departureDate, secondLegSeats, selectedSecondLegSeats, handleSelectSecondLegSeat, '#1976d2')}
+            {renderSeatPanel(
+              '🧩 Chặng 2 - Chuyến đi',
+              (selectedDepartureTrip as any)?.secondTrip?.busName,
+              searchData.departureDate,
+              secondLegSeats,
+              selectedSecondLegSeats,
+              handleSelectSecondLegSeat,
+              '#1976d2',
+              seatMapDataByTrip[(selectedDepartureTrip as any)?.secondTrip?.id?.toString()] || []
+            )}
             {/* Return Leg 1 */}
-            {renderSeatPanel('🧩 Chặng 1 - Chuyến về', (selectedReturnTrip as any)?.firstTrip?.busName, searchData.returnDate, returnFirstLegSeats, selectedReturnFirstLegSeats, (seat)=>setSelectedReturnFirstLegSeats(t=> t.some(s=>s.id===seat.id)? t.filter(s=>s.id!==seat.id):[...t, seat]), '#7b1fa2')}
+            {renderSeatPanel(
+              '🧩 Chặng 1 - Chuyến về',
+              (selectedReturnTrip as any)?.firstTrip?.busName,
+              searchData.returnDate,
+              returnFirstLegSeats,
+              selectedReturnFirstLegSeats,
+              (seat)=>setSelectedReturnFirstLegSeats(t=> t.some(s=>s.id===seat.id)? t.filter(s=>s.id!==seat.id):[...t, seat]),
+              '#7b1fa2',
+              seatMapDataByTrip[(selectedReturnTrip as any)?.firstTrip?.id?.toString()] || []
+            )}
             {/* Return Leg 2 */}
-            {renderSeatPanel('🧩 Chặng 2 - Chuyến về', (selectedReturnTrip as any)?.secondTrip?.busName, searchData.returnDate, returnSecondLegSeats, selectedReturnSecondLegSeats, (seat)=>setSelectedReturnSecondLegSeats(t=> t.some(s=>s.id===seat.id)? t.filter(s=>s.id!==seat.id):[...t, seat]), '#7b1fa2')}
+            {renderSeatPanel(
+              '🧩 Chặng 2 - Chuyến về',
+              (selectedReturnTrip as any)?.secondTrip?.busName,
+              searchData.returnDate,
+              returnSecondLegSeats,
+              selectedReturnSecondLegSeats,
+              (seat)=>setSelectedReturnSecondLegSeats(t=> t.some(s=>s.id===seat.id)? t.filter(s=>s.id!==seat.id):[...t, seat]),
+              '#7b1fa2',
+              seatMapDataByTrip[(selectedReturnTrip as any)?.secondTrip?.id?.toString()] || []
+            )}
           </Box>
         </Box>
       );
@@ -5203,6 +5459,14 @@ function BookingContent() {
   // Render booking result (success or failure)
   const renderBookingResult = () => {
     const isSuccess = paymentStatus === "success";
+    if (paymentStatus && !bookingDataRestored) {
+      return (
+        <Box sx={{ my: 8, textAlign: "center" }}>
+          <CircularProgress sx={{ color: '#f48fb1' }} />
+          <Typography variant="body2" sx={{ mt: 2 }}>Đang khôi phục dữ liệu vé...</Typography>
+        </Box>
+      );
+    }
     // booking code removed per request
 
     const handleBackToHome = () => {
@@ -6607,331 +6871,185 @@ function BookingContent() {
       );
     }
 
-    // Group seats by row for better layout
-    console.log("🎯 Processing seats for diagram:", {
-      totalSeats: seats.length,
-      sampleSeats: seats.slice(0, 3),
+  // Determine which trip's meta (floor structure) to use: prefer seat.tripId of the first seat
+  const derivedTripId = seats && seats.length && (seats[0] as any).tripId ? String((seats[0] as any).tripId) : undefined;
+  const tripKey = derivedTripId || (selectedTrip ? selectedTrip.id.toString() : undefined);
+  const rawMeta = tripKey ? (seatMapDataByTrip[tripKey] as any[] | undefined) : undefined;
+
+    // Flatten raw floors -> seat level meta
+    let metaSeatsFlattened: any[] = [];
+    if (Array.isArray(rawMeta) && rawMeta.length && rawMeta[0]?.seats) {
+      metaSeatsFlattened = rawMeta.flatMap((floor: any) =>
+        (floor.seats || []).map((seat: any) => ({
+          ...seat,
+          floorIndex: seat.floorIndex ?? floor.floorIndex ?? 1,
+        }))
+      );
+    } else if (Array.isArray(rawMeta)) {
+      metaSeatsFlattened = rawMeta as any[];
+    }
+
+    // Build multi-map for duplicate seatIds across floors (A1 can appear on both floors)
+    const metaMulti = new Map<string, any[]>();
+    metaSeatsFlattened.forEach((ms) => {
+      const key = String(ms.seatId ?? ms.seatNumber ?? ms.code ?? "");
+      if (!key) return;
+      if (!metaMulti.has(key)) metaMulti.set(key, []);
+      metaMulti.get(key)!.push(ms);
     });
 
-    const seatsByRow = seats.reduce((acc, seat) => {
-      if (!acc[seat.row]) {
-        acc[seat.row] = [];
+    console.log("🧬 meta flatten step2:", {
+      tripKey,
+      reason: derivedTripId ? 'from first seat.tripId' : (selectedTrip ? 'from selectedTrip.id' : 'none'),
+      rawMetaType: typeof rawMeta,
+      floorsDetected: Array.isArray(rawMeta) && rawMeta[0]?.seats ? rawMeta.length : 0,
+      metaSeatsFlattened: metaSeatsFlattened.length,
+      sample: metaSeatsFlattened.slice(0, 4),
+    });
+
+    // If we have raw floor meta (like preview), render directly (exact same style) and skip legacy mapping
+    if (Array.isArray(rawMeta) && rawMeta.length && rawMeta[0]?.seats) {
+      const seatMapSeatsRaw = metaSeatsFlattened.map((m, idx) => ({
+        id: idx,
+        seatId: `${m.floorIndex || 1}-${m.seatId || m.code || m.id || idx}`,
+        isAvailable: m.isSeat ? !!m.isAvailable : false,
+        isSeat: m.isSeat !== false, // treat undefined as true
+        floorIndex: m.floorIndex || 1,
+        rowIndex: m.rowIndex || 1,
+        columnIndex: m.columnIndex || 1,
+        originalSeatCode: m.seatId || m.code || String(m.id || idx)
+      }));
+
+      const selectedSeatIdsDirect = selectedCompositeSeatIds;
+
+      return (
+        <SeatMap
+          seats={seatMapSeatsRaw}
+          onSeatClick={(meta: any) => {
+            const compositeId = meta.seatId as string;
+            setSelectedCompositeSeatIds(prev => prev.includes(compositeId)
+              ? prev.filter(id => id !== compositeId)
+              : [...prev, compositeId]
+            );
+            if (onSeatClick) {
+              // Synthesize SeatType for downstream pricing if needed
+              const synthetic: any = {
+                id: meta.originalSeatCode,
+                seatNumber: meta.originalSeatCode,
+                row: String.fromCharCode(64 + (meta.rowIndex || 1)),
+                column: meta.columnIndex || 1,
+                isBooked: !meta.isAvailable,
+                price: selectedTrip?.price || 0,
+                seatType: 'regular',
+                isSelected: selectedSeatIdsDirect.includes(compositeId),
+                tripId: derivedTripId || selectedTrip?.id,
+                floorIndex: meta.floorIndex,
+                compositeSeatId: compositeId
+              };
+              onSeatClick(synthetic);
+            }
+          }}
+          selectedSeats={selectedSeatIdsDirect}
+          maxSeats={999}
+          showLegend={true}
+          compact={false}
+          disabled={!isInteractive}
+          floorDisplay="all"
+          initialFloor={1}
+          floorLabels={{ 1: 'Tầng 1', 2: 'Tầng 2' }}
+        />
+      );
+    }
+
+    // Build seat entries. If multiple metas for same baseId (different floors), create one entry per floor.
+    const seatMapSeats: any[] = [];
+    seats.forEach((seat, index) => {
+      const baseId = String(seat.seatNumber || seat.id);
+      const metas = metaMulti.get(baseId) || [];
+      if (metas.length === 0) {
+        // fallback single (floor 1) if no meta found
+        seatMapSeats.push({
+          id: typeof seat.id === 'string' ? parseInt((seat.id as string).replace(/[^0-9]/g, '')) || index : (seat.id as number) || index,
+          seatId: `1-${baseId}`,
+          isAvailable: !seat.isBooked,
+          isSeat: true,
+          floorIndex: 1,
+          rowIndex: seat.row ? seat.row.charCodeAt(0) - 64 : 1,
+          columnIndex: seat.column ?? 1,
+          originalSeatCode: baseId,
+        });
+      } else if (metas.length === 1) {
+        const meta = metas[0];
+        seatMapSeats.push({
+          id: typeof seat.id === 'string' ? parseInt((seat.id as string).replace(/[^0-9]/g, '')) || index : (seat.id as number) || index,
+          seatId: `${meta.floorIndex}-${baseId}`,
+          isAvailable: meta.isAvailable ?? !seat.isBooked,
+          isSeat: meta.isSeat ?? true,
+          floorIndex: meta.floorIndex ?? 1,
+          rowIndex: meta.rowIndex ?? (seat.row ? seat.row.charCodeAt(0) - 64 : 1),
+          columnIndex: meta.columnIndex ?? seat.column ?? 1,
+          originalSeatCode: baseId,
+        });
+      } else {
+        metas.forEach((meta, mIndex) => {
+          seatMapSeats.push({
+            id: typeof seat.id === 'string' ? parseInt((seat.id as string).replace(/[^0-9]/g, '')) || (index * 10 + mIndex) : (seat.id as number) || (index * 10 + mIndex),
+            seatId: `${meta.floorIndex}-${baseId}`,
+            isAvailable: meta.isAvailable ?? !seat.isBooked,
+            isSeat: meta.isSeat ?? true,
+            floorIndex: meta.floorIndex ?? 1,
+            rowIndex: meta.rowIndex ?? (seat.row ? seat.row.charCodeAt(0) - 64 : 1),
+            columnIndex: meta.columnIndex ?? seat.column ?? 1,
+            originalSeatCode: baseId,
+          });
+        });
       }
-      acc[seat.row].push(seat);
-      return acc;
-    }, {} as Record<string, SeatType[]>);
-
-    const rows = Object.keys(seatsByRow).sort();
-
-    console.log("🎯 Grouped seats by row:", {
-      rows: rows,
-      seatsByRow: Object.keys(seatsByRow).reduce((acc, key) => {
-        acc[key] = seatsByRow[key].length;
-        return acc;
-      }, {} as Record<string, number>),
     });
+
+    // Derive selectedSeatIds from new composite state if present, else from legacy isSelected flags
+    let selectedSeatIds: string[] = selectedCompositeSeatIds.slice();
+    if (!selectedSeatIds.length) {
+      seats.filter((s: any) => (s as any).isSelected).forEach((s) => {
+        const baseId = String(s.seatNumber || s.id);
+        const metas = metaMulti.get(baseId) || [];
+        if (metas.length === 0) selectedSeatIds.push(`1-${baseId}`);
+        else {
+          // Only push the first meta to avoid auto-selecting same seat on all floors in legacy mode
+          const meta = metas[0];
+          selectedSeatIds.push(`${meta.floorIndex}-${baseId}`);
+        }
+      });
+    }
 
     return (
-      <Box sx={{ position: "relative", overflow: "auto" }}>
-        {/* Bus Front */}
-        <Box
-          sx={{
-            mb: 2,
-            p: 2,
-            border: "2px solid #f48fb1",
-            borderRadius: "40px 40px 8px 8px",
-            bgcolor: "#fce4ec",
-            width: "fit-content",
-            mx: "auto",
-            minWidth: 300,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{ textAlign: "center", fontWeight: "bold" }}
-          >
-            🚐 Tài xế
-          </Typography>
-        </Box>
-
-        {/* Seat Layout */}
-        <Box
-          sx={{
-            maxWidth: 400,
-            mx: "auto",
-            mt: 4,
-            border: "2px solid #e0e0e0",
-            borderRadius: 2,
-            p: 2,
-            bgcolor: "#fafafa",
-          }}
-        >
-          {rows.map((rowKey) => {
-            const rowSeats = seatsByRow[rowKey].sort(
-              (a, b) => a.column - b.column
-            );
-            return (
-              <Box
-                key={rowKey}
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  mb: 1.5,
-                  gap: 1,
-                }}
-              >
-                {/* Row Label */}
-                <Typography
-                  variant="body2"
-                  sx={{
-                    minWidth: 20,
-                    textAlign: "center",
-                    fontWeight: "bold",
-                    color: "#666",
-                  }}
-                >
-                  {rowKey}
-                </Typography>
-
-                {/* Seats */}
-                <Box sx={{ display: "flex", gap: 0.5 }}>
-                  {rowSeats.map((seat, index) => {
-                    const isSelected = (seat as any).isSelected || selectedSeats.some(
-                      (s) => s.id === seat.id
-                    );
-                    const isBooked = seat.isBooked;
-
-                    // Debug logging for first few seats to check data
-                    if (index < 3) {
-                      console.log(
-                        `🔍 Seat rendering debug - Row ${rowKey}, Seat ${
-                          index + 1
-                        }:`,
-                        {
-                          seatId: seat.id,
-                          seatNumber: seat.seatNumber,
-                          isBooked: seat.isBooked,
-                          isSelected: !!isSelected,
-                          isInteractive: isInteractive,
-                          disabled: isBooked || !isInteractive,
-                          expectedColor: isSelected
-                            ? "PINK"
-                            : isBooked
-                            ? "GRAY"
-                            : "WHITE",
-                          seat: seat,
-                        }
-                      );
-                    }
-
-                    return (
-                      <Box key={`${rowKey}-${seat.id}-${seat.seatNumber || ''}-${index}`} sx={{ position: "relative" }}>
-                        <Button
-                          variant="contained"
-                          disabled={isBooked} // Chỉ disable ghế đã đặt, không disable vì isInteractive
-                          onClick={() =>
-                            isInteractive && onSeatClick && onSeatClick(seat)
-                          }
-                          title={
-                            isBooked
-                              ? `Ghế ${seat.seatNumber} - Đã đặt`
-                              : isSelected
-                              ? `Ghế ${seat.seatNumber} - Đã chọn`
-                              : `Ghế ${seat.seatNumber} - Có thể chọn`
-                          }
-                          sx={{
-                            minWidth: 45,
-                            height: 45,
-                            padding: 0,
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
-                            cursor: isBooked
-                              ? "not-allowed"
-                              : isInteractive
-                              ? "pointer"
-                              : "default",
-                            // Fixed color logic:
-                            // - Ghế đã chọn: màu hồng
-                            // - Ghế đã đặt: màu xám
-                            // - Ghế trống: màu trắng
-                            bgcolor: isSelected
-                              ? "#f48fb1" // Màu hồng cho ghế đã chọn
-                              : isBooked
-                              ? "#9e9e9e" // Màu xám cho ghế đã đặt
-                              : "white", // Màu trắng cho ghế trống
-                            color: isSelected
-                              ? "white" // Chữ trắng cho ghế đã chọn
-                              : isBooked
-                              ? "#000" // Chữ đen cho ghế đã đặt
-                              : "white", // Chữ trắng cho ghế trống (theo yêu cầu)
-                            border: isSelected
-                              ? "2px solid #e91e63"
-                              : isBooked
-                              ? "1px solid #757575"
-                              : "1px solid #e0e0e0",
-                            borderRadius: 2,
-                            position: "relative",
-                            transition: "all 0.2s ease-in-out",
-                            boxShadow: isSelected
-                              ? "0 2px 8px rgba(244, 143, 177, 0.3)"
-                              : isBooked
-                              ? "none"
-                              : "0 1px 3px rgba(0, 0, 0, 0.1)",
-                            "&:hover": isInteractive
-                              ? {
-                                  bgcolor: isBooked
-                                    ? "#757575" // Xám đậm hơn cho ghế đã đặt khi hover
-                                    : isSelected
-                                    ? "#e91e63" // Hồng đậm cho ghế đã chọn khi hover
-                                    : "#f48fb1", // Hồng cho ghế trống khi hover
-                                  color: "white",
-                                  transform: !isBooked ? "scale(1.05)" : "none",
-                                  boxShadow: !isBooked
-                                    ? "0 4px 12px rgba(244, 143, 177, 0.4)"
-                                    : "none",
-                                }
-                              : {},
-                            "&:disabled": {
-                              bgcolor: "#9e9e9e", // Màu xám cho ghế đã đặt
-                              color: "#000", // Chữ đen cho ghế đã đặt
-                              cursor: "not-allowed",
-                              "&::after": {
-                                content: '"✖"',
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: "translate(-50%, -50%)",
-                                fontSize: "1rem",
-                                zIndex: 1,
-                                color: "#000", // Dấu X màu đen
-                                fontWeight: "bold",
-                              },
-                            },
-                          }}
-                        >
-                          {seat.seatNumber || seat.id}
-                        </Button>
-
-                        {/* Seat Type Indicator */}
-                        {seat.seatType && seat.seatType !== "regular" && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: -5,
-                              right: -5,
-                              width: 12,
-                              height: 12,
-                              borderRadius: "50%",
-                              bgcolor:
-                                seat.seatType === "vip" ? "#ffd700" : "#2196f3",
-                              fontSize: "0.6rem",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            {seat.seatType === "vip" ? "⭐" : "💺"}
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
-
-                {/* Add aisle after 2nd seat for typical bus layout */}
-                {rowSeats.length > 2 && (
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 2,
-                      bgcolor: "#e0e0e0",
-                      borderRadius: 1,
-                      mx: 1,
-                    }}
-                  />
-                )}
-              </Box>
-            );
-          })}
-        </Box>
-
-        {/* Legend */}
-        <Box
-          sx={{
-            mt: 4,
-            display: "flex",
-            justifyContent: "center",
-            gap: 3,
-            flexWrap: "wrap",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 20,
-                height: 20,
-                bgcolor: "white",
-                border: "1px solid #e0e0e0",
-                mr: 1,
-                borderRadius: 1,
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-              }}
-            />
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              Ghế trống
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 20,
-                height: 20,
-                bgcolor: "#f48fb1",
-                mr: 1,
-                borderRadius: 1,
-                border: "1px solid #e91e63",
-                boxShadow: "0 2px 4px rgba(244, 143, 177, 0.3)",
-              }}
-            />
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 500, color: "#f48fb1" }}
-            >
-              Đã chọn
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 20,
-                height: 20,
-                bgcolor: "#9e9e9e",
-                mr: 1,
-                borderRadius: 1,
-                border: "1px solid #757575",
-                position: "relative",
-                "&::after": {
-                  content: '"✖"',
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  fontSize: "0.7rem",
-                  color: "white",
-                  fontWeight: "bold",
-                },
-              }}
-            />
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 500, color: "#757575" }}
-            >
-              Đã đặt
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+      <SeatMap
+        seats={seatMapSeats}
+        onSeatClick={(meta: any) => {
+          if (!isInteractive) return;
+          const compositeId = meta.seatId as string; // already floor-prefixed
+          setSelectedCompositeSeatIds(prev => prev.includes(compositeId)
+            ? prev.filter(id => id !== compositeId)
+            : [...prev, compositeId]
+          );
+          if (onSeatClick) {
+            const original = meta.originalSeatCode || String(meta.seatId).replace(/^\d+-/, '');
+            const found = seats.find((s) => String(s.seatNumber || s.id) === original);
+            if (found) {
+              (found as any).floorIndex = meta.floorIndex;
+              (found as any).compositeSeatId = compositeId;
+              onSeatClick(found);
+            }
+          }
+        }}
+        selectedSeats={selectedSeatIds}
+        maxSeats={999}
+        showLegend={true}
+        compact={false}
+        disabled={!isInteractive}
+        floorDisplay="toggle"
+        initialFloor={1}
+        floorLabels={{ 1: 'Tầng 1', 2: 'Tầng 2' }}
+      />
     );
   };
 

@@ -176,6 +176,9 @@ export default function BookingPage() {
   const [loading, setLoading] = useState<boolean>(true);
   
   // Separate trips for departure and return (round-trip functionality)
+  const [returnDateDisplay, setReturnDateDisplay] = useState<string>("-");
+  
+  // Separate trip selections for round-trip
   const [departureTrips, setDepartureTrips] = useState<TripType[]>([]);
   const [returnTrips, setReturnTrips] = useState<TripType[]>([]);
   // const [trips, setTrips] = useState<TripType[]>([]); // Keep for backward compatibility - not used
@@ -213,6 +216,8 @@ export default function BookingPage() {
   const [vnpayPayload, setVnpayPayload] = useState<VNPayPayloadType | null>(
     null
   );
+  // Flag to ensure we only render success ticket after restoring booking data
+  const [bookingDataRestored, setBookingDataRestored] = useState<boolean>(false);
 
   // Seat diagram states
   const [seatLoading, setSeatLoading] = useState<boolean>(false);
@@ -703,7 +708,7 @@ export default function BookingPage() {
     const paymentErrorParam = searchParams.get("paymentError");
 
     // Check if this is a redirect from confirm page with payment status
-    if (paymentStatusParam) {
+  if (paymentStatusParam) {
       console.log("🔍 Detected payment status from confirm page:", {
         paymentStatus: paymentStatusParam,
         paymentError: paymentErrorParam,
@@ -733,10 +738,16 @@ export default function BookingPage() {
               setCustomerPhoneNumber(bookingData.customerPhoneNumber);
               
               localStorage.removeItem('bookingData');
+              setBookingDataRestored(true);
+            }
+            else {
+              // Nothing to restore but still allow rendering
+              setBookingDataRestored(true);
             }
           }
         } catch (error) {
           console.error("❌ Error restoring booking data:", error);
+          setBookingDataRestored(true); // Avoid blocking UI if restore fails
         }
 
       // Set payment status and completed state
@@ -744,7 +755,12 @@ export default function BookingPage() {
       if (paymentErrorParam) {
         setPaymentError(decodeURIComponent(paymentErrorParam));
       }
-      setCompleted(true);
+      // Delay marking completed until after booking data restored to avoid empty template
+      // If already restored (e.g., no data) we can mark immediately
+      if (bookingDataRestored) {
+        setCompleted(true);
+      }
+      // Otherwise a separate effect below will setCompleted once restored
       setActiveStep(2); // Set to payment step
 
               // Clean up URL parameters
@@ -756,6 +772,13 @@ export default function BookingPage() {
         }
     }
   }, [searchParams]);
+
+  // When restoration finishes after payment status detected, mark completed
+  useEffect(() => {
+    if (paymentStatus && !completed && bookingDataRestored) {
+      setCompleted(true);
+    }
+  }, [bookingDataRestored, paymentStatus, completed]);
 
   // Effect to load data from URL parameters
   useEffect(() => {
@@ -1150,7 +1173,17 @@ export default function BookingPage() {
 
             // Build a safe return URL based on current origin (avoid forcing https in localhost)
             const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-            const returnUrl = `${currentOrigin}/booking/confirm`;
+            // Build safe return URL (same logic as in page.tsx)
+            const baseFromEnv = process.env.NEXT_PUBLIC_BASE_URL?.trim();
+            let returnBase = baseFromEnv || currentOrigin;
+            if (/localhost|127\.0\.0\.1/i.test(returnBase)) {
+              const port = typeof window !== 'undefined' ? window.location.port || '3000' : '3000';
+              returnBase = `http://localhost:${port}`;
+            }
+            const returnUrl = `${returnBase.replace(/\/$/, '')}/booking/confirm`;
+            if (vnpayPayload && vnpayPayload.returnUrl !== returnUrl) {
+              vnpayPayload.returnUrl = returnUrl;
+            }
 
             const response = await bookingService.createReservation(
               vnpayPayload,
@@ -1692,11 +1725,22 @@ export default function BookingPage() {
         ? JSON.parse(localStorage.getItem("user_data") || "{}")?.id
         : null;
 
+      let dynamicReturnUrl: string | undefined = undefined;
+      if (typeof window !== 'undefined') {
+        const origin = window.location.origin;
+        if (/localhost|127\.0\.0\.1/i.test(origin)) {
+          const port = window.location.port || '3000';
+          dynamicReturnUrl = `http://localhost:${port}/booking/confirm`;
+        } else {
+          dynamicReturnUrl = `${origin.replace(/\/$/, '')}/booking/confirm`;
+        }
+      }
       const payload: VNPayPayloadType = {
         customerId: userId,
         isReturn: isRoundTrip,
         tripSeats: tripSeats,
         returnTripSeats: returnTripSeats,
+        returnUrl: dynamicReturnUrl,
       };
 
       console.log("VNPay API payload prepared:", payload);
@@ -4876,6 +4920,14 @@ export default function BookingPage() {
   // Render booking result (success or failure)
   const renderBookingResult = () => {
     const isSuccess = paymentStatus === "success";
+    if (paymentStatus && !bookingDataRestored) {
+      return (
+        <Box sx={{ my: 8, textAlign: "center" }}>
+          <CircularProgress sx={{ color: '#f48fb1' }} />
+          <Typography variant="body2" sx={{ mt: 2 }}>Đang khôi phục dữ liệu vé...</Typography>
+        </Box>
+      );
+    }
     // booking code removed per request
 
     const handleBackToHome = () => {

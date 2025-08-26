@@ -66,28 +66,8 @@ export default function LoginTemplatePage() {
     if (typeof window === 'undefined') {
       return 'http://localhost:3000/login-template';
     }
-
-    const currentHost = window.location.host;
-    
-    // Check if we're in production (Netlify)
-    if (currentHost.includes('netlify.app') || currentHost === 'saleonlinebusticketsalefe.netlify.app') {
-      return 'https://xetiic.netlify.app/login-template';
-    }
-
-    // Check if we're in production (Azure)
-    if (currentHost.includes('azurewebsites.net')) {
-      return 'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template';
-    }
-
-    // For development, use allowed localhost URLs
-    const currentPort = window.location.port;
-    if (currentPort === '3000' || currentPort === '3001') {
-      return `http://localhost:${currentPort}/login-template`;
-    }
-
-    // Fallback to default port if current port is not allowed
-    console.warn(`⚠️ Current port ${currentPort} not configured in Google Console. Using default localhost:3000`);
-    return 'http://localhost:3000/login-template';
+    // Always use current origin to avoid jumping to deployed domains during local dev
+    return `${window.location.origin}/login-template`;
   };
 
 
@@ -201,16 +181,12 @@ export default function LoginTemplatePage() {
           
           // Validate redirect URL against allowed URLs
           const allowedUrls = [
-            'https://bobts-server-e7dxfwh7e5g9e3ad.malaysiawest-01.azurewebsites.net/login-template',
-            'https://xetiic.netlify.app/login-template',
+            `${window.location.origin}/login-template`,
             'http://localhost:3000/login-template',
             'http://localhost:3001/login-template'
           ];
-          
-          // Allow any netlify.app domain
-          const isNetlifyDomain = redirectURL.includes('netlify.app') && redirectURL.endsWith('/login-template');
-          
-          if (!allowedUrls.includes(redirectURL) && !isNetlifyDomain) {
+
+          if (!allowedUrls.includes(redirectURL)) {
             console.error('❌ Callback redirect URL is not in allowed list!');
             console.error('  - Selected:', redirectURL);
             console.error('  - Allowed URLs:', allowedUrls);
