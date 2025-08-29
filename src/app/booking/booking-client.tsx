@@ -19,22 +19,16 @@ import {
   IconButton,
   Chip,
   useTheme,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Skeleton,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
   DirectionsBus,
-  EventSeat,
   LocationOn,
   ArrowBack,
   ArrowForward,
   Check,
   CheckCircle,
-  Close,
   Info,
   ShoppingCart,
   CreditCard,
@@ -76,15 +70,18 @@ interface TripType extends BaseTripType {
 }
 
 interface SeatType {
-  id: string;
+  id: string; // Display ID for UI purposes
   row: string;
   column: number;
   isBooked: boolean;
   price: number;
-  seatNumber?: string;
+  seatNumber: string; // Display seat number like "1G4"
   seatType?: string;
   isSelected?: boolean;
   tripId?: number; // Add tripId to identify which trip this seat belongs to
+  floorIndex?: number;
+  rowIndex?: number;
+  columnIndex?: number;
 }
 
 interface ApiSeatResponse {
@@ -124,9 +121,10 @@ const generateMockSeats = (): SeatType[] => {
   const columns = [1, 2, 3, 4];
   const seats: SeatType[] = [];
 
-  rows.forEach((row) => {
-    columns.forEach((col) => {
-      const id = `${row}${col}`;
+  rows.forEach((row, rowIndex) => {
+    columns.forEach((col, colIndex) => {
+      const backendSeatId = (rowIndex * columns.length) + colIndex + 1;
+      const id = backendSeatId.toString(); // Use backend ID as string ID
       const isBooked = Math.random() > 0.7;
       seats.push({
         id,
@@ -204,6 +202,32 @@ export default function BookingPage() {
   const [returnSecondLegSeats, setReturnSecondLegSeats] = useState<SeatType[]>([]);
   const [selectedReturnFirstLegSeats, setSelectedReturnFirstLegSeats] = useState<SeatType[]>([]);
   const [selectedReturnSecondLegSeats, setSelectedReturnSecondLegSeats] = useState<SeatType[]>([]);
+
+  // Fallback partition for return transfer trip if not already partitioned
+  useEffect(() => {
+    const rt: any = selectedReturnTrip;
+    const isReturnTransfer = rt && (rt.tripType === 'transfer' || (rt.firstTrip && rt.secondTrip));
+    if (searchData.tripType === 'roundTrip' && isReturnTransfer) {
+      const needPartition = returnSeats.length > 0 && (returnFirstLegSeats.length === 0 || returnSecondLegSeats.length === 0);
+      if (needPartition) {
+        const leg1Id = rt.firstTrip?.id;
+        const leg2Id = rt.secondTrip?.id;
+        if (leg1Id && leg2Id) {
+          const part1 = returnSeats.filter((s: any) => s.tripId === leg1Id);
+          const part2 = returnSeats.filter((s: any) => s.tripId === leg2Id);
+          if (part1.length + part2.length > 0) {
+            console.log('🛠 Partitioning returnSeats into legs (fallback)', { total: returnSeats.length, part1: part1.length, part2: part2.length, leg1Id, leg2Id });
+            setReturnFirstLegSeats(part1);
+            setReturnSecondLegSeats(part2);
+          } else {
+            console.log('⚠️ Fallback partition found no matching tripId markers in returnSeats sample', returnSeats.slice(0,5));
+          }
+        } else {
+          console.log('⚠️ Cannot partition return transfer seats: missing leg ids', { leg1Id, leg2Id });
+        }
+      }
+    }
+  }, [searchData.tripType, selectedReturnTrip, returnSeats, returnFirstLegSeats.length, returnSecondLegSeats.length]);
   
   const [seats, setSeats] = useState<SeatType[]>([]); // Keep for one-way compatibility
   const [selectedSeats, setSelectedSeats] = useState<SeatType[]>([]); // Keep for one-way compatibility
@@ -1072,32 +1096,36 @@ export default function BookingPage() {
             });
             
             // Outbound
-            setDepartureSeats(
-              (selectedDepartureTrip as any)?.tripType === 'transfer'
-                ? [...departureSeatData.filter(s => (s.id as string).startsWith('leg1-')), ...departureSeatData.filter(s => (s.id as string).startsWith('leg2-'))]
-                : departureSeatData
-            );
             if ((selectedDepartureTrip as any)?.tripType === 'transfer') {
-              setFirstLegSeats(departureSeatData.filter(s => (s.id as string).startsWith('leg1-')));
-              setSecondLegSeats(departureSeatData.filter(s => (s.id as string).startsWith('leg2-')));
+              // Partition by tripId (added to each seat when fetched) instead of legacy prefixes
+              const depFirst = departureSeatData.filter(s => s.tripId === (selectedDepartureTrip as any).firstTrip?.id);
+              const depSecond = departureSeatData.filter(s => s.tripId === (selectedDepartureTrip as any).secondTrip?.id);
+              setFirstLegSeats(depFirst);
+              setSecondLegSeats(depSecond);
+              setDepartureSeats([...depFirst, ...depSecond]);
+              console.log("🎯 Departure transfer seats partitioned:", { depFirst: depFirst.length, depSecond: depSecond.length, total: depFirst.length + depSecond.length });
+            } else {
+              setDepartureSeats(departureSeatData);
+              console.log("🎯 Departure direct seats set:", { count: departureSeatData.length });
             }
 
             // Return
-            setReturnSeats(
-              (selectedReturnTrip as any)?.tripType === 'transfer'
-                ? [...returnSeatData.filter(s => (s.id as string).startsWith('leg1-')), ...returnSeatData.filter(s => (s.id as string).startsWith('leg2-'))]
-                : returnSeatData
-            );
             if ((selectedReturnTrip as any)?.tripType === 'transfer') {
-              setReturnFirstLegSeats(returnSeatData.filter(s => (s.id as string).startsWith('leg1-')));
-              setReturnSecondLegSeats(returnSeatData.filter(s => (s.id as string).startsWith('leg2-')));
+              const retFirst = returnSeatData.filter(s => s.tripId === (selectedReturnTrip as any).firstTrip?.id);
+              const retSecond = returnSeatData.filter(s => s.tripId === (selectedReturnTrip as any).secondTrip?.id);
+              setReturnFirstLegSeats(retFirst);
+              setReturnSecondLegSeats(retSecond);
+              setReturnSeats([...retFirst, ...retSecond]);
+              console.log("🎯 Return transfer seats partitioned:", { retFirst: retFirst.length, retSecond: retSecond.length, total: retFirst.length + retSecond.length });
+            } else {
+              setReturnSeats(returnSeatData);
+              console.log("🎯 Return direct seats set:", { count: returnSeatData.length });
             }
-            setSeats(departureSeatData); // Keep for backward compatibility
+            setSeats(departureSeatData); 
             
             console.log("🎯 Seats state updated for round trip");
           } catch (error) {
             console.error("Error loading seats for round trip:", error);
-            // Fallback to mock data if API fails
             const mockSeats = generateMockSeats();
             setDepartureSeats(mockSeats);
             setReturnSeats(mockSeats);
@@ -1377,26 +1405,22 @@ export default function BookingPage() {
   // Handle transfer trip leg seat selections
   const handleSelectFirstLegSeat = (seat: SeatType) => {
     if (seat.isBooked) return;
-
-    const alreadySelected = selectedFirstLegSeats.find((s) => s.id === seat.id);
-
-    if (alreadySelected) {
-      setSelectedFirstLegSeats(selectedFirstLegSeats.filter((s) => s.id !== seat.id));
-    } else {
-      setSelectedFirstLegSeats([...selectedFirstLegSeats, seat]);
-    }
+    const alreadySelected = selectedFirstLegSeats.some((s) => s.id === seat.id);
+    setSelectedFirstLegSeats(
+      alreadySelected
+        ? selectedFirstLegSeats.filter((s) => s.id !== seat.id)
+        : [...selectedFirstLegSeats, seat]
+    );
   };
 
   const handleSelectSecondLegSeat = (seat: SeatType) => {
     if (seat.isBooked) return;
-
-    const alreadySelected = selectedSecondLegSeats.find((s) => s.id === seat.id);
-
-    if (alreadySelected) {
-      setSelectedSecondLegSeats(selectedSecondLegSeats.filter((s) => s.id !== seat.id));
-    } else {
-      setSelectedSecondLegSeats([...selectedSecondLegSeats, seat]);
-    }
+    const alreadySelected = selectedSecondLegSeats.some((s) => s.id === seat.id);
+    setSelectedSecondLegSeats(
+      alreadySelected
+        ? selectedSecondLegSeats.filter((s) => s.id !== seat.id)
+        : [...selectedSecondLegSeats, seat]
+    );
   };
 
   // Handle shuttle point selection
@@ -1530,13 +1554,13 @@ export default function BookingPage() {
               tripId: (selectedDepartureTrip as any).firstTrip.id,
               fromStationId: (selectedDepartureTrip as any).firstTrip.fromStationId,
               toStationId: (selectedDepartureTrip as any).firstTrip.toStationId,
-              seatIds: selectedFirstLegSeats.map((seat) => parseInt((seat.id || '').toString().replace('leg1-', ''))),
+              seatIds: selectedFirstLegSeats.map(seat => parseInt(String(seat.id),10)).filter(n=>!isNaN(n)),
             },
             {
               tripId: (selectedDepartureTrip as any).secondTrip.id,
               fromStationId: (selectedDepartureTrip as any).secondTrip.fromStationId,
               toStationId: (selectedDepartureTrip as any).secondTrip.toStationId,
-              seatIds: selectedSecondLegSeats.map((seat) => parseInt((seat.id || '').toString().replace('leg2-', ''))),
+              seatIds: selectedSecondLegSeats.map(seat => parseInt(String(seat.id),10)).filter(n=>!isNaN(n)),
             },
           ];
         } else {
@@ -1575,13 +1599,13 @@ export default function BookingPage() {
                 tripId: (selectedReturnTrip as any).firstTrip.id,
                 fromStationId: (selectedReturnTrip as any).firstTrip.fromStationId,
                 toStationId: (selectedReturnTrip as any).firstTrip.toStationId,
-                seatIds: selectedReturnFirstLegSeats.map((seat) => parseInt((seat.id || '').toString().replace('leg1-', ''))),
+                seatIds: selectedReturnFirstLegSeats.map(seat => parseInt(String(seat.id),10)).filter(n=>!isNaN(n)),
               },
               {
                 tripId: (selectedReturnTrip as any).secondTrip.id,
                 fromStationId: (selectedReturnTrip as any).secondTrip.fromStationId,
                 toStationId: (selectedReturnTrip as any).secondTrip.toStationId,
-                seatIds: selectedReturnSecondLegSeats.map((seat) => parseInt((seat.id || '').toString().replace('leg2-', ''))),
+                seatIds: selectedReturnSecondLegSeats.map(seat => parseInt(String(seat.id),10)).filter(n=>!isNaN(n)),
               },
             ];
           } else {
@@ -1604,13 +1628,13 @@ export default function BookingPage() {
               tripId: (selectedDepartureTrip as any).firstTrip.id,
               busName: (selectedDepartureTrip as any).firstTrip.busName,
               seatsCount: selectedFirstLegSeats.length,
-              seatIds: selectedFirstLegSeats.map((seat) => (seat.id || '').toString().replace('leg1-', '')),
+              seatIds: selectedFirstLegSeats.map(seat => seat.id),
             },
             secondLeg: {
               tripId: (selectedDepartureTrip as any).secondTrip.id,
               busName: (selectedDepartureTrip as any).secondTrip.busName,
               seatsCount: selectedSecondLegSeats.length,
-              seatIds: selectedSecondLegSeats.map((seat) => (seat.id || '').toString().replace('leg2-', '')),
+              seatIds: selectedSecondLegSeats.map(seat => seat.id),
             }
           } : {
             tripId: selectedDepartureTrip.id,
@@ -1624,13 +1648,13 @@ export default function BookingPage() {
                 tripId: (selectedReturnTrip as any).firstTrip.id,
                 busName: (selectedReturnTrip as any).firstTrip.busName,
                 seatsCount: selectedReturnFirstLegSeats.length,
-                seatIds: selectedReturnFirstLegSeats.map((seat) => (seat.id || '').toString().replace('leg1-', '')),
+                seatIds: selectedReturnFirstLegSeats.map(seat => seat.id),
               },
               secondLeg: {
                 tripId: (selectedReturnTrip as any).secondTrip.id,
                 busName: (selectedReturnTrip as any).secondTrip.busName,
                 seatsCount: selectedReturnSecondLegSeats.length,
-                seatIds: selectedReturnSecondLegSeats.map((seat) => (seat.id || '').toString().replace('leg2-', '')),
+                seatIds: selectedReturnSecondLegSeats.map(seat => seat.id),
               }
             } : {
             tripId: selectedReturnTrip.id,
@@ -1661,8 +1685,8 @@ export default function BookingPage() {
               fromStationId: selectedTrip.firstTrip!.fromStationId,
               toStationId: selectedTrip.firstTrip!.toStationId,
               seatIds: selectedFirstLegSeats.map((seat) => {
-                // Extract original seat ID from prefixed ID (leg1-xxx)
-                const originalId = seat.id.replace('leg1-', '');
+                // (prefix legacy removed)
+                const originalId = seat.id; // already raw
                 return parseInt(originalId);
               }),
             },
@@ -1672,8 +1696,8 @@ export default function BookingPage() {
               fromStationId: selectedTrip.secondTrip!.fromStationId,
               toStationId: selectedTrip.secondTrip!.toStationId,
               seatIds: selectedSecondLegSeats.map((seat) => {
-                // Extract original seat ID from prefixed ID (leg2-xxx)
-                const originalId = seat.id.replace('leg2-', '');
+                // (prefix legacy removed)
+                const originalId = seat.id; // already raw
                 return parseInt(originalId);
               }),
             },
@@ -1684,13 +1708,13 @@ export default function BookingPage() {
               tripId: selectedTrip.firstTrip!.id,
               busName: selectedTrip.firstTrip!.busName,
               seatsCount: selectedFirstLegSeats.length,
-              seatIds: selectedFirstLegSeats.map((seat) => seat.id.replace('leg1-', '')),
+              seatIds: selectedFirstLegSeats.map(seat => seat.id),
             },
             secondLeg: {
               tripId: selectedTrip.secondTrip!.id,
               busName: selectedTrip.secondTrip!.busName,
               seatsCount: selectedSecondLegSeats.length,
-              seatIds: selectedSecondLegSeats.map((seat) => seat.id.replace('leg2-', '')),
+              seatIds: selectedSecondLegSeats.map(seat => seat.id),
             },
           });
         } else {
@@ -1796,15 +1820,13 @@ export default function BookingPage() {
         // Transform first leg seats
         let transformedFirstSeats: SeatType[] = [];
         if (Array.isArray(firstTripSeats)) {
-          transformedFirstSeats = firstTripSeats.map((apiSeat: ApiSeatResponse, index: number) => {
-            const seatsPerRow = 4;
-            const rowIndex = Math.floor(index / seatsPerRow);
-            const columnIndex = (index % seatsPerRow) + 1;
-            const rowLetter = String.fromCharCode(65 + rowIndex);
-            const displaySeatNumber = `${rowLetter}${columnIndex}`;
-
+          transformedFirstSeats = firstTripSeats.map((apiSeat: any, index: number) => {
+            // Use API rowIndex and columnIndex instead of calculating from array index
+            const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+            const columnIndex = apiSeat.columnIndex || 1;
+            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
             return {
-              id: `leg1-${apiSeat.id}`, // Prefix to avoid ID conflicts
+              id: String(apiSeat.id),
               row: rowLetter,
               column: columnIndex,
               isBooked: !apiSeat.isAvailable,
@@ -1820,15 +1842,14 @@ export default function BookingPage() {
         // Transform second leg seats
         let transformedSecondSeats: SeatType[] = [];
         if (Array.isArray(secondTripSeats)) {
-          transformedSecondSeats = secondTripSeats.map((apiSeat: ApiSeatResponse, index: number) => {
-            const seatsPerRow = 4;
-            const rowIndex = Math.floor(index / seatsPerRow);
-            const columnIndex = (index % seatsPerRow) + 1;
-            const rowLetter = String.fromCharCode(65 + rowIndex);
-            const displaySeatNumber = `${rowLetter}${columnIndex}`;
+          transformedSecondSeats = secondTripSeats.map((apiSeat: any, index: number) => {
+            // Use API rowIndex and columnIndex instead of calculating from array index
+            const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+            const columnIndex = apiSeat.columnIndex || 1;
+            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
 
             return {
-              id: `leg2-${apiSeat.id}`, // Prefix to avoid ID conflicts
+              id: String(apiSeat.id),
               row: rowLetter,
               column: columnIndex,
               isBooked: !apiSeat.isAvailable,
@@ -1841,14 +1862,22 @@ export default function BookingPage() {
           });
         }
 
-        // Store seats separately for transfer trips
-        setFirstLegSeats(transformedFirstSeats);
-        setSecondLegSeats(transformedSecondSeats);
-
-        console.log("🎫 Transfer trip seats stored separately:", {
-          "firstLeg seats": transformedFirstSeats.length,
-          "secondLeg seats": transformedSecondSeats.length,
-        });
+        // Store seats separately for transfer trips (differentiate outbound/return)
+        if (trip.direction === 'return') {
+          setReturnFirstLegSeats(transformedFirstSeats);
+          setReturnSecondLegSeats(transformedSecondSeats);
+          console.log("🎫 Return transfer seats stored:", {
+            returnFirstLeg: transformedFirstSeats.length,
+            returnSecondLeg: transformedSecondSeats.length,
+          });
+        } else {
+          setFirstLegSeats(transformedFirstSeats);
+          setSecondLegSeats(transformedSecondSeats);
+          console.log("🎫 Outbound transfer seats stored:", {
+            firstLeg: transformedFirstSeats.length,
+            secondLeg: transformedSecondSeats.length,
+          });
+        }
 
         // Return combined for backward compatibility
         return [...transformedFirstSeats, ...transformedSecondSeats];
@@ -1900,19 +1929,14 @@ export default function BookingPage() {
         console.log("🎫 Raw API seat data sample:", seatData.slice(0, 3));
 
         const transformedSeats: SeatType[] = seatData.map(
-          (apiSeat: ApiSeatResponse, index: number) => {
-            // Create seat layout: assume 4 seats per row (typical bus layout)
-            const seatsPerRow = 4;
-            const seatIndex = index; // Use array index for consistent ordering
-            const rowIndex = Math.floor(seatIndex / seatsPerRow);
-            const columnIndex = (seatIndex % seatsPerRow) + 1;
-            const rowLetter = String.fromCharCode(65 + rowIndex); // A, B, C, D...
-
-            // Generate seat number in format A1, A2, B1, B2, etc.
-            const displaySeatNumber = `${rowLetter}${columnIndex}`;
+          (apiSeat: any, index: number) => {
+            // Use API rowIndex and columnIndex instead of calculating from array index
+            const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+            const columnIndex = apiSeat.columnIndex || 1;
+            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
 
             // Use API id as unique identifier
-            const seatId = apiSeat.id.toString();
+            const seatId = String(apiSeat.id);
 
             const transformedSeat = {
               id: seatId,
@@ -1951,6 +1975,13 @@ export default function BookingPage() {
           "available seats": transformedSeats.filter(seat => !seat.isBooked).length,
           "booked seats": transformedSeats.filter(seat => seat.isBooked).length,
         });
+
+        // Persist into direction-specific arrays for direct trips (ensures departureSeats populated for reverse triple)
+        if (trip.direction === 'return') {
+          setReturnSeats(transformedSeats);
+        } else {
+          setDepartureSeats(transformedSeats);
+        }
 
         return transformedSeats;
       } else {
@@ -2016,9 +2047,10 @@ export default function BookingPage() {
         }
 
         // Set loading state for this trip
+  const tripKey = String(trip.id); // safe stringify accessible in finally
         setLoadingSeatsByTrip((prev) => ({
           ...prev,
-          [trip.id.toString()]: true,
+          [tripKey]: true,
         }));
 
         console.log("🎫 Loading seats for trip", trip.id, "with params:", {
@@ -2076,23 +2108,29 @@ export default function BookingPage() {
 
         // Transform the data similar to fetchSeatAvailability
         const transformedSeats = Array.isArray(seatData)
-          ? seatData.map((apiSeat: any, index: number) => {
-              const seatsPerRow = 4;
-              const rowIndex = Math.floor(index / seatsPerRow);
-              const columnIndex = (index % seatsPerRow) + 1;
-              const rowLetter = String.fromCharCode(65 + rowIndex);
-
-              return {
-                id: apiSeat.id.toString(),
+          ? seatData.reduce((acc: any[], apiSeat: any, index: number) => {
+              if (!apiSeat || apiSeat.id == null) {
+                if (index < 5) {
+                  console.warn('⚠️ Skipping seat with undefined id in trip', trip.id, apiSeat);
+                }
+                return acc; // skip invalid seat
+              }
+              // Use API rowIndex and columnIndex instead of calculating from array index
+              const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+              const columnIndex = apiSeat.columnIndex || 1;
+              const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
+              acc.push({
+                id: String(apiSeat.id),
                 row: rowLetter,
                 column: columnIndex,
                 isBooked: !apiSeat.isAvailable,
                 price: trip.price,
-                seatNumber: `${rowLetter}${columnIndex}`,
-                seatType: "regular",
+                seatNumber: displaySeatNumber,
+                seatType: 'regular',
                 isSelected: false,
-              };
-            })
+              });
+              return acc;
+            }, [])
           : [];
 
         const availableSeats = transformedSeats.filter(
@@ -2102,7 +2140,7 @@ export default function BookingPage() {
 
         setSeatAvailabilityByTrip((prev) => ({
           ...prev,
-          [trip.id.toString()]: {
+          [tripKey]: {
             available: availableSeats,
             total: totalSeats,
           },
@@ -2119,9 +2157,10 @@ export default function BookingPage() {
         console.error("❌ Error loading seats for trip", trip.id, ":", error);
       } finally {
         // Clear loading state for this trip
+        const safeKey = String(trip.id);
         setLoadingSeatsByTrip((prev) => ({
           ...prev,
-          [trip.id.toString()]: false,
+          [safeKey]: false,
         }));
       }
     }
@@ -2162,23 +2201,23 @@ export default function BookingPage() {
           apiClient.getSeatAvailability(secondTripId, trip.secondTrip.fromStationId, trip.secondTrip.toStationId),
         ]);
 
-        // Transformers
         const transformSeats = (
-          apiSeats: ApiSeatResponse[],
+          apiSeats: any[],
           price: number,
           legTripId: number
         ): SeatType[] =>
-          (apiSeats || []).map((apiSeat: ApiSeatResponse, index: number) => {
-            const seatsPerRow = 4;
-            const rowIndex = Math.floor(index / seatsPerRow);
-            const columnIndex = (index % seatsPerRow) + 1;
+          (apiSeats || []).map((apiSeat: any, index: number) => {
+            // Use API rowIndex and columnIndex instead of calculating from array index
+            const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+            const columnIndex = apiSeat.columnIndex || 1;
+            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
             return {
-              id: apiSeat.id.toString(),
-              row: String.fromCharCode(65 + rowIndex),
+              id: String(apiSeat.id),
+              row: rowLetter,
               column: columnIndex,
               isBooked: !apiSeat.isAvailable,
               price,
-              seatNumber: apiSeat.seatId,
+              seatNumber: displaySeatNumber,
               seatType: "standard",
               isSelected: false,
               tripId: legTripId,
@@ -2194,13 +2233,11 @@ export default function BookingPage() {
 
         setDialogFirstSeats(firstSeats);
         setDialogSecondSeats(secondSeats);
-        // Keep a combined array for any existing consumers
         setDialogSeats([...firstSeats, ...secondSeats]);
         setDialogSeatLoading(false);
         return;
       }
 
-      // For direct trips, use the original logic
       const tripIdToUse = trip.id;
 
       console.log("🎫 Using trip.id for direct trip seat dialog API:", {
@@ -2251,15 +2288,14 @@ export default function BookingPage() {
       // Transform API response with detailed logging
       if (Array.isArray(seatData) && seatData.length > 0) {
         const transformedSeats: SeatType[] = seatData.map(
-          (apiSeat: ApiSeatResponse, index: number) => {
-            const seatsPerRow = 4;
-            const rowIndex = Math.floor(index / seatsPerRow);
-            const columnIndex = (index % seatsPerRow) + 1;
-            const rowLetter = String.fromCharCode(65 + rowIndex);
-            const displaySeatNumber = `${rowLetter}${columnIndex}`;
+          (apiSeat: any, index: number) => {
+            // Use API rowIndex and columnIndex instead of calculating from array index
+            const rowLetter = String.fromCharCode(64 + (apiSeat.rowIndex || 1)); // 64 + 1 = 65 = 'A'
+            const columnIndex = apiSeat.columnIndex || 1;
+            const displaySeatNumber = apiSeat.seatId || `${rowLetter}${columnIndex}`;
 
             const transformedSeat = {
-              id: apiSeat.id.toString(),
+              id: String(apiSeat.id),
               row: rowLetter,
               column: columnIndex,
               isBooked: !apiSeat.isAvailable, // KEY LOGIC: isAvailable: true -> isBooked: false (ghế trống)
@@ -2473,29 +2509,12 @@ export default function BookingPage() {
               </Box>
             </Box>
 
-            {/* Action Buttons */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenSeatDialog(trip);
-                }}
-                sx={{
-                  borderColor: "#f48fb1",
-                  color: "#f48fb1",
-                  fontSize: "0.75rem",
-                }}
-              >
-                Xem ghế
-              </Button>
-              {isSelected && (
-                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                  <CheckCircle sx={{ color: "#f48fb1", fontSize: 28 }} />
-                </Box>
-              )}
-            </Box>
+            {/* Seat diagram button removed; show only selection indicator when selected */}
+            {isSelected && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <CheckCircle sx={{ color: "#f48fb1", fontSize: 28 }} />
+              </Box>
+            )}
             {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) && (
               <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
                 <Info sx={{ fontSize: 16, color: "text.secondary" }} />
@@ -2792,22 +2811,7 @@ export default function BookingPage() {
                                   >
                                     {formatPrice(trip.price)}
                                   </Typography>
-                                  <Button
-                                    variant="outlined"
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenSeatDialog(trip);
-                                    }}
-                                    sx={{
-                                      mt: 1,
-                                      borderColor: "#1976d2",
-                                      color: "#1976d2",
-                                      fontSize: "0.75rem",
-                                    }}
-                                  >
-                                    Xem ghế
-                                  </Button>
+                                  {/* Seat diagram button removed */}
                                 </Box>
                                 {selectedDepartureTrip?.id === trip.id && (
                                   <Box
@@ -2971,22 +2975,7 @@ export default function BookingPage() {
                                     >
                                       {formatPrice(trip.price)}
                                     </Typography>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenSeatDialog(trip);
-                                      }}
-                                      sx={{
-                                        mt: 1,
-                                        borderColor: "#7b1fa2",
-                                        color: "#7b1fa2",
-                                        fontSize: "0.75rem",
-                                      }}
-                                    >
-                                      Xem ghế
-                                    </Button>
+                                    {/* Seat diagram button removed */}
                                   </Box>
                                   {selectedReturnTrip?.id === trip.id && (
                                     <Box
@@ -3136,22 +3125,7 @@ export default function BookingPage() {
                               >
                                 {formatPrice(trip.price)}
                               </Typography>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenSeatDialog(trip);
-                                }}
-                                sx={{
-                                  mt: 1,
-                                  borderColor: "#f48fb1",
-                                  color: "#f48fb1",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                Xem ghế
-                              </Button>
+                              {/* Seat diagram button removed */}
                             </Box>
                             {(selectedDepartureTrip?.id === trip.id || selectedTrip?.id === trip.id) && (
                               <Box
@@ -3188,13 +3162,17 @@ export default function BookingPage() {
   // Render seat selection
   const renderSeatSelection = () => {
     const isRoundTrip = searchData.tripType === "roundTrip";
-    const isTransferTrip = selectedTrip?.tripType === "transfer" && selectedTrip.firstTrip && selectedTrip.secondTrip;
-    const isDepartureTransfer = isRoundTrip && selectedDepartureTrip && (selectedDepartureTrip as any).tripType === 'transfer';
-    const isReturnTransfer = isRoundTrip && selectedReturnTrip && (selectedReturnTrip as any).tripType === 'transfer';
+  // Broaden transfer detection: either explicit tripType === 'transfer' OR presence of firstTrip & secondTrip
+  const isTransferTrip = !!(selectedTrip && ((selectedTrip as any).tripType === 'transfer' || ((selectedTrip as any).firstTrip && (selectedTrip as any).secondTrip)));
+  const isDepartureTransfer = !!(isRoundTrip && selectedDepartureTrip && (((selectedDepartureTrip as any).tripType === 'transfer') || ((selectedDepartureTrip as any).firstTrip && (selectedDepartureTrip as any).secondTrip)));
+  const isReturnTransfer = !!(isRoundTrip && selectedReturnTrip && (((selectedReturnTrip as any).tripType === 'transfer') || ((selectedReturnTrip as any).firstTrip && (selectedReturnTrip as any).secondTrip)));
+  // Fallback detection: returnSeats already merged but contain seats for more than one tripId
+  const returnDistinctTripIds = isRoundTrip ? new Set((returnSeats || []).map((s: any)=> s.tripId)).size : 0;
     
     // Check if we should show dual seat diagrams for round trip OR transfer trip
+    const isMixedRoundTrip = isRoundTrip && ((isDepartureTransfer && !isReturnTransfer) || (!isDepartureTransfer && isReturnTransfer));
     const shouldShowDualDiagrams = (
-      (isRoundTrip && selectedDepartureTrip && selectedReturnTrip && departureSeats.length > 0 && returnSeats.length > 0)
+      (isRoundTrip && !isMixedRoundTrip && !isDepartureTransfer && !isReturnTransfer && selectedDepartureTrip && selectedReturnTrip && departureSeats.length > 0 && returnSeats.length > 0)
     ) || (
       (!isRoundTrip && isTransferTrip && selectedTrip?.firstTrip && selectedTrip?.secondTrip && firstLegSeats.length > 0 && secondLegSeats.length > 0)
     );
@@ -3203,10 +3181,63 @@ export default function BookingPage() {
       firstLegSeats.length > 0 && secondLegSeats.length > 0 && returnFirstLegSeats.length > 0 && returnSecondLegSeats.length > 0;
 
     // Triple diagrams: transfer departure (2 legs) + return
-    const shouldShowTripleDiagrams = (
+  const shouldShowTripleDiagrams = (
       isDepartureTransfer && selectedReturnTrip &&
       firstLegSeats.length > 0 && secondLegSeats.length > 0 && returnSeats.length > 0
     );
+
+    // Triple diagrams (reverse): departure direct + return transfer (2 legs)
+    // Hiển thị 3 sơ đồ: chuyến đi (thẳng) + 2 chặng chuyến về (nối)
+    // Trước đây yêu cầu tất cả mảng ghế phải > 0 mới render => khi dữ liệu load lệch sẽ chỉ thấy 1/2 sơ đồ.
+    // Nới lỏng để chỉ cần phân loại loại chuyến là đủ; phần thân sẽ tự hiển thị trạng thái rỗng nếu chưa có ghế.
+    let shouldShowTripleDiagramsReturnTransfer: boolean = !!(
+      isRoundTrip && !isDepartureTransfer && isReturnTransfer && selectedDepartureTrip && selectedReturnTrip
+    );
+    // If not yet partitioned but we can infer two legs via distinct tripIds in returnSeats => still show triple layout
+    if (!shouldShowTripleDiagramsReturnTransfer && isRoundTrip && !isDepartureTransfer && isReturnTransfer && returnDistinctTripIds > 1) {
+      shouldShowTripleDiagramsReturnTransfer = true;
+    }
+
+    // Extra diagnostic if reverse triple expected but not showing yet
+    if (isRoundTrip && !isDepartureTransfer && isReturnTransfer && typeof window !== 'undefined') {
+      if (!shouldShowTripleDiagramsReturnTransfer) {
+        console.log('🛠 Expected reverse triple (direct outbound + transfer return) but condition not yet met', {
+          departureSeatsLen: departureSeats.length,
+          returnFirstLegSeatsLen: returnFirstLegSeats.length,
+          returnSecondLegSeatsLen: returnSecondLegSeats.length,
+          reasons: {
+            noDepartureSeats: departureSeats.length === 0,
+            noReturnFirst: returnFirstLegSeats.length === 0,
+            noReturnSecond: returnSecondLegSeats.length === 0,
+          },
+          rawReturnSeatsLen: returnSeats.length,
+          sampleReturnSeats: returnSeats.slice(0,5).map(s=>({id:s.id, tripId:(s as any).tripId}))
+        });
+      }
+    }
+
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      try {
+        console.log('🧪 Seat layout mode decision', {
+          isRoundTrip,
+          isDepartureTransfer,
+          isReturnTransfer,
+            isMixedRoundTrip,
+          lengths: {
+            departureSeats: departureSeats.length,
+            returnSeats: returnSeats.length,
+            firstLegSeats: firstLegSeats.length,
+            secondLegSeats: secondLegSeats.length,
+            returnFirstLegSeats: returnFirstLegSeats.length,
+            returnSecondLegSeats: returnSecondLegSeats.length
+          },
+          shouldShowQuadDiagrams,
+          shouldShowTripleDiagrams,
+          shouldShowTripleDiagramsReturnTransfer,
+          shouldShowDualDiagrams
+        });
+      } catch {}
+    }
 
     if (shouldShowQuadDiagrams) {
       return (
@@ -3406,6 +3437,210 @@ export default function BookingPage() {
                     (selectedFirstLegSeats.length * ((((selectedDepartureTrip as any)?.firstTrip?.price) || 0))) +
                     (selectedSecondLegSeats.length * ((((selectedDepartureTrip as any)?.secondTrip?.price) || 0))) +
                     (selectedReturnSeats.length * ((selectedReturnTrip?.price) || 0))
+                  )}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      );
+    }
+
+  if (shouldShowTripleDiagramsReturnTransfer) {
+      return (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" gutterBottom sx={{ color: "#f48fb1", fontWeight: 700, textAlign: "center", mb: 4 }}>
+            🎫 Chọn ghế: Chuyến đi (thẳng) + Chặng 1 + Chặng 2 (chuyến về - nối)
+          </Typography>
+
+          {/* Status Summary */}
+          <Box sx={{ mb: 4, display: "flex", justifyContent: "center", gap: 3, flexWrap: 'wrap' }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 3, py: 2, borderRadius: 3, bgcolor: "rgba(25, 118, 210, 0.1)", border: "2px solid #1976d2" }}>
+              <CheckCircle sx={{ color: "#1976d2", fontSize: 24 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Chuyến đi: {selectedDepartureTrip?.busName}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 3, py: 2, borderRadius: 3, bgcolor: "rgba(123, 31, 162, 0.1)", border: "2px solid #7b1fa2" }}>
+              <CheckCircle sx={{ color: "#7b1fa2", fontSize: 24 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Chặng 1 về: {(selectedReturnTrip as any)?.firstTrip?.busName}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 3, py: 2, borderRadius: 3, bgcolor: "rgba(123, 31, 162, 0.1)", border: "2px solid #7b1fa2" }}>
+              <CheckCircle sx={{ color: "#7b1fa2", fontSize: 24 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                Chặng 2 về: {(selectedReturnTrip as any)?.secondTrip?.busName}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Triple Seat Diagrams (reverse) */}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr 1fr" }, gap: 4, mb: 4 }}>
+            {/* Departure direct */}
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 3, border: "3px solid #1976d2", background: "linear-gradient(135deg, rgba(25, 118, 210, 0.02) 0%, white 100%)" }}>
+              <Typography variant="h6" gutterBottom sx={{ color: "#1976d2", fontWeight: 700 }}>
+                🛫 Chuyến đi - {selectedDepartureTrip?.busName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {selectedDepartureTrip && (
+                  <>
+                    {formatTimeSafe(selectedDepartureTrip.timeStart)} - {formatTimeSafe(selectedDepartureTrip.timeEnd)} • {searchData.departureDate}
+                  </>
+                )}
+              </Typography>
+              {departureSeats.length > 0 ? (
+                renderSeatDiagram(
+                  departureSeats.map(seat => ({ ...seat, isSelected: selectedDepartureSeats.some(s => s.id === seat.id) })),
+                  true,
+                  handleSelectDepartureSeat
+                )
+              ) : (
+                <Box sx={{ display:'flex', flexDirection:'column', gap:1 }}>
+                  <Skeleton variant="rounded" height={200} />
+                  <Typography variant="caption" color="text.secondary" sx={{ textAlign:'center' }}>Đang tải sơ đồ ghế chuyến đi...</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(25, 118, 210, 0.08)", borderRadius: 2, border: "1px solid rgba(25, 118, 210, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#1976d2" }}>
+                  Ghế đã chọn ({selectedDepartureSeats.length}):
+                </Typography>
+                {selectedDepartureSeats.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedDepartureSeats.map((seat) => (
+                      <Chip key={seat.id} label={seat.seatNumber || seat.id} onDelete={() => handleSelectDepartureSeat(seat)} sx={{ bgcolor: "#1976d2", color: "white", fontWeight: 600, '& .MuiChip-deleteIcon': { color: 'white' } }} />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#1976d2" }}>
+                  {formatPrice(selectedDepartureSeats.length * (selectedDepartureTrip?.price || 0))}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Return leg 1 */}
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 3, border: "3px solid #7b1fa2", background: "linear-gradient(135deg, rgba(123, 31, 162, 0.02) 0%, white 100%)" }}>
+              <Typography variant="h6" gutterBottom sx={{ color: "#7b1fa2", fontWeight: 700 }}>
+                🧩 Chặng 1 - {(selectedReturnTrip as any)?.firstTrip?.busName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {(selectedReturnTrip as any)?.firstTrip && (
+                  <>
+                    {formatTimeSafe((selectedReturnTrip as any).firstTrip.timeStart)} - {formatTimeSafe((selectedReturnTrip as any).firstTrip.timeEnd)} • {searchData.returnDate}
+                  </>
+                )}
+              </Typography>
+              {returnFirstLegSeats.length > 0 ? (
+                renderSeatDiagram(
+                  returnFirstLegSeats.map(seat => ({ ...seat, isSelected: selectedReturnFirstLegSeats.some(s => s.id === seat.id) })),
+                  true,
+                  (seat) => setSelectedReturnFirstLegSeats(t => t.some(s => s.id === seat.id) ? t.filter(s => s.id !== seat.id) : [...t, seat])
+                )
+              ) : (
+                <Box sx={{ display:'flex', flexDirection:'column', gap:1 }}>
+                  <Skeleton variant="rounded" height={200} />
+                  <Typography variant="caption" color="text.secondary" sx={{ textAlign:'center' }}>Đang tải sơ đồ ghế chặng 1 về...</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(123, 31, 162, 0.08)", borderRadius: 2, border: "1px solid rgba(123, 31, 162, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#7b1fa2" }}>
+                  Ghế đã chọn ({selectedReturnFirstLegSeats.length}):
+                </Typography>
+                {selectedReturnFirstLegSeats.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedReturnFirstLegSeats.map((seat) => (
+                      <Chip key={seat.id} label={seat.seatNumber || seat.id} onDelete={() => setSelectedReturnFirstLegSeats(t => t.filter(s => s.id !== seat.id))} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, '& .MuiChip-deleteIcon': { color: 'white' } }} />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#7b1fa2" }}>
+                  {formatPrice(selectedReturnFirstLegSeats.length * (((selectedReturnTrip as any)?.firstTrip?.price) || 0))}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Return leg 2 */}
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 3, border: "3px solid #7b1fa2", background: "linear-gradient(135deg, rgba(123, 31, 162, 0.02) 0%, white 100%)" }}>
+              <Typography variant="h6" gutterBottom sx={{ color: "#7b1fa2", fontWeight: 700 }}>
+                🧩 Chặng 2 - {(selectedReturnTrip as any)?.secondTrip?.busName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {(selectedReturnTrip as any)?.secondTrip && (
+                  <>
+                    {formatTimeSafe((selectedReturnTrip as any).secondTrip.timeStart)} - {formatTimeSafe((selectedReturnTrip as any).secondTrip.timeEnd)} • {searchData.returnDate}
+                  </>
+                )}
+              </Typography>
+              {returnSecondLegSeats.length > 0 ? (
+                renderSeatDiagram(
+                  returnSecondLegSeats.map(seat => ({ ...seat, isSelected: selectedReturnSecondLegSeats.some(s => s.id === seat.id) })),
+                  true,
+                  (seat) => setSelectedReturnSecondLegSeats(t => t.some(s => s.id === seat.id) ? t.filter(s => s.id !== seat.id) : [...t, seat])
+                )
+              ) : (
+                <Box sx={{ display:'flex', flexDirection:'column', gap:1 }}>
+                  <Skeleton variant="rounded" height={200} />
+                  <Typography variant="caption" color="text.secondary" sx={{ textAlign:'center' }}>Đang tải sơ đồ ghế chặng 2 về...</Typography>
+                </Box>
+              )}
+              <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(123, 31, 162, 0.08)", borderRadius: 2, border: "1px solid rgba(123, 31, 162, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "#7b1fa2" }}>
+                  Ghế đã chọn ({selectedReturnSecondLegSeats.length}):
+                </Typography>
+                {selectedReturnSecondLegSeats.length > 0 ? (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedReturnSecondLegSeats.map((seat) => (
+                      <Chip key={seat.id} label={seat.seatNumber || seat.id} onDelete={() => setSelectedReturnSecondLegSeats(t => t.filter(s => s.id !== seat.id))} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, '& .MuiChip-deleteIcon': { color: 'white' } }} />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                    Chưa chọn ghế nào
+                  </Typography>
+                )}
+                <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#7b1fa2" }}>
+                  {formatPrice(selectedReturnSecondLegSeats.length * (((selectedReturnTrip as any)?.secondTrip?.price) || 0))}
+                </Typography>
+              </Box>
+            </Paper>
+          </Box>
+
+          {/* Total Summary for 3 sections (reverse) */}
+          <Paper elevation={6} sx={{ p: 4, borderRadius: 3, background: "linear-gradient(135deg, rgba(244, 143, 177, 0.1) 0%, white 100%)", border: "2px solid #f48fb1" }}>
+            <Typography variant="h5" gutterBottom sx={{ color: "#f48fb1", fontWeight: 700, textAlign: "center", mb: 3 }}>
+              💰 Tổng quan thanh toán
+            </Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3, alignItems: "end" }}>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1976d2", mb: 1 }}>🛫 Chuyến đi</Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>{`${selectedDepartureSeats.length} ghế`}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: "#1976d2" }}>{formatPrice(selectedDepartureSeats.length * (selectedDepartureTrip?.price || 0))}</Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#7b1fa2", mb: 1 }}>🧩 Chặng 1 về</Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>{`${selectedReturnFirstLegSeats.length} ghế`}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: "#7b1fa2" }}>{formatPrice(selectedReturnFirstLegSeats.length * (((selectedReturnTrip as any)?.firstTrip?.price) || 0))}</Typography>
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#7b1fa2", mb: 1 }}>🧩 Chặng 2 về</Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>{`${selectedReturnSecondLegSeats.length} ghế`}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: "#7b1fa2" }}>{formatPrice(selectedReturnSecondLegSeats.length * (((selectedReturnTrip as any)?.secondTrip?.price) || 0))}</Typography>
+              </Box>
+              <Box sx={{ textAlign: "center", p: 3, bgcolor: "#f48fb1", borderRadius: 3, color: "white" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>TỔNG CỘNG</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                  {formatPrice(
+                    (selectedDepartureSeats.length * (selectedDepartureTrip?.price || 0)) +
+                    (selectedReturnFirstLegSeats.length * (((selectedReturnTrip as any)?.firstTrip?.price) || 0)) +
+                    (selectedReturnSecondLegSeats.length * (((selectedReturnTrip as any)?.secondTrip?.price) || 0))
                   )}
                 </Typography>
               </Box>
@@ -4670,7 +4905,7 @@ export default function BookingPage() {
                           {selectedFirstLegSeats.map((seat) => (
                             <Chip
                               key={seat.id}
-                              label={seat.seatNumber || seat.id.replace('leg1-', '')}
+                              label={seat.seatNumber || seat.id}
                               sx={{ 
                                 bgcolor: "#1976d2", 
                                 color: "white", 
@@ -4693,7 +4928,7 @@ export default function BookingPage() {
                           {selectedSecondLegSeats.map((seat) => (
                             <Chip
                               key={seat.id}
-                              label={seat.seatNumber || seat.id.replace('leg2-', '')}
+                              label={seat.seatNumber || seat.id}
                               sx={{ 
                                 bgcolor: "#7b1fa2", 
                                 color: "white", 
@@ -4731,7 +4966,7 @@ export default function BookingPage() {
                             </Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                               {selectedFirstLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.replace('leg1-', '')} sx={{ bgcolor: "#1976d2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id} sx={{ bgcolor: "#1976d2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
                               ))}
                             </Box>
                           </Box>
@@ -4743,7 +4978,7 @@ export default function BookingPage() {
                             </Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                               {selectedSecondLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.replace('leg2-', '')} sx={{ bgcolor: "#1976d2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id} sx={{ bgcolor: "#1976d2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
                               ))}
                             </Box>
                           </Box>
@@ -4781,7 +5016,7 @@ export default function BookingPage() {
                             </Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                               {selectedReturnFirstLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.replace('leg1-', '')} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
                               ))}
                             </Box>
                           </Box>
@@ -4793,7 +5028,7 @@ export default function BookingPage() {
                             </Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                               {selectedReturnSecondLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.replace('leg2-', '')} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id} sx={{ bgcolor: "#7b1fa2", color: "white", fontWeight: 600, fontSize: "0.875rem" }} />
                               ))}
                             </Box>
                           </Box>
@@ -5016,7 +5251,7 @@ export default function BookingPage() {
             {isSuccess ? (
               <Check sx={{ fontSize: 60 }} />
             ) : (
-              <Close sx={{ fontSize: 60 }} />
+              <CheckCircle sx={{ fontSize: 60 }} />
             )}
           </Box>
         </motion.div>
@@ -5271,7 +5506,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">{firstLegLabel} - {(selectedDepartureTrip as any)?.firstTrip?.busName}</Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1.5 }}>
                               {selectedFirstLegSeats.length > 0 ? selectedFirstLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg1-/, '')} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, mb: 2, color: "#e91e63" }}>{formatPrice(firstLegPrice)}</Typography>
@@ -5279,7 +5514,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">{secondLegLabel} - {(selectedDepartureTrip as any)?.secondTrip?.busName}</Typography>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1.5 }}>
                               {selectedSecondLegSeats.length > 0 ? selectedSecondLegSeats.map((seat) => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg2-/, '')} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, mb: 2, color: "#e91e63" }}>{formatPrice(secondLegPrice)}</Typography>
@@ -5305,7 +5540,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">🛫 Chuyến đi • Chặng 1 - {(selectedDepartureTrip as any)?.firstTrip?.busName}</Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                               {selectedFirstLegSeats.length > 0 ? selectedFirstLegSeats.map(seat => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg1-/, '')} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, mb: 2, color: '#e91e63' }}>{formatPrice(depLeg1Price)}</Typography>
@@ -5313,7 +5548,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">🛫 Chuyến đi • Chặng 2 - {(selectedDepartureTrip as any)?.secondTrip?.busName}</Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                               {selectedSecondLegSeats.length > 0 ? selectedSecondLegSeats.map(seat => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg2-/, '')} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, mb: 2, color: '#e91e63' }}>{formatPrice(depLeg2Price)}</Typography>
@@ -5321,7 +5556,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">🛬 Chuyến về • Chặng 1 - {(selectedReturnTrip as any)?.firstTrip?.busName}</Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                               {selectedReturnFirstLegSeats.length > 0 ? selectedReturnFirstLegSeats.map(seat => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg1-/, '')} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, mb: 2, color: '#e91e63' }}>{formatPrice(retLeg1Price)}</Typography>
@@ -5329,7 +5564,7 @@ export default function BookingPage() {
                             <Typography variant="body2" color="text.secondary">🛬 Chuyến về • Chặng 2 - {(selectedReturnTrip as any)?.secondTrip?.busName}</Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                               {selectedReturnSecondLegSeats.length > 0 ? selectedReturnSecondLegSeats.map(seat => (
-                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg2-/, '')} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
+                                <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: '#fce4ec', color: '#e91e63', fontWeight: 'bold' }} />
                               )) : <Typography variant="body2" color="text.secondary">-</Typography>}
                             </Box>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: '#e91e63' }}>{formatPrice(retLeg2Price)}</Typography>
@@ -5368,7 +5603,7 @@ export default function BookingPage() {
                           <Typography variant="body2" color="text.secondary">Số ghế</Typography>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1.5 }}>
                       {(seatsForDisplay && seatsForDisplay.length > 0) ? seatsForDisplay.map((seat) => (
-                              <Chip key={seat.id} label={seat.seatNumber || seat.id.toString().replace(/^leg[12]-/, '')} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
+                              <Chip key={seat.id} label={seat.seatNumber || seat.id.toString()} size="small" sx={{ bgcolor: "#fce4ec", color: "#e91e63", fontWeight: "bold" }} />
                       )) : (
                         <Typography variant="body2" color="text.secondary">-</Typography>
                       )}
@@ -6105,9 +6340,18 @@ export default function BookingPage() {
                 {/* Seats */}
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                   {rowSeats.map((seat, index) => {
-                    const isSelected = (seat as any).isSelected || selectedSeats.some(
-                      (s) => s.id === seat.id
+                    // FIX: tránh hiện tượng chọn ghế ở chặng 1 bị "mirror" sang chặng 2 / chuyến về
+                    // Nếu seat đã được truyền kèm cờ isSelected (được xác định riêng cho panel), ta ưu tiên dùng nó.
+                    // Chỉ fallback về selectedSeats (global - dùng cho chế độ oneWay cũ) khi không có isSelected.
+                    // Trong bối cảnh multi-chặng (transfer / roundTrip) ta KHÔNG fallback vào selectedSeats toàn cục
+                    const inMultiSegmentContext = (
+                      (selectedDepartureTrip && selectedReturnTrip) ||
+                      (selectedTrip && selectedTrip.tripType === 'transfer')
                     );
+                    const isSelected =
+                      typeof (seat as any).isSelected === 'boolean'
+                        ? (seat as any).isSelected
+                        : (inMultiSegmentContext ? false : selectedSeats.some((s) => s.id === seat.id));
                     const isBooked = seat.isBooked;
 
                     // Debug logging for first few seats to check data
@@ -6343,137 +6587,8 @@ export default function BookingPage() {
     );
   };
 
-  // Seat Dialog Component
-  const renderSeatDialog = () => (
-    <Dialog
-      open={seatDialogOpen}
-      onClose={handleCloseSeatDialog}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          maxHeight: "90vh",
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          bgcolor: "#f48fb1",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <EventSeat sx={{ mr: 1 }} />
-          <Typography variant="h6">
-            Sơ đồ ghế - {seatDialogTrip?.busName}
-          </Typography>
-        </Box>
-        <IconButton onClick={handleCloseSeatDialog} sx={{ color: "white" }}>
-          <Close />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 3 }}>
-        {seatDialogTrip && (
-          <Box>
-            <Box sx={{ mb: 3, p: 2, bgcolor: "#fce4ec", borderRadius: 2 }}>
-              <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: "bold", mb: 1 }}
-              >
-                Thông tin chuyến xe
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 2,
-                }}
-              >
-                <Box>
-                  <Typography variant="body2">
-                    <strong>Tuyến:</strong> {searchData.from} → {searchData.to}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Khởi hành:</strong>{" "}
-                    {new Date(seatDialogTrip.timeStart).toLocaleTimeString(
-                      "vi-VN",
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2">
-                    <strong>Ngày:</strong> {searchData.departureDate}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Giá vé:</strong> {formatPrice(seatDialogTrip.price)}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Use dialog-specific seat data and loading states */}
-            {dialogSeatLoading ? (
-              renderSimpleLoading("Đang tải sơ đồ ghế...")
-            ) : dialogSeatError ? (
-              renderErrorState(
-                dialogSeatError,
-                () => seatDialogTrip && handleOpenSeatDialog(seatDialogTrip)
-              )
-            ) : seatDialogTrip.tripType === "transfer" && dialogFirstSeats.length + dialogSecondSeats.length > 0 ? (
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                    Chặng 1: {seatDialogTrip.firstTrip?.fromLocation} → {seatDialogTrip.firstTrip?.endLocation}
-                  </Typography>
-                  {renderSeatDiagram(dialogFirstSeats, false)}
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                    Chặng 2: {seatDialogTrip.secondTrip?.fromLocation} → {seatDialogTrip.secondTrip?.endLocation}
-                  </Typography>
-                  {renderSeatDiagram(dialogSecondSeats, false)}
-                </Box>
-              </Box>
-            ) : (
-              // Fallback for direct trips
-              renderSeatDiagram(dialogSeats, false)
-            )}
-          </Box>
-        )}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3 }}>
-        <Button onClick={handleCloseSeatDialog} variant="outlined">
-          Đóng
-        </Button>
-        <Button
-          onClick={() => {
-            if (seatDialogTrip) {
-              handleSelectTrip(seatDialogTrip);
-              handleCloseSeatDialog();
-            }
-          }}
-          variant="contained"
-          sx={{
-            bgcolor: "#f48fb1",
-            "&:hover": { bgcolor: "#e91e63" },
-          }}
-        >
-          Chọn chuyến này
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+  // Seat dialog removed as per request
+  const renderSeatDialog = () => null;
 
   // Custom loading component
   function renderLoading() {
@@ -6895,8 +7010,7 @@ export default function BookingPage() {
         </>
       )}
 
-      {/* Seat Dialog */}
-      {renderSeatDialog()}
+  {/* Seat Dialog removed */}
     </Box>
   );
 }

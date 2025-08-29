@@ -23,6 +23,13 @@ interface SeatMapProps {
   floorDisplay?: 'all' | 'toggle';
   initialFloor?: number;
   floorLabels?: Record<number, string>; // e.g. {1: 'Chặng 1', 2: 'Chặng 2'}
+  /**
+   * selectionKey determines which field is used to match against selectedSeats.
+   * 'seatId' (default) uses display seat code (may duplicate across trips/legs).
+   * 'id' uses backend numeric id (unique per seat in API layer).
+   * 'auto' prefers backend id if present else falls back to seatId.
+   */
+  selectionKey?: 'seatId' | 'id' | 'auto';
 }
 
 const SeatMap: React.FC<SeatMapProps> = ({
@@ -35,7 +42,8 @@ const SeatMap: React.FC<SeatMapProps> = ({
   disabled = false,
   floorDisplay = 'all',
   initialFloor,
-  floorLabels
+  floorLabels,
+  selectionKey = 'seatId'
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -50,7 +58,6 @@ const SeatMap: React.FC<SeatMapProps> = ({
     return acc;
   }, {} as Record<number, SeatData[]>);
 
-  // Sort seats by row and column
   Object.keys(seatsByFloor).forEach(floorIndex => {
     seatsByFloor[Number(floorIndex)].sort((a, b) => {
       if (a.rowIndex !== b.rowIndex) {
@@ -70,10 +77,17 @@ const SeatMap: React.FC<SeatMapProps> = ({
     }
   }, [floorDisplay, activeFloor, availableFloors.join(',')]);
 
+  // Resolve selection identity key for a seat
+  const resolveKey = React.useCallback((seat: SeatData) => {
+    if (selectionKey === 'id') return seat.id !== undefined ? String(seat.id) : seat.seatId;
+    if (selectionKey === 'auto') return seat.id !== undefined ? String(seat.id) : seat.seatId;
+    return seat.seatId; // 'seatId'
+  }, [selectionKey]);
+
   // Color logic (priority: selected > booked > available)
   const getSeatColor = (seat: SeatData) => {
     if (!seat.isSeat) return 'transparent';
-    if (selectedSeats.includes(seat.seatId)) return theme.palette.primary.main;
+    if (selectedSeats.includes(resolveKey(seat))) return theme.palette.primary.main;
     if (!seat.isAvailable) return theme.palette.error.main; // Booked
     return theme.palette.success.main; // Available
   };
@@ -102,7 +116,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
     if (disabled || !onSeatClick || !seat.isSeat) return;
     
     // Check if seat is already selected
-    const isSelected = selectedSeats.includes(seat.seatId);
+  const isSelected = selectedSeats.includes(resolveKey(seat));
     
     // If trying to select and already at max, don't allow
     if (!isSelected && selectedSeats.length >= maxSeats) return;
@@ -190,7 +204,26 @@ const SeatMap: React.FC<SeatMapProps> = ({
           {sortedRows.map(rowIndex => {
             const rowSeats = seatsByRow[rowIndex];
             const numericRowIndex = rowIndex;
-            const rowLabel = String.fromCharCode(64 + numericRowIndex + inferredOffset); // apply offset
+            // --- Row label sanitization ---
+            // Original logic tried to infer an alphanumeric offset from seatId letters which could
+            // yield large char codes and strange Unicode (e.g. ʌ, ʖ, ʠ). We constrain labels to
+            // spreadsheet style A, B, C ... Z, AA, AB ... based on visual order instead.
+            const orderIndex = sortedRows.indexOf(rowIndex); // 0-based visual order
+            const indexToLetters = (n: number) => {
+              let s = '';
+              let x = n + 1; // convert to 1-based
+              while (x > 0) {
+                const mod = (x - 1) % 26;
+                s = String.fromCharCode(65 + mod) + s;
+                x = Math.floor((x - 1) / 26);
+              }
+              return s;
+            };
+            // Try original inferred letter if it's within A-Z; otherwise fallback to sequence mapping.
+            const tentativeCode = 64 + numericRowIndex + inferredOffset;
+            const rowLabel = (tentativeCode >= 65 && tentativeCode <= 90)
+              ? String.fromCharCode(tentativeCode)
+              : indexToLetters(orderIndex);
             
             return (
               <Box key={rowIndex} sx={{ display: 'flex', alignItems: 'center', gap: compact ? 0.5 : 1 }}>
@@ -232,7 +265,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
                           cursor: clickable ? 'pointer' : 'default',
                           bgcolor: getSeatColor(seat),
                           color: seat.isSeat ? 'white' : 'text.disabled',
-                          border: seat.isSeat ? `1px solid ${selectedSeats.includes(seat.seatId) ? theme.palette.primary.dark : theme.palette.divider}` : '1px dashed transparent',
+                          border: seat.isSeat ? `1px solid ${selectedSeats.includes(resolveKey(seat)) ? theme.palette.primary.dark : theme.palette.divider}` : '1px dashed transparent',
                           transition: 'all 0.15s ease',
                           '&:hover': clickable ? {
                             transform: 'scale(1.08)',

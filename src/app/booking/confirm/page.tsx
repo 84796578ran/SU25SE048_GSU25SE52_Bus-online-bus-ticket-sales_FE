@@ -28,16 +28,52 @@ function BookingConfirmContent() {
     }
 
     const responseCode = searchParams?.get("vnp_ResponseCode");
+    
     if (responseCode === "00") {
       setStatus("success");
-      // Redirect to booking page with payment success status
+      
+      // Try to extract referenceId from VNPay response
+      const txnRef = searchParams?.get("vnp_TxnRef"); // Transaction reference
+      const orderInfo = searchParams?.get("vnp_OrderInfo"); // Order info
+      
+      console.log("✅ VNPay payment success:", {
+        responseCode,
+        txnRef,
+        orderInfo,
+        allParams: Object.fromEntries(searchParams?.entries() || [])
+      });
+      
+      // Try to extract referenceId from transaction reference or order info
+      let referenceId: string | null = null;
+      if (txnRef) {
+        referenceId = txnRef;
+      } else if (orderInfo) {
+        // Try to extract referenceId from order info if it contains the ID
+        const match = orderInfo.match(/(\d{18,})/); // Look for long numeric IDs
+        if (match) {
+          referenceId = match[1];
+        }
+      }
+      
+      // Redirect to booking page with payment success status and referenceId if available
       setTimeout(() => {
-        router.push("/booking?paymentStatus=success");
+        if (referenceId) {
+          router.push(`/booking?paymentStatus=success&referenceId=${referenceId}`);
+        } else {
+          router.push("/booking?paymentStatus=success");
+        }
       }, 2000);
     } else {
       setStatus("fail");
       // Get error message from VNPay response
       const errorMessage = searchParams?.get("vnp_Message") || "Thanh toán thất bại hoặc đã bị hủy";
+      
+      console.log("❌ VNPay payment failed:", {
+        responseCode,
+        errorMessage,
+        allParams: Object.fromEntries(searchParams?.entries() || [])
+      });
+      
       // Redirect to booking page with payment failure status and error message
       setTimeout(() => {
         router.push(`/booking?paymentStatus=failed&paymentError=${encodeURIComponent(errorMessage)}`);
