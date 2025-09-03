@@ -23,7 +23,6 @@ import {
   Visibility,
   VisibilityOff,
   Google,
-  Facebook,
   Email,
   Lock,
   ArrowBack,
@@ -46,7 +45,7 @@ function LoginTemplateContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
-  const [isClearingGoogleSession, setIsClearingGoogleSession] = useState(false);
+  // Removed clear Google session feature
   
   // Debug option: Set to true to disable redirect and see API response
   const DEBUG_MODE = false; // Disabled for production
@@ -378,27 +377,7 @@ function LoginTemplateContent() {
     }
   };
 
-  const handleClearGoogleSession = async () => {
-    setIsClearingGoogleSession(true);
-    setError('');
-    setErrorType('default');
-    
-    try {
-      await authService.clearGoogleSession();
-      setError('✅ Đã xóa phiên đăng nhập Google. Bây giờ bạn có thể chọn tài khoản khác khi đăng nhập.');
-      
-      // Clear any stored Google-related data
-      localStorage.removeItem('last_google_code');
-      localStorage.removeItem('last_google_code_time');
-      
-      console.log('🧹 Cleared all Google session data');
-    } catch (err: any) {
-      console.error('Failed to clear Google session:', err);
-      setError('⚠️ Không thể xóa hoàn toàn phiên Google, nhưng vẫn có thể thử đăng nhập.');
-    } finally {
-      setIsClearingGoogleSession(false);
-    }
-  };
+  // Removed handleClearGoogleSession
 
   return (
     <motion.div
@@ -865,12 +844,12 @@ function LoginTemplateContent() {
                     </Typography>
                   </Divider>
 
-                  <Stack direction="row" spacing={3} sx={{ mt: 4 }}>
+                  <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
                     <motion.div
                       initial={{ x: -20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.5, delay: 1.2 }}
-                      style={{ width: '50%' }}
+                      style={{ width: '100%' }}
                     >
                       <motion.div
                         whileHover={{ scale: 1.02, y: -2 }}
@@ -881,13 +860,14 @@ function LoginTemplateContent() {
                           fullWidth
                           startIcon={<Google />}
                           onClick={() => handleSocialLogin('Google')}
-                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
+                          disabled={isGoogleLoading || isLoading}
                           sx={{
-                            py: 2,
+                            py: 2.5,
                             borderRadius: 3,
                             borderColor: 'rgba(219, 68, 55, 0.3)',
                             color: '#db4437',
                             fontWeight: 600,
+                            fontSize: '1.1rem',
                             textTransform: 'none',
                             background: 'rgba(219, 68, 55, 0.02)',
                             transition: 'all 0.3s ease',
@@ -904,91 +884,13 @@ function LoginTemplateContent() {
                             }
                           }}
                         >
-                          {isGoogleLoading ? 'Đang kết nối Google...' : 'Google'}
+                          {isGoogleLoading ? 'Đang kết nối Google...' : 'Đăng nhập bằng Google'}
                         </Button>
                       </motion.div>
                     </motion.div>
-                    
-                    <motion.div
-                      initial={{ x: 20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 1.3 }}
-                      style={{ width: '50%' }}
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="outlined"
-                          fullWidth
-                          startIcon={<Facebook />}
-                          onClick={() => handleSocialLogin('Facebook')}
-                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
-                          sx={{
-                            py: 2,
-                            borderRadius: 3,
-                            borderColor: 'rgba(59, 89, 152, 0.3)',
-                            color: '#3b5998',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            background: 'rgba(59, 89, 152, 0.02)',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              borderColor: '#3b5998',
-                              background: 'rgba(59, 89, 152, 0.08)',
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 6px 20px rgba(59, 89, 152, 0.2)',
-                            },
-                          }}
-                        >
-                          Facebook
-                        </Button>
-                      </motion.div>
-                    </motion.div>
-                  </Stack>
+                  </Box>
 
-                  {/* Clear Google Session Button */}
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 1.4 }}
-                  >
-                    <Box sx={{ mt: 3, textAlign: 'center' }}>
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={handleClearGoogleSession}
-                          disabled={isClearingGoogleSession || isGoogleLoading || isLoading}
-                          sx={{
-                            color: '#666',
-                            fontSize: '0.875rem',
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            px: 2,
-                            py: 1,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              color: '#db4437',
-                              background: 'rgba(219, 68, 55, 0.05)',
-                            },
-                            '&:disabled': {
-                              color: '#999',
-                            }
-                          }}
-                        >
-                          {isClearingGoogleSession ? '🔄 Đang xóa phiên Google...' : '🧹 Xóa phiên đăng nhập Google'}
-                        </Button>
-                      </motion.div>
-                                             <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                         Dùng khi muốn đăng nhập với tài khoản Google khác
-                       </Typography>
-                    </Box>
-                  </motion.div>
+                  {/* Clear Google session feature removed */}
                 </Box>
               </motion.div>
 

@@ -20,6 +20,7 @@ import {
   Chip,
   useTheme,
   Skeleton,
+  Snackbar,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
@@ -237,6 +238,28 @@ export default function BookingPage() {
   const [completed, setCompleted] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<"success" | "failed" | null>(null);
   const [paymentError, setPaymentError] = useState<string>("");
+  
+  // Notification state
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+  });
+  
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({
+      open: true,
+      message,
+      severity: type
+    });
+  };
+
+  const handleCloseNotification = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification(prev => ({ ...prev, open: false }));
+  };
   const [vnpayPayload, setVnpayPayload] = useState<VNPayPayloadType | null>(
     null
   );
@@ -952,17 +975,17 @@ export default function BookingPage() {
       if (searchData.tripType === "roundTrip") {
         // Round-trip validation: need both departure and return trips
         if (!selectedDepartureTrip) {
-          alert("Vui lòng chọn chuyến đi");
+          showNotification("Vui lòng chọn chuyến đi", "error");
           return;
         }
         if (!selectedReturnTrip) {
-          alert("Vui lòng chọn chuyến về");
+          showNotification("Vui lòng chọn chuyến về", "error");
           return;
         }
       } else {
         // One-way validation
         if (!selectedTrip && !selectedDepartureTrip) {
-          alert("Vui lòng chọn một chuyến xe");
+          showNotification("Vui lòng chọn một chuyến xe", "error");
           return;
         }
       }
@@ -978,30 +1001,30 @@ export default function BookingPage() {
         // Outbound
         if (isDepartureTransfer) {
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến đi");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến đi", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến đi");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến đi", "error");
             return;
           }
         } else if (selectedDepartureSeats.length === 0) {
-          alert("Vui lòng chọn ít nhất một ghế cho chuyến đi");
+          showNotification("Vui lòng chọn ít nhất một ghế cho chuyến đi", "error");
           return;
         }
 
         // Return
         if (isReturnTransfer) {
           if (selectedReturnFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến về");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến về", "error");
             return;
           }
           if (selectedReturnSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến về");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến về", "error");
             return;
           }
         } else if (selectedReturnSeats.length === 0) {
-          alert("Vui lòng chọn ít nhất một ghế cho chuyến về");
+          showNotification("Vui lòng chọn ít nhất một ghế cho chuyến về", "error");
           return;
         }
       } else {
@@ -1009,18 +1032,18 @@ export default function BookingPage() {
         if (selectedTrip?.tripType === "transfer") {
           // Transfer trip validation: need seats for both legs
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2", "error");
             return;
           }
         } else {
           // Regular one-way validation
           const currentSelectedSeats = selectedSeats.length > 0 ? selectedSeats : selectedDepartureSeats;
           if (currentSelectedSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế");
+            showNotification("Vui lòng chọn ít nhất một ghế", "error");
             return;
           }
         }
@@ -1031,19 +1054,19 @@ export default function BookingPage() {
     if (activeStep === 2) {
       // Pickup point no longer required
       if (!paymentMethod) {
-        alert("Vui lòng chọn phương thức thanh toán");
+        showNotification("Vui lòng chọn phương thức thanh toán", "error");
         return;
       }
       // Validate phone number
       if (isAuthenticated && isPhoneEditable && (!customerPhoneNumber || customerPhoneNumber.trim().length === 0)) {
-        alert("Vui lòng nhập số điện thoại");
+        showNotification("Vui lòng nhập số điện thoại", "error");
         return;
       }
       // Basic phone number validation
       if (isAuthenticated && customerPhoneNumber && customerPhoneNumber.trim().length > 0) {
         const phoneRegex = /^[0-9]{10,11}$/;
         if (!phoneRegex.test(customerPhoneNumber.replace(/\s/g, ''))) {
-          alert("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số");
+          showNotification("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số", "error");
           return;
         }
       }
@@ -1429,14 +1452,14 @@ export default function BookingPage() {
   // Handle phone number save/update
   const handleSavePhoneNumber = async () => {
     if (!customerPhoneNumber || customerPhoneNumber.trim().length === 0) {
-      alert("Vui lòng nhập số điện thoại");
+      showNotification("Vui lòng nhập số điện thoại", "error");
       return;
     }
 
     // Basic phone number validation
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(customerPhoneNumber.replace(/\s/g, ''))) {
-      alert("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số");
+      showNotification("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số", "error");
       return;
     }
 
@@ -1452,7 +1475,7 @@ export default function BookingPage() {
       
       if (!userId || isNaN(userId)) {
         console.error("❌ No valid user ID found for phone update");
-        alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
+        showNotification("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", "error");
         return;
       }
 
@@ -1480,11 +1503,11 @@ export default function BookingPage() {
       console.log("✅ Phone number saved successfully");
       
       // Show success notification
-      alert("Cập nhật số điện thoại thành công!");
+      showNotification("Cập nhật số điện thoại thành công!", "success");
       
     } catch (error) {
       console.error("❌ Error saving phone number:", error);
-      alert("Có lỗi xảy ra khi lưu số điện thoại. Vui lòng thử lại.");
+      showNotification("Có lỗi xảy ra khi lưu số điện thoại. Vui lòng thử lại.", "error");
     } finally {
       setIsPhoneUpdating(false);
     }
@@ -1532,7 +1555,7 @@ export default function BookingPage() {
       if (isRoundTrip) {
         // Chuyến khứ hồi - sử dụng departure và return trip riêng biệt
         if (!selectedDepartureTrip) {
-          alert("Vui lòng chọn chuyến đi và ghế cho chuyến đi!");
+          showNotification("Vui lòng chọn chuyến đi và ghế cho chuyến đi!", "error");
           return;
         }
         const isDepartureTransfer = (selectedDepartureTrip as any).tripType === "transfer" && (selectedDepartureTrip as any).firstTrip && (selectedDepartureTrip as any).secondTrip;
@@ -1540,11 +1563,11 @@ export default function BookingPage() {
         if (isDepartureTransfer) {
           // Cần ghế cho cả 2 chặng của chuyến đi
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chặng 1 của chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chặng 1 của chuyến đi!", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chặng 2 của chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chặng 2 của chuyến đi!", "error");
           return;
         }
 
@@ -1566,7 +1589,7 @@ export default function BookingPage() {
         } else {
           // Chuyến đi thẳng
           if (selectedDepartureSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chuyến đi!", "error");
             return;
           }
         tripSeats = [
@@ -1586,11 +1609,11 @@ export default function BookingPage() {
           if (isReturnTransfer) {
             // Cần ghế cho cả 2 chặng của chuyến về
             if (selectedReturnFirstLegSeats.length === 0) {
-              alert("Vui lòng chọn ghế cho chặng 1 của chuyến về!");
+              showNotification("Vui lòng chọn ghế cho chặng 1 của chuyến về!", "error");
               return;
             }
             if (selectedReturnSecondLegSeats.length === 0) {
-              alert("Vui lòng chọn ghế cho chặng 2 của chuyến về!");
+              showNotification("Vui lòng chọn ghế cho chặng 2 của chuyến về!", "error");
               return;
             }
 
@@ -1667,14 +1690,14 @@ export default function BookingPage() {
       } else {
         // Chuyến một chiều (bao gồm cả transfer trip)
         if (!selectedTrip) {
-          alert("Vui lòng chọn chuyến xe!");
+          showNotification("Vui lòng chọn chuyến xe!", "error");
           return;
         }
 
         if (selectedTrip.tripType === "transfer") {
           // Transfer trip - cần 2 tripSeats cho 2 chặng
           if (selectedFirstLegSeats.length === 0 || selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho cả hai chặng!");
+            showNotification("Vui lòng chọn ghế cho cả hai chặng!", "error");
             return;
           }
 
@@ -1720,7 +1743,7 @@ export default function BookingPage() {
         } else {
           // Regular one-way trip
           if (selectedSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế!");
+            showNotification("Vui lòng chọn ít nhất một ghế!", "error");
             return;
           }
 
@@ -7011,6 +7034,23 @@ export default function BookingPage() {
       )}
 
   {/* Seat Dialog removed */}
+    
+    {/* Notification Snackbar */}
+    <Snackbar
+      open={notification.open}
+      autoHideDuration={6000}
+      onClose={handleCloseNotification}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+      <Alert
+        onClose={handleCloseNotification}
+        severity={notification.severity}
+        sx={{ width: '100%' }}
+        variant="filled"
+      >
+        {notification.message}
+      </Alert>
+    </Snackbar>
     </Box>
   );
 }

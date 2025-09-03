@@ -24,7 +24,6 @@ import {
   Visibility,
   VisibilityOff,
   Google,
-  Facebook,
   Email,
   Lock,
   ArrowBack,
@@ -47,7 +46,7 @@ export default function LoginTemplatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
-  const [isClearingGoogleSession, setIsClearingGoogleSession] = useState(false);
+  // Removed clear Google session feature
   const [hasPendingSearch, setHasPendingSearch] = useState(false);
   
   // Debug option: Set to true to disable redirect and see API response
@@ -498,27 +497,7 @@ export default function LoginTemplatePage() {
     }
   };
 
-  const handleClearGoogleSession = async () => {
-    setIsClearingGoogleSession(true);
-    setError('');
-    setErrorType('default');
-    
-    try {
-      await authService.clearGoogleSession();
-      setError('✅ Đã xóa phiên đăng nhập Google. Bây giờ bạn có thể chọn tài khoản khác khi đăng nhập.');
-      
-      // Clear any stored Google-related data
-      localStorage.removeItem('last_google_code');
-      localStorage.removeItem('last_google_code_time');
-      
-      console.log('🧹 Cleared all Google session data');
-    } catch (err: any) {
-      console.error('Failed to clear Google session:', err);
-      setError('⚠️ Không thể xóa hoàn toàn phiên Google, nhưng vẫn có thể thử đăng nhập.');
-    } finally {
-      setIsClearingGoogleSession(false);
-    }
-  };
+  // Removed handleClearGoogleSession
 
   return (
     <motion.div
@@ -1019,7 +998,7 @@ export default function LoginTemplatePage() {
                           fullWidth
                           startIcon={<Google />}
                           onClick={() => handleSocialLogin('Google')}
-                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
+                          disabled={isGoogleLoading || isLoading}
                           sx={{
                             py: 2,
                             borderRadius: 3,
@@ -1047,86 +1026,10 @@ export default function LoginTemplatePage() {
                       </motion.div>
                     </motion.div>
                     
-                    <motion.div
-                      initial={{ x: 20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 1.3 }}
-                      style={{ width: '50%' }}
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="outlined"
-                          fullWidth
-                          startIcon={<Facebook />}
-                          onClick={() => handleSocialLogin('Facebook')}
-                          disabled={isGoogleLoading || isLoading || isClearingGoogleSession}
-                          sx={{
-                            py: 2,
-                            borderRadius: 3,
-                            borderColor: 'rgba(59, 89, 152, 0.3)',
-                            color: '#3b5998',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            background: 'rgba(59, 89, 152, 0.02)',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              borderColor: '#3b5998',
-                              background: 'rgba(59, 89, 152, 0.08)',
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 6px 20px rgba(59, 89, 152, 0.2)',
-                            },
-                          }}
-                        >
-                          Facebook
-                        </Button>
-                      </motion.div>
-                    </motion.div>
+                    {/* Facebook login removed */}
                   </Stack>
 
-                  {/* Clear Google Session Button */}
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 1.4 }}
-                  >
-                    <Box sx={{ mt: 3, textAlign: 'center' }}>
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={handleClearGoogleSession}
-                          disabled={isClearingGoogleSession || isGoogleLoading || isLoading}
-                          sx={{
-                            color: '#666',
-                            fontSize: '0.875rem',
-                            textTransform: 'none',
-                            borderRadius: 2,
-                            px: 2,
-                            py: 1,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              color: '#db4437',
-                              background: 'rgba(219, 68, 55, 0.05)',
-                            },
-                            '&:disabled': {
-                              color: '#999',
-                            }
-                          }}
-                        >
-                          {isClearingGoogleSession ? '🔄 Đang xóa phiên Google...' : '🧹 Xóa phiên đăng nhập Google'}
-                        </Button>
-                      </motion.div>
-                                             <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                         Dùng khi muốn đăng nhập với tài khoản Google khác
-                       </Typography>
-                    </Box>
-                  </motion.div>
+                  {/* Clear Google session feature removed */}
                 </Box>
               </motion.div>
 

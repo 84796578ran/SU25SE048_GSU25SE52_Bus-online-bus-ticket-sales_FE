@@ -492,7 +492,7 @@ export default function BusTicketHomePage() {
 
     // Validate required fields before proceeding
     if (!searchData.from || !searchData.to || !searchData.fromStation || !searchData.toStation || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
-      alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
+      showNotification('Vui lòng điền đầy đủ thông tin tìm kiếm', 'error');
       return;
     }
 
@@ -1420,9 +1420,9 @@ export default function BusTicketHomePage() {
                             fullWidth
                             options={locations}
                             getOptionLabel={(option) => option.name}
+                            getOptionKey={(option) => `location-${option.id}`}
                             value={searchData.from}
                             onChange={(event, newValue) => {
-                              // Validate: prevent selecting same location for both from and to
                               if (newValue && searchData.to && newValue.id === searchData.to.id) {
                                 showNotification('Không thể chọn cùng một địa điểm cho điểm đi và điểm đến', 'error');
                                 return;
@@ -1485,6 +1485,7 @@ export default function BusTicketHomePage() {
                             fullWidth
                             options={fromStations}
                             getOptionLabel={(option) => option.name}
+                            getOptionKey={(option) => `from-station-${option.id}`}
                             value={searchData.fromStation}
                             onChange={(event, newValue) => {
                               setSearchData(prev => ({
@@ -1573,6 +1574,7 @@ export default function BusTicketHomePage() {
                             fullWidth
                             options={locations}
                             getOptionLabel={(option) => option.name}
+                            getOptionKey={(option) => `location-to-${option.id}`}
                             value={searchData.to}
                             onChange={(event, newValue) => {
                               // Validate: prevent selecting same location for both from and to
@@ -1638,6 +1640,7 @@ export default function BusTicketHomePage() {
                             fullWidth
                             options={toStations}
                             getOptionLabel={(option) => option.name}
+                            getOptionKey={(option) => `to-station-${option.id}`}
                             value={searchData.toStation}
                             onChange={(event, newValue) => {
                               setSearchData(prev => ({

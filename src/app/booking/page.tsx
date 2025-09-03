@@ -49,6 +49,7 @@ import {
   AccessTime,
   LocalShipping,
   ShoppingCart,
+  Route,
   CreditCard,
   Star,
   StarBorder,
@@ -281,6 +282,15 @@ function BookingContent() {
     message: '',
     type: 'success'
   });
+
+  // Helper function for showing notifications
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setNotification({
+      open: true,
+      message,
+      type
+    });
+  };
 
   // Seat availability by trip id for displaying in trip cards
   const [seatAvailabilityByTrip, setSeatAvailabilityByTrip] = useState<
@@ -1112,17 +1122,17 @@ function BookingContent() {
       if (searchData.tripType === "roundTrip") {
         // Round-trip validation: need both departure and return trips
         if (!selectedDepartureTrip) {
-          alert("Vui lòng chọn chuyến đi");
+          showNotification("Vui lòng chọn chuyến đi", "error");
           return;
         }
         if (!selectedReturnTrip) {
-          alert("Vui lòng chọn chuyến về");
+          showNotification("Vui lòng chọn chuyến về", "error");
           return;
         }
       } else {
         // One-way validation
         if (!selectedTrip && !selectedDepartureTrip) {
-          alert("Vui lòng chọn một chuyến xe");
+          showNotification("Vui lòng chọn một chuyến xe", "error");
           return;
         }
       }
@@ -1138,30 +1148,30 @@ function BookingContent() {
         // Outbound
         if (isDepartureTransfer) {
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến đi");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến đi", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến đi");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến đi", "error");
             return;
           }
         } else if (selectedDepartureSeats.length === 0) {
-          alert("Vui lòng chọn ít nhất một ghế cho chuyến đi");
+          showNotification("Vui lòng chọn ít nhất một ghế cho chuyến đi", "error");
           return;
         }
 
         // Return
         if (isReturnTransfer) {
           if (selectedReturnFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến về");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1 của chuyến về", "error");
             return;
           }
           if (selectedReturnSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến về");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2 của chuyến về", "error");
             return;
           }
         } else if (selectedReturnSeats.length === 0) {
-          alert("Vui lòng chọn ít nhất một ghế cho chuyến về");
+          showNotification("Vui lòng chọn ít nhất một ghế cho chuyến về", "error");
           return;
         }
       } else {
@@ -1169,18 +1179,18 @@ function BookingContent() {
         if (selectedTrip?.tripType === "transfer") {
           // Transfer trip validation: need seats for both legs
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 1");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 1", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế cho chặng 2");
+            showNotification("Vui lòng chọn ít nhất một ghế cho chặng 2", "error");
             return;
           }
         } else {
           // Regular one-way validation
           const currentSelectedSeats = selectedSeats.length > 0 ? selectedSeats : selectedDepartureSeats;
           if (currentSelectedSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế");
+            showNotification("Vui lòng chọn ít nhất một ghế", "error");
             return;
           }
         }
@@ -1191,19 +1201,19 @@ function BookingContent() {
     if (activeStep === 2) {
       // Pickup point no longer required
       if (!paymentMethod) {
-        alert("Vui lòng chọn phương thức thanh toán");
+        showNotification("Vui lòng chọn phương thức thanh toán", "error");
         return;
       }
       // Validate phone number
       if (isAuthenticated && isPhoneEditable && (!customerPhoneNumber || customerPhoneNumber.trim().length === 0)) {
-        alert("Vui lòng nhập số điện thoại");
+        showNotification("Vui lòng nhập số điện thoại", "error");
         return;
       }
       // Basic phone number validation
       if (isAuthenticated && customerPhoneNumber && customerPhoneNumber.trim().length > 0) {
         const phoneRegex = /^[0-9]{10,11}$/;
         if (!phoneRegex.test(customerPhoneNumber.replace(/\s/g, ''))) {
-          alert("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số");
+          showNotification("Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số", "error");
           return;
         }
       }
@@ -1705,7 +1715,7 @@ function BookingContent() {
 
       if (isRoundTrip) {
         if (!selectedDepartureTrip) {
-          alert("Vui lòng chọn chuyến đi và ghế cho chuyến đi!");
+          showNotification("Vui lòng chọn chuyến đi và ghế cho chuyến đi!", "error");
           return;
         }
         const isDepartureTransfer = (selectedDepartureTrip as any).tripType === "transfer" && (selectedDepartureTrip as any).firstTrip && (selectedDepartureTrip as any).secondTrip;
@@ -1713,11 +1723,11 @@ function BookingContent() {
         if (isDepartureTransfer) {
           // Cần ghế cho cả 2 chặng của chuyến đi
           if (selectedFirstLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chặng 1 của chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chặng 1 của chuyến đi!", "error");
             return;
           }
           if (selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chặng 2 của chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chặng 2 của chuyến đi!", "error");
           return;
         }
 
@@ -1740,7 +1750,7 @@ function BookingContent() {
         } else {
           // Chuyến đi thẳng
           if (selectedDepartureSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho chuyến đi!");
+            showNotification("Vui lòng chọn ghế cho chuyến đi!", "error");
             return;
           }
         tripSeats = [
@@ -1760,11 +1770,11 @@ function BookingContent() {
           if (isReturnTransfer) {
             // Cần ghế cho cả 2 chặng của chuyến về
             if (selectedReturnFirstLegSeats.length === 0) {
-              alert("Vui lòng chọn ghế cho chặng 1 của chuyến về!");
+              showNotification("Vui lòng chọn ghế cho chặng 1 của chuyến về!", "error");
               return;
             }
             if (selectedReturnSecondLegSeats.length === 0) {
-              alert("Vui lòng chọn ghế cho chặng 2 của chuyến về!");
+              showNotification("Vui lòng chọn ghế cho chặng 2 của chuyến về!", "error");
               return;
             }
 
@@ -1843,14 +1853,14 @@ function BookingContent() {
       } else {
         // Chuyến một chiều (bao gồm cả transfer trip)
         if (!selectedTrip) {
-          alert("Vui lòng chọn chuyến xe!");
+          showNotification("Vui lòng chọn chuyến xe!", "error");
           return;
         }
 
         if (selectedTrip.tripType === "transfer") {
           // Transfer trip - cần 2 tripSeats cho 2 chặng
           if (selectedFirstLegSeats.length === 0 || selectedSecondLegSeats.length === 0) {
-            alert("Vui lòng chọn ghế cho cả hai chặng!");
+            showNotification("Vui lòng chọn ghế cho cả hai chặng!", "error");
             return;
           }
 
@@ -1893,7 +1903,7 @@ function BookingContent() {
         } else {
           // Regular one-way trip
           if (selectedSeats.length === 0) {
-            alert("Vui lòng chọn ít nhất một ghế!");
+            showNotification("Vui lòng chọn ít nhất một ghế!", "error");
             return;
           }
 
@@ -1956,7 +1966,7 @@ function BookingContent() {
       const emptySeatGroup = [...tripSeats, ...returnTripSeats].find(g => !g.seatIds || g.seatIds.length === 0);
       if (emptySeatGroup) {
         console.warn("❌ Blocking submit: found empty seatIds group", emptySeatGroup);
-        alert("Không thể tạo đặt chỗ: danh sách ghế rỗng hoặc không hợp lệ. Vui lòng chọn lại ghế.");
+        showNotification("Không thể tạo đặt chỗ: danh sách ghế rỗng hoặc không hợp lệ. Vui lòng chọn lại ghế.", "error");
         return;
       }
 
@@ -2979,16 +2989,71 @@ function BookingContent() {
               )}
             </Box>
 
-            {/* Seat Map Preview */}
-
-            {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) && (
-              <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                <Info sx={{ fontSize: 16, color: "text.secondary" }} />
-                <Typography variant="caption" color="text.secondary">
-                  {(trip.firstTrip?.routeDescription || trip.secondTrip?.routeDescription) as string} • Có thể đi một phần của chuyến
+            {/* Route Information - Detailed Itinerary */}
+            <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(244, 143, 177, 0.05)", borderRadius: 2, border: "1px solid rgba(244, 143, 177, 0.2)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                <Route sx={{ fontSize: 18, color: "#f48fb1", mr: 1 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#f48fb1" }}>
+                  Lộ trình chi tiết
                 </Typography>
               </Box>
-            )}
+              
+              {/* First Trip Route */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}>
+                  Chặng 1: {trip.firstTrip.fromLocation} → {trip.firstTrip.endLocation}
+                </Typography>
+                {trip.firstTrip.routeDescription && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, fontStyle: "italic" }}>
+                    📍 Lộ trình: {trip.firstTrip.routeDescription}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1 }}>
+                  🚌 Nhà xe: {trip.firstTrip.busName} • ⏰ {formatTimeSafe(trip.firstTrip.timeStart)} - {formatTimeSafe(trip.firstTrip.timeEnd)}
+                </Typography>
+              </Box>
+
+              {/* Transfer Point */}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", my: 1 }}>
+                <Box sx={{ height: 1, flex: 1, bgcolor: "rgba(244, 143, 177, 0.3)" }} />
+                <Typography variant="caption" sx={{ 
+                  mx: 2, 
+                  color: "#f48fb1", 
+                  fontWeight: 600, 
+                  bgcolor: "white", 
+                  px: 2, 
+                  py: 0.5, 
+                  borderRadius: 1, 
+                  border: "1px solid rgba(244, 143, 177, 0.3)" 
+                }}>
+                  🔄 Điểm chuyển xe: {trip.firstTrip.endLocation}
+                </Typography>
+                <Box sx={{ height: 1, flex: 1, bgcolor: "rgba(244, 143, 177, 0.3)" }} />
+              </Box>
+
+              {/* Second Trip Route */}
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}>
+                  Chặng 2: {trip.secondTrip.fromLocation} → {trip.secondTrip.endLocation}
+                </Typography>
+                {trip.secondTrip.routeDescription && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, fontStyle: "italic" }}>
+                    📍 Lộ trình: {trip.secondTrip.routeDescription}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1 }}>
+                  🚌 Nhà xe: {trip.secondTrip.busName} • ⏰ {formatTimeSafe(trip.secondTrip.timeStart)} - {formatTimeSafe(trip.secondTrip.timeEnd)}
+                </Typography>
+              </Box>
+
+              {/* Summary */}
+              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid rgba(244, 143, 177, 0.2)" }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Info sx={{ fontSize: 14 }} />
+                  Tổng thời gian: {trip.totalDuration} • Tổng giá: {formatPrice(trip.price)} • Có thể lên/xuống xe tại các điểm trung gian
+                </Typography>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
       </motion.div>
@@ -3292,12 +3357,37 @@ function BookingContent() {
                                   </Box>
                                 )}
                               </Box>
+                              
+                              {/* Route Information - Detailed Direct Trip Route */}
                               {trip.routeDescription && (
-                                <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Info sx={{ fontSize: 16, color: "text.secondary" }} />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {trip.routeDescription} • Có thể đi một phần của chuyến
-                                  </Typography>
+                                <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(25, 118, 210, 0.05)", borderRadius: 2, border: "1px solid rgba(25, 118, 210, 0.2)" }}>
+                                  <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                                    <Route sx={{ fontSize: 18, color: "#1976d2", mr: 1 }} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                                      Lộ trình chi tiết
+                                    </Typography>
+                                  </Box>
+                                  
+                                  {/* Route Details */}
+                                  <Box sx={{ mb: 1.5 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}>
+                                      Chuyến thẳng: {trip.fromLocation} → {trip.endLocation}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, fontStyle: "italic" }}>
+                                      📍 {trip.routeDescription}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, mt: 0.5 }}>
+                                      🚌 Nhà xe: {trip.busName} • ⏰ {formatTimeSafe(trip.timeStart)} - {formatTimeSafe(trip.timeEnd)} • 💰 {formatPrice(trip.price)}
+                                    </Typography>
+                                  </Box>
+
+                                  {/* Summary */}
+                                  <Box sx={{ pt: 1, borderTop: "1px solid rgba(25, 118, 210, 0.2)" }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                      <Info sx={{ fontSize: 14 }} />
+                                      Chuyến thẳng không cần chuyển xe • Có thể lên/xuống xe tại các điểm trung gian theo lộ trình
+                                    </Typography>
+                                  </Box>
                                 </Box>
                               )}
 
@@ -3457,12 +3547,37 @@ function BookingContent() {
                                     </Box>
                                   )}
                                 </Box>
+                                
+                                {/* Route Information - Detailed Return Trip Route */}
                                 {trip.routeDescription && (
-                                  <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                                    <Info sx={{ fontSize: 16, color: "text.secondary" }} />
-                                    <Typography variant="caption" color="text.secondary">
-                                      {trip.routeDescription} • Có thể đi một phần của chuyến
-                                    </Typography>
+                                  <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(123, 31, 162, 0.05)", borderRadius: 2, border: "1px solid rgba(123, 31, 162, 0.2)" }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                                      <Route sx={{ fontSize: 18, color: "#7b1fa2", mr: 1 }} />
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#7b1fa2" }}>
+                                        Lộ trình chi tiết (Chuyến về)
+                                      </Typography>
+                                    </Box>
+                                    
+                                    {/* Route Details */}
+                                    <Box sx={{ mb: 1.5 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}>
+                                        Chuyến thẳng: {trip.fromLocation} → {trip.endLocation}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, fontStyle: "italic" }}>
+                                        📍 {trip.routeDescription}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, mt: 0.5 }}>
+                                        🚌 Nhà xe: {trip.busName} • ⏰ {formatTimeSafe(trip.timeStart)} - {formatTimeSafe(trip.timeEnd)} • 💰 {formatPrice(trip.price)}
+                                      </Typography>
+                                    </Box>
+
+                                    {/* Summary */}
+                                    <Box sx={{ pt: 1, borderTop: "1px solid rgba(123, 31, 162, 0.2)" }}>
+                                      <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                        <Info sx={{ fontSize: 14 }} />
+                                        Chuyến về thẳng không cần chuyển xe • Có thể lên/xuống xe tại các điểm trung gian theo lộ trình
+                                      </Typography>
+                                    </Box>
                                   </Box>
                                 )}
                               </CardContent>
@@ -3614,12 +3729,37 @@ function BookingContent() {
                               </Box>
                             )}
                           </Box>
+                          
+                          {/* Route Information - Detailed One-way Trip Route */}
                           {trip.routeDescription && (
-                            <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                              <Info sx={{ fontSize: 16, color: "text.secondary" }} />
-                              <Typography variant="caption" color="text.secondary">
-                                {trip.routeDescription} • Có thể đi một phần của chuyến
-                              </Typography>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(244, 143, 177, 0.05)", borderRadius: 2, border: "1px solid rgba(244, 143, 177, 0.2)" }}>
+                              <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                                <Route sx={{ fontSize: 18, color: "#f48fb1", mr: 1 }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#f48fb1" }}>
+                                  Lộ trình chi tiết
+                                </Typography>
+                              </Box>
+                              
+                              {/* Route Details */}
+                              <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}>
+                                  Chuyến thẳng: {trip.fromLocation} → {trip.endLocation}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, fontStyle: "italic" }}>
+                                  📍 {trip.routeDescription}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", pl: 1, mt: 0.5 }}>
+                                  🚌 Nhà xe: {trip.busName} • ⏰ {new Date(trip.timeStart).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - {new Date(trip.timeEnd).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • 💰 {formatPrice(trip.price)}
+                                </Typography>
+                              </Box>
+
+                              {/* Summary */}
+                              <Box sx={{ pt: 1, borderTop: "1px solid rgba(244, 143, 177, 0.2)" }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <Info sx={{ fontSize: 14 }} />
+                                  Chuyến thẳng không cần chuyển xe • Có thể lên/xuống xe tại các điểm trung gian theo lộ trình
+                                </Typography>
+                              </Box>
                             </Box>
                           )}
 

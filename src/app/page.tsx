@@ -646,7 +646,7 @@ function BusTicketHomePageContent() {
 
     // Validate required fields before proceeding
     if (!searchData.from || !searchData.to || !searchData.fromStation || !searchData.toStation || !searchData.departureDate || (tripType === 'roundTrip' && !searchData.returnDate)) {
-      alert('Vui lòng điền đầy đủ thông tin tìm kiếm');
+      showNotification('Vui lòng điền đầy đủ thông tin tìm kiếm', 'error');
       return;
     }
 
