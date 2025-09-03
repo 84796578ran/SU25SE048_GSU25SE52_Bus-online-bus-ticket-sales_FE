@@ -1102,7 +1102,15 @@ function BookingContent() {
     const updateTime = () => {
       const timeElement = document.getElementById('current-time');
       if (timeElement) {
-        timeElement.textContent = new Date().toLocaleString("vi-VN");
+        timeElement.textContent = new Date().toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          year: 'numeric',
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
       }
     };
 
@@ -5898,7 +5906,15 @@ function BookingContent() {
                       {formatPrice(bookingResult.totalPrice)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Thanh toán lúc: {new Date(bookingResult.paymentDate).toLocaleString("vi-VN")}
+                      Thanh toán lúc: {new Date(bookingResult.paymentDate).toLocaleString("vi-VN", { 
+                        timeZone: "Asia/Ho_Chi_Minh",
+                        year: 'numeric',
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
                     </Typography>
                   </Box>
 
@@ -6046,7 +6062,15 @@ function BookingContent() {
                       {formatPrice(bookingResult.totalPrice)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Thời gian: {new Date(bookingResult.paymentDate).toLocaleString("vi-VN")}
+                      Thời gian: {new Date(bookingResult.paymentDate).toLocaleString("vi-VN", { 
+                        timeZone: "Asia/Ho_Chi_Minh",
+                        year: 'numeric',
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
                     </Typography>
                   </Box>
 

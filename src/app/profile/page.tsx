@@ -134,6 +134,7 @@ export default function ProfilePage() {
     try {
       const date = new Date(dateString);
       return date.toLocaleString("vi-VN", {
+        timeZone: "Asia/Ho_Chi_Minh",
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
