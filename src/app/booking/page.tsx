@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Box,
@@ -62,6 +62,7 @@ import { bookingService, VNPayPayloadType } from "@/services/bookingService";
 import authService, { type CustomerProfile } from "@/services/authService";
 import { useAuth } from "@/hooks/useAuth";
 import SeatMap from "@/components/SeatMap";
+import { useSeatRealtime } from "@/hooks/useSeatRealtime";
 
 interface BaseTripType {
   id: number;
@@ -242,6 +243,18 @@ function BookingContent() {
     totalPrice: number;
     paymentDate: string;
   } | null>(null);
+
+  // Realtime seat locks: compute relevant tripIds then subscribe
+  const realtimeTripIds = useMemo(() => {
+    const ids: number[] = [];
+    const push = (n?: number) => { if (typeof n === 'number' && !isNaN(n)) ids.push(n); };
+    const addTrip = (t: any) => { if (!t) return; if (t.tripType === 'transfer') { push(t.firstTrip?.id); push(t.secondTrip?.id); } else { push(t.id); } };
+    addTrip(selectedTrip || selectedDepartureTrip);
+    if (searchData.tripType === 'roundTrip') addTrip(selectedReturnTrip);
+    return Array.from(new Set(ids));
+  }, [selectedTrip, selectedDepartureTrip, selectedReturnTrip, searchData.tripType]);
+
+  const { externallyLockedSeatIds } = useSeatRealtime({ tripIds: realtimeTripIds });
   const [bookingResultLoading, setBookingResultLoading] = useState<boolean>(false);
   const [bookingResultError, setBookingResultError] = useState<string>("");
 
@@ -832,6 +845,7 @@ function BookingContent() {
             }
           }}
           selectedSeats={selectedSeatIds}
+          externalLockedSeatIds={externallyLockedSeatIds}
           maxSeats={4}
           showLegend={true}
           compact={false}
@@ -1406,6 +1420,18 @@ function BookingContent() {
                   console.log(`  + ${key}:`, response[key]);
                 });
 
+                // Nếu backend trả về { success: false, message: "..." } thì hiển thị thông báo lỗi ngay
+                if (response && (response as any).success === false) {
+                  const apiMessage = (response as any).message || "Có lỗi xảy ra khi xử lý thanh toán";
+                  console.warn("⚠️ API trả về thất bại:", apiMessage);
+                  setPaymentStatus("failed");
+                  setPaymentError(apiMessage);
+                  setCompleted(true);
+                  // Không có redirect, đánh dấu đã khôi phục dữ liệu để hiển thị lỗi ngay
+                  setBookingDataRestored(true);
+                  return;
+                }
+
                 // Kiểm tra các khả năng có thể của paymentUrl
                 const paymentUrl = response.paymentUrl || 
                                   response.payment_url || 
@@ -1459,6 +1485,7 @@ function BookingContent() {
                   setPaymentStatus("failed");
                   setPaymentError("Không thể tạo URL thanh toán. Vui lòng thử lại.");
                   setCompleted(true);
+                  setBookingDataRestored(true);
                   return;
                 }
               }
@@ -1467,6 +1494,7 @@ function BookingContent() {
               setPaymentStatus("failed");
               setPaymentError("Không nhận được phản hồi từ server");
               setCompleted(true);
+              setBookingDataRestored(true);
               return;
             }
           } catch (error: any) {
@@ -1486,6 +1514,7 @@ function BookingContent() {
             setPaymentStatus("failed");
             setPaymentError(error.message || "Có lỗi xảy ra khi xử lý thanh toán");
             setCompleted(true);
+            setBookingDataRestored(true);
             return;
           }
         }
@@ -5750,6 +5779,10 @@ function BookingContent() {
     
     // Show loading while fetching booking result
     if (paymentStatus && !bookingDataRestored) {
+      // Nếu đã có trạng thái thất bại và có thông điệp lỗi, hiển thị ngay thay vì đợi restore
+      if (paymentStatus === "failed" && paymentError) {
+        // fall through to render failed template below
+      } else {
       return (
         <Box sx={{ my: 8, textAlign: "center" }}>
           <CircularProgress sx={{ color: '#f48fb1' }} />
@@ -5758,6 +5791,7 @@ function BookingContent() {
           </Typography>
         </Box>
       );
+      }
     }
 
     // Show error if failed to fetch booking result
@@ -7662,6 +7696,7 @@ function BookingContent() {
             }
           }}
           selectedSeats={selectedSeatIdsDirect}
+          externalLockedSeatIds={externallyLockedSeatIds}
           maxSeats={999}
           showLegend={true}
           compact={false}
@@ -7787,6 +7822,7 @@ function BookingContent() {
           }
         }}
         selectedSeats={selectedSeatIds}
+        externalLockedSeatIds={externallyLockedSeatIds}
         maxSeats={999}
         showLegend={true}
         compact={false}

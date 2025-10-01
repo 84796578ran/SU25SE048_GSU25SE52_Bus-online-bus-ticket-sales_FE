@@ -30,6 +30,11 @@ interface SeatMapProps {
    * 'auto' prefers backend id if present else falls back to seatId.
    */
   selectionKey?: 'seatId' | 'id' | 'auto';
+  /**
+   * externalLockedSeatIds: string ids (backend seat id) that are currently locked by others.
+   * These will be rendered as unavailable to avoid conflicts.
+   */
+  externalLockedSeatIds?: Set<string>;
 }
 
 const SeatMap: React.FC<SeatMapProps> = ({
@@ -43,7 +48,8 @@ const SeatMap: React.FC<SeatMapProps> = ({
   floorDisplay = 'all',
   initialFloor,
   floorLabels,
-  selectionKey = 'seatId'
+  selectionKey = 'seatId',
+  externalLockedSeatIds
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -88,7 +94,8 @@ const SeatMap: React.FC<SeatMapProps> = ({
   const getSeatColor = (seat: SeatData) => {
     if (!seat.isSeat) return 'transparent';
     if (selectedSeats.includes(resolveKey(seat))) return theme.palette.primary.main;
-    if (!seat.isAvailable) return theme.palette.error.main; // Booked
+    const externallyLocked = externalLockedSeatIds?.has(String(seat.id ?? seat.seatId));
+    if (!seat.isAvailable || externallyLocked) return theme.palette.error.main; // Booked or locked
     return theme.palette.success.main; // Available
   };
 
@@ -250,7 +257,8 @@ const SeatMap: React.FC<SeatMapProps> = ({
                       columnIndex: col,
                     } as SeatData;
                     const key = seat.id !== undefined ? `${floorIndex}-${seat.id}` : `${floorIndex}-${numericRowIndex}-${col}`;
-                    const clickable = seat.isSeat && seat.isAvailable && !disabled;
+                    const externallyLocked = externalLockedSeatIds?.has(String(seat.id ?? seat.seatId));
+                    const clickable = seat.isSeat && seat.isAvailable && !externallyLocked && !disabled;
                     return (
                       <Box
                         key={key}
@@ -276,7 +284,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
                         }}
                       >
                         {getSeatIcon(seat)}
-                        {seat.isSeat && !seat.isAvailable && (
+                        {seat.isSeat && (!seat.isAvailable || externallyLocked) && (
                           <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 1, pointerEvents: 'none' }} />
                         )}
                       </Box>

@@ -37,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import Link from "next/link";
 import { apiClient } from "@/services/api";
+import { useSeatRealtime } from "@/hooks/useSeatRealtime";
 import { bookingService, VNPayPayloadType } from "@/services/bookingService";
 import authService, { type CustomerProfile } from "@/services/authService";
 import { useAuth } from "@/hooks/useAuth";
@@ -203,6 +204,20 @@ export default function BookingPage() {
   const [returnSecondLegSeats, setReturnSecondLegSeats] = useState<SeatType[]>([]);
   const [selectedReturnFirstLegSeats, setSelectedReturnFirstLegSeats] = useState<SeatType[]>([]);
   const [selectedReturnSecondLegSeats, setSelectedReturnSecondLegSeats] = useState<SeatType[]>([]);
+
+  // Realtime seat lock subscription per active trips and segment
+  const realtimeTripIds = useMemo(() => {
+    const ids: number[] = [];
+    const push = (n?: number) => { if (typeof n === 'number' && !isNaN(n)) ids.push(n); };
+    const addTrip = (t: any) => { if (!t) return; if (t.tripType === 'transfer') { push(t.firstTrip?.id); push(t.secondTrip?.id); } else { push(t.id); } };
+    addTrip(selectedTrip || selectedDepartureTrip);
+    if (searchData.tripType === 'roundTrip') addTrip(selectedReturnTrip);
+    return Array.from(new Set(ids));
+  }, [selectedTrip, selectedDepartureTrip, selectedReturnTrip, searchData.tripType]);
+
+  const { externallyLockedSeatIds } = useSeatRealtime({
+    tripIds: realtimeTripIds,
+  });
 
   // Fallback partition for return transfer trip if not already partitioned
   useEffect(() => {
@@ -701,7 +716,7 @@ export default function BookingPage() {
         {date}
       </Typography>
       {renderSeatDiagram(
-        seats.map(seat => ({ ...seat, isSelected: selectedSeats.some(s => s.id === seat.id) })),
+        seats.map(seat => ({ ...seat, isSelected: selectedSeats.some(s => s.id === seat.id), isBooked: seat.isBooked || (externallyLockedSeatIds?.has(String(seat.id)) ?? false) })),
         true,
         onSelect
       )}
@@ -1266,6 +1281,17 @@ export default function BookingPage() {
                   console.log(`  + ${key}:`, response[key]);
                 });
 
+                // Nếu backend trả về { success: false, message: "..." } thì hiển thị thông báo lỗi ngay
+                if (response && (response as any).success === false) {
+                  const apiMessage = (response as any).message || "Có lỗi xảy ra khi xử lý thanh toán";
+                  console.warn("⚠️ API trả về thất bại:", apiMessage);
+                  setPaymentStatus("failed");
+                  setPaymentError(apiMessage);
+                  setCompleted(true);
+                  setBookingDataRestored(true);
+                  return;
+                }
+
                 // Kiểm tra các khả năng có thể của paymentUrl
                 const paymentUrl = response.paymentUrl || 
                                   response.payment_url || 
@@ -1319,6 +1345,7 @@ export default function BookingPage() {
                   setPaymentStatus("failed");
                   setPaymentError("Không thể tạo URL thanh toán. Vui lòng thử lại.");
                   setCompleted(true);
+                  setBookingDataRestored(true);
                   return;
                 }
               }
@@ -1327,6 +1354,7 @@ export default function BookingPage() {
               setPaymentStatus("failed");
               setPaymentError("Không nhận được phản hồi từ server");
               setCompleted(true);
+              setBookingDataRestored(true);
               return;
             }
           } catch (error: BookingError | unknown) {
@@ -1348,6 +1376,7 @@ export default function BookingPage() {
             setPaymentStatus("failed");
             setPaymentError((error as any)?.message || "Có lỗi xảy ra khi xử lý thanh toán");
             setCompleted(true);
+            setBookingDataRestored(true);
             return;
           }
         }
@@ -6383,7 +6412,8 @@ export default function BookingPage() {
                       typeof (seat as any).isSelected === 'boolean'
                         ? (seat as any).isSelected
                         : (inMultiSegmentContext ? false : selectedSeats.some((s) => s.id === seat.id));
-                    const isBooked = seat.isBooked;
+                    const isExternallyLocked = externallyLockedSeatIds?.has(String((seat as any).id));
+                    const isBooked = seat.isBooked || !!isExternallyLocked;
 
                     // Debug logging for first few seats to check data
                     if (index < 3) {
@@ -6412,7 +6442,7 @@ export default function BookingPage() {
                       <Box key={`${rowKey}-${seat.id}-${seat.seatNumber || ''}-${index}`} sx={{ position: "relative" }}>
                         <Button
                           variant="contained"
-                          disabled={isBooked} // Chỉ disable ghế đã đặt, không disable vì isInteractive
+                          disabled={isBooked} // Disable if booked or externally locked
                           onClick={() =>
                             isInteractive && onSeatClick && onSeatClick(seat)
                           }
@@ -6436,7 +6466,7 @@ export default function BookingPage() {
                               : "default",
                             // Fixed color logic:
                             // - Ghế đã chọn: màu hồng
-                            // - Ghế đã đặt: màu xám
+                            // - Ghế đã đặt hoặc đang bị khóa realtime: màu xám
                             // - Ghế trống: màu trắng
                             bgcolor: isSelected
                               ? "#f48fb1" // Màu hồng cho ghế đã chọn
